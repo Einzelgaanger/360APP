@@ -258,17 +258,53 @@ export function extractFeedbackThemes(responses: AppraisalResponse[]): {
   startDoing: string[];
   continueDoing: string[];
 } {
-  const themes = {
-    stopDoing: [] as string[],
-    startDoing: [] as string[],
-    continueDoing: [] as string[],
-  };
+  // Use Sets to deduplicate feedback items
+  const stopSet = new Set<string>();
+  const startSet = new Set<string>();
+  const continueSet = new Set<string>();
   
   responses.forEach(r => {
-    if (r.stop_doing) themes.stopDoing.push(r.stop_doing);
-    if (r.start_doing) themes.startDoing.push(r.start_doing);
-    if (r.continue_doing) themes.continueDoing.push(r.continue_doing);
+    if (r.stop_doing) {
+      const trimmed = r.stop_doing.trim();
+      if (trimmed && !stopSet.has(trimmed.toLowerCase())) {
+        stopSet.add(trimmed.toLowerCase());
+      }
+    }
+    if (r.start_doing) {
+      const trimmed = r.start_doing.trim();
+      if (trimmed && !startSet.has(trimmed.toLowerCase())) {
+        startSet.add(trimmed.toLowerCase());
+      }
+    }
+    if (r.continue_doing) {
+      const trimmed = r.continue_doing.trim();
+      if (trimmed && !continueSet.has(trimmed.toLowerCase())) {
+        continueSet.add(trimmed.toLowerCase());
+      }
+    }
   });
   
-  return themes;
+  // Convert back to arrays with original casing (get first occurrence)
+  const getUniqueItems = (responses: AppraisalResponse[], field: 'stop_doing' | 'start_doing' | 'continue_doing'): string[] => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    responses.forEach(r => {
+      const value = r[field];
+      if (value) {
+        const trimmed = value.trim();
+        const key = trimmed.toLowerCase();
+        if (trimmed && !seen.has(key)) {
+          seen.add(key);
+          result.push(trimmed);
+        }
+      }
+    });
+    return result;
+  };
+  
+  return {
+    stopDoing: getUniqueItems(responses, 'stop_doing'),
+    startDoing: getUniqueItems(responses, 'start_doing'),
+    continueDoing: getUniqueItems(responses, 'continue_doing'),
+  };
 }
