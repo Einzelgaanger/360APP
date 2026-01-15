@@ -1,20 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, X, Loader2, Brain } from 'lucide-react';
+import { Send, X, Loader2, Brain, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatMessage, InsightSuggestion } from '@/types/appraisal';
 import { cn } from '@/lib/utils';
 
-const INSIGHT_SUGGESTIONS: InsightSuggestion[] = [
+const INSIGHT_SUGGESTIONS_ROW1: InsightSuggestion[] = [
   { id: '1', question: 'Who are the top 3 performing managers?', category: 'performance' },
   { id: '2', question: 'Which manager has the best team leadership score?', category: 'leadership' },
   { id: '3', question: 'What are the most common improvement areas?', category: 'feedback' },
   { id: '4', question: 'Compare Demola Idowu vs Dotun Adekunle', category: 'comparison' },
+];
+
+const INSIGHT_SUGGESTIONS_ROW2: InsightSuggestion[] = [
   { id: '5', question: 'Which managers need cultural fit improvement?', category: 'culture' },
   { id: '6', question: 'What should managers stop doing most?', category: 'feedback' },
   { id: '7', question: 'Who received the most reviews?', category: 'performance' },
   { id: '8', question: 'Average score by relationship type?', category: 'comparison' },
+  { id: '9', question: 'Show results orientation breakdown', category: 'performance' },
 ];
 
 interface AIChatPanelProps {
@@ -25,30 +29,64 @@ interface AIChatPanelProps {
 
 // Keep markdown formatting for rich display
 const formatResponse = (text: string): string => {
-  return text
-    // Clean up excessive newlines only
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  return text.replace(/\n{3,}/g, '\n\n').trim();
+};
+
+// Marquee row component for endless scrolling
+const MarqueeRow = ({ 
+  suggestions, 
+  direction = 'left', 
+  speed = 25,
+  onSelect 
+}: { 
+  suggestions: InsightSuggestion[]; 
+  direction?: 'left' | 'right'; 
+  speed?: number;
+  onSelect: (question: string) => void;
+}) => {
+  // Duplicate suggestions for seamless loop
+  const items = [...suggestions, ...suggestions, ...suggestions];
+  
+  return (
+    <div className="relative overflow-hidden py-2">
+      <motion.div
+        className="flex gap-3"
+        animate={{
+          x: direction === 'left' ? ['0%', '-33.33%'] : ['-33.33%', '0%'],
+        }}
+        transition={{
+          x: {
+            repeat: Infinity,
+            repeatType: 'loop',
+            duration: speed,
+            ease: 'linear',
+          },
+        }}
+      >
+        {items.map((suggestion, idx) => (
+          <button
+            key={`${suggestion.id}-${idx}`}
+            onClick={() => onSelect(suggestion.question)}
+            className="flex-shrink-0 px-4 py-3 rounded-2xl bg-card/60 backdrop-blur-sm border border-border/40 
+              hover:border-primary/50 hover:bg-primary/10 hover:scale-[1.02] 
+              transition-all duration-200 cursor-pointer group whitespace-nowrap"
+          >
+            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+              {suggestion.question}
+            </span>
+          </button>
+        ))}
+      </motion.div>
+    </div>
+  );
 };
 
 export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [visibleSuggestions, setVisibleSuggestions] = useState<number[]>([0, 1, 2]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Rotate suggestions with animation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setVisibleSuggestions(prev => {
-        const next = prev.map(i => (i + 1) % INSIGHT_SUGGESTIONS.length);
-        return next;
-      });
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -156,83 +194,33 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
 
           {/* Animated Suggestions - Always visible when no messages */}
           {messages.length === 0 && (
-            <div className="p-6 flex-1 flex flex-col items-center justify-center">
+            <div className="flex-1 flex flex-col justify-center overflow-hidden">
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center mb-8"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center px-6 mb-6"
               >
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
-                  <Sparkles className="w-8 h-8 text-primary" />
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
+                  <MessageCircle className="w-7 h-7 text-primary" />
                 </div>
-                <h4 className="text-lg font-medium mb-2">What would you like to know?</h4>
-                <p className="text-sm text-muted-foreground">Ask questions about manager performance, feedback trends, or comparisons</p>
+                <h4 className="text-lg font-medium mb-1">What would you like to know?</h4>
+                <p className="text-sm text-muted-foreground">Click any suggestion or type your question</p>
               </motion.div>
 
-              {/* Floating Animated Suggestions - Carousel Style */}
-              <div className="w-full relative overflow-hidden">
-                <div className="space-y-2">
-                  <AnimatePresence mode="wait">
-                    {visibleSuggestions.map((suggestionIdx, i) => {
-                      const suggestion = INSIGHT_SUGGESTIONS[suggestionIdx];
-                      return (
-                        <motion.button
-                          key={`suggestion-${suggestionIdx}-${i}`}
-                          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                          animate={{ 
-                            opacity: 1, 
-                            y: 0, 
-                            scale: 1,
-                            transition: { 
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 25,
-                              delay: i * 0.08 
-                            }
-                          }}
-                          exit={{ 
-                            opacity: 0, 
-                            y: -20, 
-                            scale: 0.95,
-                            transition: { duration: 0.2 }
-                          }}
-                          whileHover={{ scale: 1.02, backgroundColor: 'hsl(var(--primary) / 0.1)' }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => sendMessage(suggestion.question)}
-                          className="w-full p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-border/60 text-left hover:border-primary/60 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200"
-                        >
-                          <div className="flex items-center gap-3">
-                            <motion.div 
-                              className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0"
-                              whileHover={{ rotate: [0, -5, 5, 0] }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              <span className="text-xs font-bold text-primary uppercase">
-                                {suggestion.category.slice(0, 2)}
-                              </span>
-                            </motion.div>
-                            <span className="text-sm font-medium">{suggestion.question}</span>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* Progress indicator */}
-              <div className="flex items-center gap-2 mt-6">
-                <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: 4, ease: 'linear', repeat: Infinity }}
-                  />
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {visibleSuggestions[0] + 1}/{INSIGHT_SUGGESTIONS.length}
-                </span>
+              {/* Marquee Suggestions - 2 rows with opposite directions */}
+              <div className="space-y-1">
+                <MarqueeRow 
+                  suggestions={INSIGHT_SUGGESTIONS_ROW1} 
+                  direction="left" 
+                  speed={30}
+                  onSelect={sendMessage} 
+                />
+                <MarqueeRow 
+                  suggestions={INSIGHT_SUGGESTIONS_ROW2} 
+                  direction="right" 
+                  speed={35}
+                  onSelect={sendMessage} 
+                />
               </div>
             </div>
           )}
