@@ -31,23 +31,55 @@ export default function Dashboard() {
 
   const dataContext = useMemo(() => {
     if (!managerSummaries.length) return '';
-    return `Total Responses: ${overallStats.totalResponses}
-Total Managers: ${overallStats.totalManagers}
-Average Score: ${overallStats.avgOverallScore}/4.0
+    
+    // Build comprehensive context with ALL available data
+    const allManagerData = managerSummaries.map(m => 
+      `• ${m.manager_name}: Overall ${m.overall_score.toFixed(2)}/4.0, Team Leadership ${m.avg_team_leadership.toFixed(2)}, Results ${m.avg_results_orientation.toFixed(2)}, Culture ${m.avg_cultural_fit.toFixed(2)}, Reviews: ${m.total_responses}`
+    ).join('\n');
+    
+    const relationshipData = Object.entries(relationshipDistribution)
+      .map(([rel, count]) => `• ${rel}: ${count} reviews`)
+      .join('\n');
+    
+    const scoreData = Object.entries(scoreDistribution)
+      .map(([score, count]) => `• Score ${score}: ${count} occurrences`)
+      .join('\n');
+    
+    const feedbackData = {
+      stopDoing: feedbackThemes.stopDoing.slice(0, 15).map(f => `• ${f}`).join('\n'),
+      startDoing: feedbackThemes.startDoing.slice(0, 15).map(f => `• ${f}`).join('\n'),
+      continueDoing: feedbackThemes.continueDoing.slice(0, 15).map(f => `• ${f}`).join('\n'),
+    };
 
-Top 5 Managers:
-${managerSummaries.slice(0, 5).map((m, i) => 
-  `${i+1}. ${m.manager_name}: ${m.overall_score.toFixed(2)} (${m.total_responses} reviews)`
-).join('\n')}
+    return `=== VGG 360° PERFORMANCE REVIEW DATA ===
 
-Lowest 3 Performers:
-${managerSummaries.slice(-3).reverse().map(m => 
-  `- ${m.manager_name}: ${m.overall_score.toFixed(2)}`
-).join('\n')}
+SUMMARY STATISTICS:
+• Total Responses: ${overallStats.totalResponses}
+• Total Managers Evaluated: ${overallStats.totalManagers}
+• Organization Average Score: ${overallStats.avgOverallScore}/4.0 (${((overallStats.avgOverallScore/4)*100).toFixed(0)}% performance)
+• Top Performer: ${overallStats.topPerformer} with ${overallStats.topScore.toFixed(2)}/4.0
 
-Competency Averages:
-${competencyScores.map(c => `- ${c.name}: ${c.score.toFixed(2)}/4.0`).join('\n')}`;
-  }, [managerSummaries, overallStats, competencyScores]);
+COMPETENCY BREAKDOWN (Organization-wide):
+${competencyScores.map(c => `• ${c.name}: ${c.score.toFixed(2)}/4.0 (${((c.score/4)*100).toFixed(0)}%)`).join('\n')}
+
+ALL MANAGERS - DETAILED SCORES:
+${allManagerData}
+
+REVIEWER RELATIONSHIP DISTRIBUTION:
+${relationshipData}
+
+SCORE FREQUENCY DISTRIBUTION:
+${scoreData}
+
+QUALITATIVE FEEDBACK - STOP DOING (Areas for Improvement):
+${feedbackData.stopDoing || '• No feedback available'}
+
+QUALITATIVE FEEDBACK - START DOING (Recommendations):
+${feedbackData.startDoing || '• No feedback available'}
+
+QUALITATIVE FEEDBACK - CONTINUE DOING (Strengths):
+${feedbackData.continueDoing || '• No feedback available'}`;
+  }, [managerSummaries, overallStats, competencyScores, relationshipDistribution, scoreDistribution, feedbackThemes]);
 
   const handleLogout = () => { logout(); navigate('/'); };
 

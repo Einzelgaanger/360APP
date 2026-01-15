@@ -23,22 +23,10 @@ interface AIChatPanelProps {
   dataContext: string;
 }
 
-// Format AI response to clean up markdown artifacts
+// Keep markdown formatting for rich display
 const formatResponse = (text: string): string => {
   return text
-    // Remove ** bold markers and replace with clean text
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    // Remove * italic markers
-    .replace(/\*([^*]+)\*/g, '$1')
-    // Remove ### headers markers
-    .replace(/^###\s*/gm, '')
-    // Remove ## headers markers
-    .replace(/^##\s*/gm, '')
-    // Remove # headers markers
-    .replace(/^#\s*/gm, '')
-    // Clean up bullet points for consistency
-    .replace(/^\s*[-•]\s*/gm, '• ')
-    // Remove excessive newlines
+    // Clean up excessive newlines only
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 };
@@ -181,52 +169,70 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
                 <p className="text-sm text-muted-foreground">Ask questions about manager performance, feedback trends, or comparisons</p>
               </motion.div>
 
-              {/* Floating Animated Suggestions */}
-              <div className="w-full space-y-3">
-                <AnimatePresence mode="popLayout">
-                  {visibleSuggestions.map((suggestionIdx, i) => {
-                    const suggestion = INSIGHT_SUGGESTIONS[suggestionIdx];
-                    return (
-                      <motion.button
-                        key={`${suggestion.id}-${suggestionIdx}`}
-                        initial={{ opacity: 0, x: 50, scale: 0.9 }}
-                        animate={{ 
-                          opacity: 1, 
-                          x: 0, 
-                          scale: 1,
-                          transition: { delay: i * 0.1 }
-                        }}
-                        exit={{ opacity: 0, x: -50, scale: 0.9 }}
-                        whileHover={{ scale: 1.02, x: 4 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => sendMessage(suggestion.question)}
-                        className="w-full p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-border/50 text-left hover:border-primary/50 hover:from-primary/10 hover:to-accent/10 transition-all duration-300"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-medium text-primary">
-                              {suggestion.category.charAt(0).toUpperCase()}
-                            </span>
+              {/* Floating Animated Suggestions - Carousel Style */}
+              <div className="w-full relative overflow-hidden">
+                <div className="space-y-2">
+                  <AnimatePresence mode="wait">
+                    {visibleSuggestions.map((suggestionIdx, i) => {
+                      const suggestion = INSIGHT_SUGGESTIONS[suggestionIdx];
+                      return (
+                        <motion.button
+                          key={`suggestion-${suggestionIdx}-${i}`}
+                          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                          animate={{ 
+                            opacity: 1, 
+                            y: 0, 
+                            scale: 1,
+                            transition: { 
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 25,
+                              delay: i * 0.08 
+                            }
+                          }}
+                          exit={{ 
+                            opacity: 0, 
+                            y: -20, 
+                            scale: 0.95,
+                            transition: { duration: 0.2 }
+                          }}
+                          whileHover={{ scale: 1.02, backgroundColor: 'hsl(var(--primary) / 0.1)' }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => sendMessage(suggestion.question)}
+                          className="w-full p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-border/60 text-left hover:border-primary/60 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200"
+                        >
+                          <div className="flex items-center gap-3">
+                            <motion.div 
+                              className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0"
+                              whileHover={{ rotate: [0, -5, 5, 0] }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <span className="text-xs font-bold text-primary uppercase">
+                                {suggestion.category.slice(0, 2)}
+                              </span>
+                            </motion.div>
+                            <span className="text-sm font-medium">{suggestion.question}</span>
                           </div>
-                          <span className="text-sm">{suggestion.question}</span>
-                        </div>
-                      </motion.button>
-                    );
-                  })}
-                </AnimatePresence>
+                        </motion.button>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
               </div>
 
-              {/* Indicator dots */}
-              <div className="flex gap-1.5 mt-6">
-                {INSIGHT_SUGGESTIONS.map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full transition-colors duration-300",
-                      visibleSuggestions.includes(i) ? "bg-primary" : "bg-muted-foreground/30"
-                    )}
+              {/* Progress indicator */}
+              <div className="flex items-center gap-2 mt-6">
+                <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                  <motion.div 
+                    className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 4, ease: 'linear', repeat: Infinity }}
                   />
-                ))}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {visibleSuggestions[0] + 1}/{INSIGHT_SUGGESTIONS.length}
+                </span>
               </div>
             </div>
           )}
@@ -241,7 +247,28 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
                   animate={{ opacity: 1, y: 0 }}
                   className={cn('chat-bubble', msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai')}
                 >
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                  {msg.role === 'assistant' ? (
+                    <div 
+                      className="text-sm leading-relaxed prose prose-sm prose-invert max-w-none
+                        prose-strong:text-primary prose-strong:font-semibold
+                        prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-2
+                        prose-p:my-2 prose-ul:my-2 prose-ol:my-2
+                        prose-li:my-0.5"
+                      dangerouslySetInnerHTML={{ 
+                        __html: msg.content
+                          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                          .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+                          .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+                          .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+                          .replace(/^\d+\.\s+(.+)$/gm, '<li class="list-decimal ml-4">$1</li>')
+                          .replace(/^[•\-]\s+(.+)$/gm, '<li class="list-disc ml-4">$1</li>')
+                          .replace(/\n/g, '<br />')
+                      }}
+                    />
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                  )}
                 </motion.div>
               ))}
               {loading && messages[messages.length - 1]?.role === 'user' && (
