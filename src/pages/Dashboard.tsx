@@ -15,7 +15,7 @@ import ExportButton from '@/components/dashboard/ExportButton';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
 import { Button } from '@/components/ui/button';
 import { ManagerSummary } from '@/types/appraisal';
-import { BarChart3, Users, Trophy, Target, Sparkles, LogOut, Loader2 } from 'lucide-react';
+import { BarChart3, Users, Trophy, Target, Zap, LogOut, Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -65,9 +65,6 @@ ${competencyScores.map(c => `- ${c.name}: ${c.score.toFixed(2)}/4.0`).join('\n')
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-primary/70 glow-primary">
-              <BarChart3 className="w-6 h-6 text-primary-foreground" />
-            </div>
             <div>
               <h1 className="text-xl font-bold">VGG 360° Analytics</h1>
               <p className="text-xs text-muted-foreground">Performance Intelligence</p>
@@ -77,7 +74,7 @@ ${competencyScores.map(c => `- ${c.name}: ${c.score.toFixed(2)}/4.0`).join('\n')
             <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
             <ExportButton managers={managerSummaries} responses={responses} />
             <Button onClick={() => setChatOpen(true)} className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90">
-              <Sparkles className="w-4 h-4" /> Analytics Copilot
+              <Zap className="w-4 h-4" /> Analytics Copilot
             </Button>
             <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
           </div>
