@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { ManagerSummary, CompetencyScore } from '@/types/appraisal';
+import { ManagerSummary } from '@/types/appraisal';
 import { getCompetencyBreakdown, extractFeedbackThemes } from '@/lib/dataProcessor';
-import { X, Award, TrendingUp, Users, Target } from 'lucide-react';
+import { X, Award, Users, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CompetencyRadar from './CompetencyRadar';
 import FeedbackThemes from './FeedbackThemes';
+import ReviewerBreakdown from './ReviewerBreakdown';
 import { cn } from '@/lib/utils';
 
 interface ManagerDetailPanelProps {
@@ -62,28 +63,25 @@ export default function ManagerDetailPanel({ manager, onClose }: ManagerDetailPa
       <div className="p-6 space-y-6">
         {/* Category Scores */}
         <div className="grid grid-cols-3 gap-4">
-          {categories.map((cat, index) => {
-            const info = getScoreLabel(cat.score);
-            return (
-              <motion.div
-                key={cat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="glass-card p-4 text-center"
-              >
-                <cat.icon className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground mb-1">{cat.label}</p>
-                <p className={cn('text-xl font-bold', 
-                  cat.score >= 3 ? 'text-success' : 
-                  cat.score >= 2.5 ? 'text-primary' : 
-                  cat.score >= 2 ? 'text-warning' : 'text-destructive'
-                )}>
-                  {cat.score.toFixed(2)}
-                </p>
-              </motion.div>
-            );
-          })}
+          {categories.map((cat, index) => (
+            <motion.div
+              key={cat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="glass-card p-4 text-center"
+            >
+              <cat.icon className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground mb-1">{cat.label}</p>
+              <p className={cn('text-xl font-bold', 
+                cat.score >= 3 ? 'text-success' : 
+                cat.score >= 2.5 ? 'text-primary' : 
+                cat.score >= 2 ? 'text-warning' : 'text-destructive'
+              )}>
+                {cat.score.toFixed(2)}
+              </p>
+            </motion.div>
+          ))}
         </div>
 
         {/* Competency Radar */}
@@ -92,29 +90,13 @@ export default function ManagerDetailPanel({ manager, onClose }: ManagerDetailPa
           title={`${manager.manager_name}'s Competencies`}
         />
 
-        {/* Feedback Themes */}
-        <FeedbackThemes themes={themes} managerName={manager.manager_name} />
+        {/* Two-column layout for Feedback and Reviewer Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Feedback Themes */}
+          <FeedbackThemes themes={themes} managerName={manager.manager_name} />
 
-        {/* Relationship Breakdown */}
-        <div className="glass-card p-6">
-          <h4 className="font-semibold mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-muted-foreground" />
-            Reviewer Breakdown
-          </h4>
-          <div className="space-y-2">
-            {Object.entries(
-              manager.responses.reduce((acc, r) => {
-                const rel = r.relationship || 'Unknown';
-                acc[rel] = (acc[rel] || 0) + 1;
-                return acc;
-              }, {} as Record<string, number>)
-            ).map(([rel, count]) => (
-              <div key={rel} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground truncate max-w-[200px]">{rel}</span>
-                <span className="font-medium">{count}</span>
-              </div>
-            ))}
-          </div>
+          {/* Reviewer Breakdown - Independent component */}
+          <ReviewerBreakdown responses={manager.responses} />
         </div>
       </div>
     </motion.div>
