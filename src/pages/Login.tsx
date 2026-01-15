@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, Mail, BarChart3, AlertCircle } from 'lucide-react';
+import { Lock, Mail, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -48,16 +48,8 @@ export default function Login() {
         className="relative z-10 w-full max-w-md px-6"
       >
         <div className="glass-panel p-8 shadow-2xl">
-          {/* Logo & Title */}
+          {/* Title */}
           <div className="text-center mb-8">
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring' }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 mb-4 glow-primary"
-            >
-              <BarChart3 className="w-8 h-8 text-primary-foreground" />
-            </motion.div>
             <h1 className="text-2xl font-bold gradient-text">VGG 360° Analytics</h1>
             <p className="text-muted-foreground mt-2 text-sm">
               Executive Performance Intelligence Platform
@@ -129,15 +121,6 @@ export default function Login() {
               )}
             </Button>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 rounded-lg bg-muted/30 border border-border/50">
-            <p className="text-xs text-muted-foreground text-center mb-2">Demo Credentials</p>
-            <div className="space-y-1 text-xs font-mono text-center">
-              <p className="text-foreground/80">admin@vgg.com</p>
-              <p className="text-foreground/80">VGG360Analytics!</p>
-            </div>
-          </div>
         </div>
       </motion.div>
     </div>
