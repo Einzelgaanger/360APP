@@ -8,9 +8,53 @@ interface CompetencyRadarProps {
   title?: string;
 }
 
+// Custom tick component that wraps text to 2 lines
+const CustomTick = ({ payload, x, y, textAnchor, ...rest }: any) => {
+  const words = payload.value.split(' ');
+  const maxCharsPerLine = 12;
+  
+  // Split into lines
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  words.forEach((word: string) => {
+    if (currentLine.length + word.length + 1 <= maxCharsPerLine) {
+      currentLine = currentLine ? `${currentLine} ${word}` : word;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+  
+  // Limit to 2 lines max
+  const displayLines = lines.slice(0, 2);
+  if (lines.length > 2) {
+    displayLines[1] = displayLines[1].slice(0, 10) + '...';
+  }
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {displayLines.map((line, index) => (
+        <text
+          key={index}
+          x={0}
+          y={index * 12 - (displayLines.length - 1) * 6}
+          textAnchor={textAnchor}
+          fill="hsl(var(--muted-foreground))"
+          fontSize={10}
+          {...rest}
+        >
+          {line}
+        </text>
+      ))}
+    </g>
+  );
+};
+
 export default function CompetencyRadar({ competencies, title = 'Competency Overview' }: CompetencyRadarProps) {
   const data = competencies.map(c => ({
-    subject: c.name.length > 12 ? c.name.slice(0, 12) + '...' : c.name,
+    subject: c.name,
     fullName: c.name,
     score: c.score,
     percentage: c.percentage,
@@ -36,17 +80,14 @@ export default function CompetencyRadar({ competencies, title = 'Competency Over
 
       <div className="h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={data} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+          <RadarChart data={data} margin={{ top: 30, right: 50, bottom: 30, left: 50 }}>
             <PolarGrid 
               stroke="hsl(var(--border))" 
               strokeOpacity={0.3}
             />
             <PolarAngleAxis 
               dataKey="subject" 
-              tick={{ 
-                fill: 'hsl(var(--muted-foreground))', 
-                fontSize: 10,
-              }}
+              tick={<CustomTick />}
               tickLine={false}
             />
             <PolarRadiusAxis 
