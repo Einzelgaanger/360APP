@@ -14,7 +14,7 @@ import AIChatPanel from '@/components/dashboard/AIChatPanel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ManagerSummary } from '@/types/appraisal';
-import { BarChart3, Users, Trophy, Target, Zap, Loader2, Sparkles } from 'lucide-react';
+import { BarChart3, Users, Trophy, Target, Zap, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function DemoDashboard() {
@@ -92,7 +92,6 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
       <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 border-b border-amber-500/30">
         <div className="container mx-auto px-4 py-2 flex items-center justify-center gap-3">
           <Badge variant="outline" className="bg-amber-500/20 text-amber-200 border-amber-500/50">
-            <Sparkles className="w-3 h-3 mr-1" />
             DEMO MODE
           </Badge>
           <span className="text-sm text-amber-200/80">
