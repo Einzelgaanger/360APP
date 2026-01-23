@@ -69,3 +69,9 @@ export interface FilterState {
   relationships: string[];
   scoreRange: [number, number];
 }
+
+export interface FeedbackThemes {
+  stopDoing: string[];
+  startDoing: string[];
+  continueDoing: string[];
+}
