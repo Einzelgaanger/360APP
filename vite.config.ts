@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
     host: "0.0.0.0",
     allowedHosts: [
       "three60appraisal.onrender.com",
+      "appraisal.vgg.app",
       "localhost",
     ],
   },
