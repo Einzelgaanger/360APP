@@ -98,6 +98,126 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_appraisal_responses: {
+        Row: {
+          analyzes_change_score: number | null
+          approachable_score: number | null
+          confidence_integrity_score: number | null
+          continue_doing: string | null
+          created_at: string | null
+          cultural_fit_comments: string | null
+          effective_direction_score: number | null
+          empowers_team_score: number | null
+          establishes_rapport_score: number | null
+          final_say_score: number | null
+          flat_collaborative_score: number | null
+          id: string
+          manager_name: string
+          mentors_coaches_score: number | null
+          open_to_ideas_score: number | null
+          patient_humble_score: number | null
+          relationship: string | null
+          response_number: number | null
+          results_orientation_comments: string | null
+          sense_of_urgency_score: number | null
+          sets_clear_goals_score: number | null
+          start_doing: string | null
+          stop_doing: string | null
+          team_leadership_comments: string | null
+          timestamp: string | null
+        }
+        Insert: {
+          analyzes_change_score?: number | null
+          approachable_score?: number | null
+          confidence_integrity_score?: number | null
+          continue_doing?: string | null
+          created_at?: string | null
+          cultural_fit_comments?: string | null
+          effective_direction_score?: number | null
+          empowers_team_score?: number | null
+          establishes_rapport_score?: number | null
+          final_say_score?: number | null
+          flat_collaborative_score?: number | null
+          id?: string
+          manager_name: string
+          mentors_coaches_score?: number | null
+          open_to_ideas_score?: number | null
+          patient_humble_score?: number | null
+          relationship?: string | null
+          response_number?: number | null
+          results_orientation_comments?: string | null
+          sense_of_urgency_score?: number | null
+          sets_clear_goals_score?: number | null
+          start_doing?: string | null
+          stop_doing?: string | null
+          team_leadership_comments?: string | null
+          timestamp?: string | null
+        }
+        Update: {
+          analyzes_change_score?: number | null
+          approachable_score?: number | null
+          confidence_integrity_score?: number | null
+          continue_doing?: string | null
+          created_at?: string | null
+          cultural_fit_comments?: string | null
+          effective_direction_score?: number | null
+          empowers_team_score?: number | null
+          establishes_rapport_score?: number | null
+          final_say_score?: number | null
+          flat_collaborative_score?: number | null
+          id?: string
+          manager_name?: string
+          mentors_coaches_score?: number | null
+          open_to_ideas_score?: number | null
+          patient_humble_score?: number | null
+          relationship?: string | null
+          response_number?: number | null
+          results_orientation_comments?: string | null
+          sense_of_urgency_score?: number | null
+          sets_clear_goals_score?: number | null
+          start_doing?: string | null
+          stop_doing?: string | null
+          team_leadership_comments?: string | null
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
+      demo_manager_summaries: {
+        Row: {
+          avg_cultural_fit: number | null
+          avg_results_orientation: number | null
+          avg_team_leadership: number | null
+          created_at: string | null
+          id: string
+          manager_name: string
+          overall_score: number | null
+          total_responses: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_cultural_fit?: number | null
+          avg_results_orientation?: number | null
+          avg_team_leadership?: number | null
+          created_at?: string | null
+          id?: string
+          manager_name: string
+          overall_score?: number | null
+          total_responses?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_cultural_fit?: number | null
+          avg_results_orientation?: number | null
+          avg_team_leadership?: number | null
+          created_at?: string | null
+          id?: string
+          manager_name?: string
+          overall_score?: number | null
+          total_responses?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       manager_summaries: {
         Row: {
           avg_cultural_fit: number | null
