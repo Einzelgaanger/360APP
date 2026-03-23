@@ -103,6 +103,9 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => navigate('/appraisal')} className="gap-2">
+              <ClipboardList className="w-4 h-4" /> 360° Appraisal
+            </Button>
             <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
             <ExportButton managers={managerSummaries} responses={responses} />
             <Button onClick={() => setChatOpen(true)} className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90">
