@@ -267,19 +267,31 @@ export default function Survey() {
                 </div>
                 <p className="text-muted-foreground text-sm mb-6">{selectedSubsidiary?.name}</p>
                 <div className="grid gap-2 max-h-[60vh] overflow-y-auto pr-2">
-                  {employees.map(emp => (
-                    <button
-                      key={emp.id}
-                      onClick={() => handleSelectEmployee(emp)}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-secondary/30 hover:bg-secondary/60 hover:border-primary/50 transition-all text-left group"
-                    >
-                      <div>
-                        <span className="font-medium text-sm">{emp.name}</span>
-                        {emp.role && <span className="block text-xs text-muted-foreground">{emp.role}</span>}
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </button>
-                  ))}
+                  {employees.map(emp => {
+                    const isCompleted = completedEmployees.has(emp.id);
+                    return (
+                      <button
+                        key={emp.id}
+                        onClick={() => !isCompleted && handleSelectEmployee(emp)}
+                        disabled={isCompleted}
+                        className={`flex items-center justify-between p-3 rounded-lg border transition-all text-left group ${
+                          isCompleted
+                            ? 'border-primary/30 bg-primary/5 opacity-70 cursor-not-allowed'
+                            : 'border-border/50 bg-secondary/30 hover:bg-secondary/60 hover:border-primary/50'
+                        }`}
+                      >
+                        <div>
+                          <span className="font-medium text-sm">{emp.name}</span>
+                          {emp.role && <span className="block text-xs text-muted-foreground">{emp.role}</span>}
+                        </div>
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>
