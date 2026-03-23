@@ -52,6 +52,26 @@ export default function Survey() {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [completedEmployees, setCompletedEmployees] = useState<Set<string>>(new Set());
+
+  // Load completed employees from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('vgg_completed_reviews');
+    if (saved) {
+      try {
+        setCompletedEmployees(new Set(JSON.parse(saved)));
+      } catch { /* ignore */ }
+    }
+  }, []);
+
+  const markEmployeeCompleted = (employeeId: string) => {
+    setCompletedEmployees(prev => {
+      const next = new Set(prev);
+      next.add(employeeId);
+      localStorage.setItem('vgg_completed_reviews', JSON.stringify([...next]));
+      return next;
+    });
+  };
 
   useEffect(() => {
     loadData();
