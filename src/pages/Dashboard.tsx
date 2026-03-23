@@ -15,7 +15,7 @@ import ExportButton from '@/components/dashboard/ExportButton';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
 import { Button } from '@/components/ui/button';
 import { ManagerSummary } from '@/types/appraisal';
-import { BarChart3, Users, Trophy, Target, Zap, LogOut, Loader2 } from 'lucide-react';
+import { BarChart3, Users, Trophy, Target, Zap, LogOut, Loader2, ClipboardList } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
