@@ -166,6 +166,7 @@ export default function Survey() {
 
       if (answersError) throw answersError;
 
+      markEmployeeCompleted(selectedEmployee.id);
       setStep('submitted');
       toast.success('Response submitted successfully!');
     } catch (err) {
