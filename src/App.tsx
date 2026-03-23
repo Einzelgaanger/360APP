@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import DemoDashboard from "./pages/DemoDashboard";
+import Survey from "./pages/Survey";
+import AppraisalAdmin from "./pages/AppraisalAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
