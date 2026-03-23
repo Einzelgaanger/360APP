@@ -25,6 +25,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/appraisal" element={<ProtectedRoute><AppraisalAdmin /></ProtectedRoute>} />
+      <Route path="/survey" element={<Survey />} />
       <Route path="/demo" element={<DemoDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
