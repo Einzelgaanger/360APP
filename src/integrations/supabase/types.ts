@@ -218,6 +218,41 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          role: string | null
+          sort_order: number | null
+          subsidiary_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          role?: string | null
+          sort_order?: number | null
+          subsidiary_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          role?: string | null
+          sort_order?: number | null
+          subsidiary_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_subsidiary_id_fkey"
+            columns: ["subsidiary_id"]
+            isOneToOne: false
+            referencedRelation: "subsidiaries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manager_summaries: {
         Row: {
           avg_cultural_fit: number | null
@@ -253,6 +288,158 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      subsidiaries: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      survey_answers: {
+        Row: {
+          created_at: string | null
+          id: string
+          question_id: string
+          response_id: string
+          score: number | null
+          text_answer: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question_id: string
+          response_id: string
+          score?: number | null
+          text_answer?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question_id?: string
+          response_id?: string
+          score?: number | null
+          text_answer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_answers_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "survey_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      survey_questions: {
+        Row: {
+          category_id: string
+          created_at: string | null
+          id: string
+          question_text: string
+          question_type: string
+          sort_order: number | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string | null
+          id?: string
+          question_text: string
+          question_type?: string
+          sort_order?: number | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string | null
+          id?: string
+          question_text?: string
+          question_type?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "survey_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          created_at: string | null
+          employee_id: string
+          id: string
+          subsidiary_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id: string
+          id?: string
+          subsidiary_id: string
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string
+          id?: string
+          subsidiary_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_responses_subsidiary_id_fkey"
+            columns: ["subsidiary_id"]
+            isOneToOne: false
+            referencedRelation: "subsidiaries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
