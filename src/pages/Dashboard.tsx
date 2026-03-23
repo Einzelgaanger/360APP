@@ -15,7 +15,7 @@ import ExportButton from '@/components/dashboard/ExportButton';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
 import { Button } from '@/components/ui/button';
 import { ManagerSummary } from '@/types/appraisal';
-import { BarChart3, Users, Trophy, Target, Zap, LogOut, Loader2 } from 'lucide-react';
+import { BarChart3, Users, Trophy, Target, Zap, LogOut, Loader2, ClipboardList } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -103,6 +103,9 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => navigate('/appraisal')} className="gap-2">
+              <ClipboardList className="w-4 h-4" /> 360° Appraisal
+            </Button>
             <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
             <ExportButton managers={managerSummaries} responses={responses} />
             <Button onClick={() => setChatOpen(true)} className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90">

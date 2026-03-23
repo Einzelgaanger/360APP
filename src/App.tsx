@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import DemoDashboard from "./pages/DemoDashboard";
+import Survey from "./pages/Survey";
+import AppraisalAdmin from "./pages/AppraisalAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +25,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/appraisal" element={<ProtectedRoute><AppraisalAdmin /></ProtectedRoute>} />
+      <Route path="/survey" element={<Survey />} />
       <Route path="/demo" element={<DemoDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
