@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { ThemeToggle } from '@/components/ThemeToggle';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, Mail, AlertCircle, ShieldCheck } from 'lucide-react';
-import vggLogo from '@/assets/vgg-logo.webp';
+import vggIcon from '@/assets/vgg-icon.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -50,7 +50,7 @@ export default function Login() {
 
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center relative p-6">
-        <div className="absolute top-5 right-5"><ThemeToggle /></div>
+        
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -59,7 +59,7 @@ export default function Login() {
           className="w-full max-w-sm"
         >
           <div className="mb-8">
-            <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto mb-8" />
+            <img src={vggIcon} alt="Venture Garden Group" className="h-10 w-auto mb-8" />
             <h1 className="text-2xl font-bold font-serif mb-1">Administrator Sign In</h1>
             <p className="text-muted-foreground text-sm">
               VGG 360° Performance Analytics

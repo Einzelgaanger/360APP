@@ -3,14 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
-import { ThemeToggle } from '@/components/ThemeToggle';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Search, ArrowLeft, CheckCircle2, AlertCircle, Loader2, Building2, User,
 } from 'lucide-react';
-import vggLogo from '@/assets/vgg-logo.webp';
+import vggIcon from '@/assets/vgg-icon.png';
 
 interface EmployeeResult {
   id: string;
@@ -110,7 +110,7 @@ export default function FindAccount() {
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
       </div>
-      <div className="absolute top-5 right-5"><ThemeToggle /></div>
+      
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
