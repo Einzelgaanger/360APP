@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    /* VGG Branding — Green & Blue */
+    /* VGG Branding — Green & Blue, Formal Corporate */
     --background: 0 0% 100%;
     --foreground: 160 25% 12%;
 
@@ -19,10 +19,10 @@
     --primary: 152 62% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 150 12% 94%;
+    --secondary: 150 8% 95%;
     --secondary-foreground: 160 20% 25%;
 
-    --muted: 150 10% 93%;
+    --muted: 150 8% 94%;
     --muted-foreground: 160 8% 48%;
 
     --accent: 210 72% 45%;
@@ -37,11 +37,11 @@
     --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 150 12% 88%;
-    --input: 150 12% 88%;
+    --border: 150 8% 90%;
+    --input: 150 8% 90%;
     --ring: 152 62% 38%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --chart-1: 152 62% 38%;
     --chart-2: 210 72% 45%;
@@ -65,22 +65,22 @@
   }
 
   .dark {
-    --background: 160 25% 7%;
+    --background: 160 20% 6%;
     --foreground: 150 15% 94%;
 
-    --card: 160 22% 11%;
+    --card: 160 18% 10%;
     --card-foreground: 150 15% 94%;
 
-    --popover: 160 22% 13%;
+    --popover: 160 18% 12%;
     --popover-foreground: 150 15% 94%;
 
     --primary: 152 62% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 20% 15%;
+    --secondary: 160 15% 14%;
     --secondary-foreground: 150 14% 85%;
 
-    --muted: 160 18% 16%;
+    --muted: 160 12% 15%;
     --muted-foreground: 150 10% 52%;
 
     --accent: 210 72% 52%;
@@ -95,8 +95,8 @@
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 160 18% 18%;
-    --input: 160 18% 20%;
+    --border: 160 12% 18%;
+    --input: 160 12% 20%;
     --ring: 152 62% 45%;
 
     --chart-1: 152 62% 45%;
@@ -110,13 +110,13 @@
     --score-average: 38 80% 50%;
     --score-poor: 0 65% 55%;
 
-    --sidebar-background: 160 25% 7%;
+    --sidebar-background: 160 20% 6%;
     --sidebar-foreground: 150 15% 90%;
     --sidebar-primary: 152 62% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 22% 13%;
+    --sidebar-accent: 160 18% 12%;
     --sidebar-accent-foreground: 150 15% 90%;
-    --sidebar-border: 160 18% 18%;
+    --sidebar-border: 160 12% 18%;
     --sidebar-ring: 152 62% 45%;
   }
 }
@@ -133,26 +133,30 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
-    font-family: 'Instrument Serif', Georgia, serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    @apply font-bold tracking-tight;
   }
 }
 
 @layer components {
   .glass-panel {
-    @apply bg-card border border-border rounded-xl shadow-sm;
+    @apply bg-card/80 backdrop-blur-xl border border-border/60 rounded-2xl shadow-lg shadow-black/[0.03];
+  }
+
+  .glass-panel-hover {
+    @apply glass-panel hover:shadow-xl hover:shadow-black/[0.06] hover:border-primary/20 transition-all duration-300;
   }
 
   .gradient-text {
-    @apply text-primary;
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
   }
 
   .stat-card {
-    @apply glass-panel p-6 hover:shadow-md transition-shadow duration-300;
+    @apply glass-panel p-6 hover:shadow-xl hover:shadow-black/[0.06] hover:-translate-y-0.5 transition-all duration-300;
   }
 
   .score-badge {
-    @apply inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold;
+    @apply inline-flex items-center justify-center w-10 h-10 rounded-xl text-sm font-bold;
   }
 
   .score-excellent {
@@ -181,6 +185,10 @@
 
   .chat-bubble-ai {
     @apply bg-secondary text-secondary-foreground mr-auto rounded-bl-md;
+  }
+
+  .input-field {
+    @apply rounded-xl border-2 border-border bg-background px-4 py-3 text-sm transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:text-muted-foreground/60;
   }
 }
 

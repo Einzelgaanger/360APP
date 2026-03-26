@@ -24,18 +24,11 @@ export default function StatsCard({
   variant = 'default',
   delay = 0,
 }: StatsCardProps) {
-  const variants = {
-    default: 'border-border/50 hover:border-primary/30',
-    primary: 'border-primary/30 hover:border-primary/50 glow-primary',
-    accent: 'border-accent/30 hover:border-accent/50 glow-accent',
-    success: 'border-success/30 hover:border-success/50',
-  };
-
   const iconVariants = {
-    default: 'bg-secondary text-foreground',
-    primary: 'bg-primary/20 text-primary',
-    accent: 'bg-accent/20 text-accent',
-    success: 'bg-success/20 text-success',
+    default: 'bg-muted text-foreground',
+    primary: 'bg-primary/15 text-primary',
+    accent: 'bg-accent/15 text-accent',
+    success: 'bg-success/15 text-success',
   };
 
   return (
@@ -43,29 +36,26 @@ export default function StatsCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
-      className={cn(
-        'stat-card group cursor-default',
-        variants[variant]
-      )}
+      className="glass-panel-hover p-6 group cursor-default"
     >
       <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground font-medium">{title}</p>
+        <div className="space-y-1.5">
+          <p className="text-sm text-muted-foreground font-semibold">{title}</p>
           <motion.p
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ delay: delay + 0.1, type: 'spring' }}
-            className="text-3xl font-bold tracking-tight"
+            className="text-3xl font-extrabold tracking-tight"
           >
             {value}
           </motion.p>
           {subtitle && (
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
+            <p className="text-xs text-muted-foreground font-medium">{subtitle}</p>
           )}
           {trend && (
             <div className={cn(
-              'inline-flex items-center gap-1 text-xs font-medium',
-              trend.positive ? 'text-success' : 'text-destructive'
+              'inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-lg',
+              trend.positive ? 'text-success bg-success/10' : 'text-destructive bg-destructive/10'
             )}>
               <span>{trend.positive ? '↑' : '↓'}</span>
               <span>{Math.abs(trend.value)}%</span>
@@ -73,7 +63,7 @@ export default function StatsCard({
           )}
         </div>
         <div className={cn(
-          'p-3 rounded-xl transition-transform group-hover:scale-110',
+          'p-3 rounded-2xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-md',
           iconVariants[variant]
         )}>
           <Icon className="w-5 h-5" />
