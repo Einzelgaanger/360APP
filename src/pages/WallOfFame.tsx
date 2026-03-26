@@ -119,7 +119,11 @@ export default function WallOfFame() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-2xl font-bold mb-2">Performance Rankings</h1>
+          <h1 className="text-2xl font-bold font-serif mb-2">Performance Rankings</h1>
+          <p className="text-muted-foreground text-sm">
+            Top performers based on peer review scores across all competencies.
+          </p>
+        </motion.div>
           <p className="text-muted-foreground text-sm">
             Top performers based on peer review scores across all competencies.
           </p>
