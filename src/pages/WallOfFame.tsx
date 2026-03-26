@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import VGGHeader from '@/components/VGGHeader';
 import { Button } from '@/components/ui/button';
 import {
-  Trophy, Medal, Award, ArrowLeft, LogOut, Loader2, Star, Users,
+  Trophy, Medal, Award, ArrowLeft, Loader2, Star, Users,
 } from 'lucide-react';
 
 interface RankedEmployee {
@@ -100,27 +100,18 @@ export default function WallOfFame() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Trophy className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-semibold">Wall of Fame</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/my-dashboard" className="gap-1.5">
-                <ArrowLeft className="w-4 h-4" /> Dashboard
-              </Link>
-            </Button>
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <VGGHeader
+        subtitle="Wall of Fame"
+        onLogout={handleLogout}
+        maxWidth="max-w-3xl"
+        actions={
+          <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+            <Link to="/my-dashboard">
+              <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
+            </Link>
+          </Button>
+        }
+      />
 
       <main className="max-w-3xl mx-auto px-4 py-6">
         <motion.div
@@ -128,7 +119,7 @@ export default function WallOfFame() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-2xl font-bold mb-2">Performance Rankings</h1>
+          <h1 className="text-2xl font-bold font-serif mb-2">Performance Rankings</h1>
           <p className="text-muted-foreground text-sm">
             Top performers based on peer review scores across all competencies.
           </p>

@@ -13,9 +13,10 @@ import ManagerDetailPanel from '@/components/dashboard/ManagerDetailPanel';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 import ExportButton from '@/components/dashboard/ExportButton';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
+import VGGHeader from '@/components/VGGHeader';
 import { Button } from '@/components/ui/button';
 import { ManagerSummary } from '@/types/appraisal';
-import { BarChart3, Users, Trophy, Target, Zap, LogOut, Loader2, ClipboardList } from 'lucide-react';
+import { BarChart3, Users, Trophy, Target, Zap, Loader2, ClipboardList } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -93,28 +94,22 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-xl font-bold">VGG 360° Analytics</h1>
-              <p className="text-xs text-muted-foreground">Performance Intelligence</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate('/appraisal')} className="gap-2">
-              <ClipboardList className="w-4 h-4" /> 360° Appraisal
+      <VGGHeader
+        subtitle="Performance Intelligence"
+        onLogout={handleLogout}
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={() => navigate('/appraisal')} className="gap-2 h-8 text-xs">
+              <ClipboardList className="w-3.5 h-3.5" /> 360° Appraisal
             </Button>
             <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
             <ExportButton managers={managerSummaries} responses={responses} />
-            <Button onClick={() => setChatOpen(true)} className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90">
-              <Zap className="w-4 h-4" /> Analytics Copilot
+            <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2 h-8 text-xs">
+              <Zap className="w-3.5 h-3.5" /> Analytics Copilot
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Stats */}

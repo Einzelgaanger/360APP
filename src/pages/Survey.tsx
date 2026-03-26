@@ -5,10 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import VGGHeader from '@/components/VGGHeader';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
-  Building2, User, ClipboardList, Send, Loader2, Shield, BarChart3, Trophy, LogOut
+  Building2, User, ClipboardList, Send, Loader2, Shield, BarChart3, Trophy
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -155,35 +155,25 @@ export default function Survey() {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm font-sans">V</span>
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold font-sans leading-none">VGG 360° Appraisal</h1>
-              <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{profile?.name}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild className="h-7 text-xs gap-1">
-              <Link to="/my-dashboard"><BarChart3 className="w-3 h-3" /> Dashboard</Link>
+      <VGGHeader
+        subtitle={profile?.name}
+        onLogout={async () => { await logout(); navigate('/'); }}
+        maxWidth="max-w-3xl"
+        actions={
+          <>
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link to="/my-dashboard"><BarChart3 className="w-3.5 h-3.5" /> Dashboard</Link>
             </Button>
-            <Button variant="outline" size="sm" asChild className="h-7 text-xs gap-1">
-              <Link to="/wall-of-fame"><Trophy className="w-3 h-3" /> Rankings</Link>
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link to="/wall-of-fame"><Trophy className="w-3.5 h-3.5" /> Rankings</Link>
             </Button>
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground px-2">
               <Shield className="w-3 h-3" />
               <span>Anonymous</span>
             </div>
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={async () => { await logout(); navigate('/'); }}>
-              <LogOut className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {/* Step Indicator */}
       {step !== 'submitted' && (
