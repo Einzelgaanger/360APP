@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import TypewriterText from '@/components/TypewriterText';
 import { Button } from '@/components/ui/button';
-import { Search, Users, BarChart3, ChevronRight, ChevronLeft, Shield, ArrowRight, Star, TrendingUp, Award } from 'lucide-react';
-import welcomeImg from '@/assets/onboarding-welcome.png';
-import stepsImg from '@/assets/onboarding-steps.png';
-import startImg from '@/assets/onboarding-start.png';
+import {
+  Search, Users, BarChart3, ChevronRight, ChevronLeft,
+  Shield, ArrowRight, Award, CheckCircle2, Lock, Eye,
+} from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function Onboarding() {
@@ -18,51 +18,27 @@ export default function Onboarding() {
   const prev = useCallback(() => setSlide((s) => Math.max(s - 1, 0)), []);
 
   const handleAutoAdvance = useCallback(() => {
-    setSlide((s) => {
-      if (s < 2) return s + 1;
-      return s;
-    });
+    setSlide((s) => (s < 2 ? s + 1 : s));
   }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-hidden relative">
-      {/* Subtle grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.3)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.3)_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.03] via-transparent to-transparent pointer-events-none" />
-
-      {/* Floating decorative elements */}
-      <motion.div
-        animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-20 right-[15%] w-16 h-16 rounded-2xl bg-primary/5 border border-primary/10 hidden lg:block"
-      />
-      <motion.div
-        animate={{ y: [0, 12, 0], rotate: [0, -3, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-        className="absolute bottom-32 left-[10%] w-12 h-12 rounded-full bg-accent/5 border border-accent/10 hidden lg:block"
-      />
-      <motion.div
-        animate={{ y: [0, -10, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-        className="absolute top-1/3 left-[8%] hidden lg:block"
-      >
-        <Star className="w-5 h-5 text-primary/15" />
-      </motion.div>
-      <motion.div
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-        className="absolute top-1/4 right-[8%] hidden lg:block"
-      >
-        <TrendingUp className="w-6 h-6 text-primary/10" />
-      </motion.div>
+      {/* Background decoration */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-primary/[0.04] blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-accent/[0.04] blur-3xl" />
+      </div>
 
       {/* Top bar */}
       <header className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-5">
         <div className="flex items-center gap-3">
-          <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto" />
-          <span className="text-xs font-medium text-muted-foreground tracking-wide uppercase">360° Appraisal</span>
+          <img src={vggLogo} alt="Venture Garden Group" className="h-7 sm:h-8 w-auto" />
+          <div className="hidden sm:block h-5 w-px bg-border" />
+          <span className="hidden sm:block text-xs font-semibold text-muted-foreground tracking-widest uppercase">
+            360° Appraisal
+          </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           <Button variant="outline" size="sm" onClick={() => navigate('/login')} className="text-xs">
             Sign In
@@ -70,8 +46,27 @@ export default function Onboarding() {
         </div>
       </header>
 
+      {/* Progress bar */}
+      <div className="relative z-10 px-6 sm:px-10">
+        <div className="max-w-2xl mx-auto flex gap-2">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="h-1 flex-1 rounded-full overflow-hidden bg-muted"
+            >
+              <motion.div
+                initial={false}
+                animate={{ width: i <= slide ? '100%' : '0%' }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="h-full bg-primary rounded-full"
+              />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
       {/* Slide content */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-6 pb-28">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-6 pb-24 pt-8">
         <AnimatePresence mode="wait">
           {slide === 0 && <SlideWelcome key="welcome" onComplete={handleAutoAdvance} />}
           {slide === 1 && <SlideHowItWorks key="how" onComplete={handleAutoAdvance} />}
@@ -80,38 +75,42 @@ export default function Onboarding() {
       </div>
 
       {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 py-6 flex items-center justify-center gap-6 bg-gradient-to-t from-background via-background/80 to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 z-20 py-6 flex items-center justify-center gap-4 bg-gradient-to-t from-background via-background/90 to-transparent">
         <Button
-          variant="ghost"
-          size="icon"
+          variant="outline"
+          size="sm"
           onClick={prev}
           disabled={slide === 0}
-          className="rounded-full h-10 w-10"
+          className="rounded-full h-10 w-10 p-0"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
         </Button>
 
-        <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
+        <div className="flex gap-2.5 items-center">
+          {['Welcome', 'How it works', 'Get started'].map((label, i) => (
             <button
               key={i}
               onClick={() => setSlide(i)}
-              className={`h-2 rounded-full transition-all duration-300 ${
+              className="flex items-center gap-1.5 group"
+            >
+              <div className={`h-2.5 rounded-full transition-all duration-300 ${
                 i === slide
                   ? 'w-8 bg-primary'
-                  : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
-              }`}
-            />
+                  : i < slide
+                  ? 'w-2.5 bg-primary/40'
+                  : 'w-2.5 bg-muted-foreground/20 group-hover:bg-muted-foreground/40'
+              }`} />
+            </button>
           ))}
         </div>
 
         <Button
-          variant="ghost"
-          size="icon"
+          variant="outline"
+          size="sm"
           onClick={slide === 2 ? () => navigate('/login') : next}
-          className="rounded-full h-10 w-10"
+          className="rounded-full h-10 w-10 p-0"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
     </div>
@@ -124,84 +123,77 @@ function SlideWelcome({ onComplete }: { onComplete: () => void }) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
+      exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="max-w-4xl w-full flex flex-col lg:flex-row items-center gap-8 lg:gap-14"
+      className="max-w-3xl w-full text-center"
     >
-      {/* Text side */}
-      <div className="flex-1 text-center lg:text-left">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.15 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-6"
-        >
-          <Shield className="w-3 h-3" />
-          VGG 360° Performance Platform
-        </motion.div>
+      {/* Badge */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.15 }}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 text-primary text-xs font-semibold mb-8"
+      >
+        <Shield className="w-3.5 h-3.5" />
+        VGG 360° Performance Platform
+      </motion.div>
 
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight mb-3">
-          <TypewriterText
-            texts={['Driving Performance.', 'Unlocking Growth.', 'Building Excellence.']}
-            className="text-primary"
-            speed={70}
-            deleteSpeed={35}
-            pauseDuration={2200}
-            onCycleComplete={onComplete}
-          />
-        </h1>
+      {/* Main heading */}
+      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground leading-[1.1] mb-6">
+        <span className="block mb-2">Powering</span>
+        <TypewriterText
+          texts={['Performance.', 'Growth.', 'Excellence.']}
+          className="gradient-text"
+          speed={70}
+          deleteSpeed={35}
+          pauseDuration={2200}
+          onCycleComplete={onComplete}
+        />
+      </h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-md mx-auto lg:mx-0 mt-4"
-        >
+      {/* Subtitle */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="max-w-lg mx-auto mb-10"
+      >
+        <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
           <TypewriterText
             texts={[
               'A comprehensive peer review platform designed to unlock your team\'s full potential.',
               'Structured, anonymous feedback that fuels real development.',
             ]}
-            speed={25}
-            deleteSpeed={12}
+            speed={22}
+            deleteSpeed={10}
             pauseDuration={3000}
           />
-        </motion.p>
+        </p>
+      </motion.div>
 
-        {/* Feature pills */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
-          className="flex flex-wrap gap-2 mt-6 justify-center lg:justify-start"
-        >
-          {['Anonymous', 'Secure', 'Data-Driven'].map((label, i) => (
-            <motion.span
-              key={label}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1 + i * 0.1 }}
-              className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium"
-            >
-              {label}
-            </motion.span>
-          ))}
-        </motion.div>
-      </div>
-
-      {/* Illustration side */}
+      {/* Feature cards */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.85, x: 40 }}
-        animate={{ opacity: 1, scale: 1, x: 0 }}
-        transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="flex-shrink-0"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+        className="flex flex-wrap gap-3 justify-center"
       >
-        <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <img src={welcomeImg} alt="Welcome" width={220} height={220} className="drop-shadow-lg" />
-        </motion.div>
+        {[
+          { icon: Lock, label: 'Anonymous & Secure' },
+          { icon: Eye, label: 'Transparent Process' },
+          { icon: BarChart3, label: 'Data-Driven Insights' },
+        ].map(({ icon: Icon, label }, i) => (
+          <motion.div
+            key={label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 + i * 0.1 }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card border border-border/60 shadow-sm text-sm text-muted-foreground"
+          >
+            <Icon className="w-4 h-4 text-primary" />
+            {label}
+          </motion.div>
+        ))}
       </motion.div>
     </motion.div>
   );
@@ -209,9 +201,30 @@ function SlideWelcome({ onComplete }: { onComplete: () => void }) {
 
 /* ─── Slide 2: How It Works ─── */
 const STEPS = [
-  { icon: Search, title: 'Find Your Profile', desc: 'Look up your name to locate your account and set up your credentials securely.', color: 'text-primary' },
-  { icon: Users, title: 'Review Colleagues', desc: 'Provide honest, anonymous feedback across key competencies for your peers.', color: 'text-chart-4' },
-  { icon: BarChart3, title: 'View Insights', desc: 'Access your personal dashboard, see benchmarks, and track progress over time.', color: 'text-chart-5' },
+  {
+    icon: Search,
+    title: 'Find Your Profile',
+    desc: 'Look up your name to locate your account and set up your credentials securely.',
+    gradient: 'from-primary/10 to-primary/5',
+    iconBg: 'bg-primary/15',
+    iconColor: 'text-primary',
+  },
+  {
+    icon: Users,
+    title: 'Review Your Colleagues',
+    desc: 'Provide honest, anonymous feedback across key competencies for your peers.',
+    gradient: 'from-accent/10 to-accent/5',
+    iconBg: 'bg-accent/15',
+    iconColor: 'text-accent',
+  },
+  {
+    icon: BarChart3,
+    title: 'View Your Insights',
+    desc: 'Access your personal dashboard, see benchmarks, and track your progress.',
+    gradient: 'from-warning/10 to-warning/5',
+    iconBg: 'bg-warning/15',
+    iconColor: 'text-warning',
+  },
 ];
 
 function SlideHowItWorks({ onComplete }: { onComplete: () => void }) {
@@ -219,87 +232,68 @@ function SlideHowItWorks({ onComplete }: { onComplete: () => void }) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
+      exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="max-w-4xl w-full flex flex-col lg:flex-row items-center gap-8 lg:gap-14"
+      className="max-w-3xl w-full text-center"
     >
-      {/* Illustration side */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.85, x: -40 }}
-        animate={{ opacity: 1, scale: 1, x: 0 }}
-        transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="flex-shrink-0 order-2 lg:order-1"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1 }}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/8 border border-accent/15 text-accent text-xs font-semibold mb-8"
       >
-        <motion.div
-          animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <img src={stepsImg} alt="Steps" width={200} height={160} loading="lazy" className="drop-shadow-lg" />
-        </motion.div>
+        <Award className="w-3.5 h-3.5" />
+        Simple 3-Step Process
       </motion.div>
 
-      {/* Content side */}
-      <div className="flex-1 text-center lg:text-left order-1 lg:order-2">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-6"
-        >
-          <Award className="w-3 h-3" />
-          Simple 3-Step Process
-        </motion.div>
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] mb-4">
+        <TypewriterText
+          texts={['How It Works', 'Your Journey Begins', 'Three Simple Steps']}
+          className="text-foreground"
+          speed={60}
+          deleteSpeed={30}
+          pauseDuration={2500}
+          onCycleComplete={onComplete}
+        />
+      </h1>
 
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-3">
-          <TypewriterText
-            texts={['How It Works', 'Your Journey Begins', 'Three Simple Steps']}
-            className="text-foreground"
-            speed={60}
-            deleteSpeed={30}
-            pauseDuration={2500}
-            onCycleComplete={onComplete}
-          />
-        </h1>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto mb-10"
+      >
+        <TypewriterText
+          texts={[
+            'From account setup to actionable insights in minutes.',
+            'A streamlined process designed for busy professionals.',
+          ]}
+          speed={22}
+          deleteSpeed={10}
+          pauseDuration={3000}
+        />
+      </motion.p>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-muted-foreground text-xs sm:text-sm max-w-md mx-auto lg:mx-0 mb-8"
-        >
-          <TypewriterText
-            texts={[
-              'From account setup to actionable insights in minutes.',
-              'A streamlined process designed for busy professionals.',
-            ]}
-            speed={25}
-            deleteSpeed={12}
-            pauseDuration={3000}
-          />
-        </motion.p>
-
-        <div className="grid gap-4">
-          {STEPS.map((step, i) => (
-            <motion.div
-              key={step.title}
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 + i * 0.15, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-start gap-4 p-4 rounded-xl bg-card border border-border hover:shadow-md transition-shadow duration-300 text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <step.icon className={`w-5 h-5 ${step.color}`} />
-              </div>
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-primary mb-0.5">
-                  Step {i + 1}
-                </div>
-                <h3 className="text-sm font-semibold text-foreground mb-1">{step.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+      {/* Step cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {STEPS.map((step, i) => (
+          <motion.div
+            key={step.title}
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+            className={`relative p-6 rounded-2xl bg-gradient-to-b ${step.gradient} border border-border/40 text-left group hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}
+          >
+            <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground mb-4">
+              Step {i + 1}
+            </div>
+            <div className={`w-12 h-12 rounded-2xl ${step.iconBg} flex items-center justify-center mb-4`}>
+              <step.icon className={`w-6 h-6 ${step.iconColor}`} />
+            </div>
+            <h3 className="text-base font-bold text-foreground mb-2">{step.title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
+          </motion.div>
+        ))}
       </div>
     </motion.div>
   );
@@ -311,95 +305,78 @@ function SlideGetStarted({ navigate }: { navigate: (path: string) => void }) {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
+      exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="max-w-4xl w-full flex flex-col lg:flex-row items-center gap-8 lg:gap-14"
+      className="max-w-2xl w-full text-center"
     >
-      {/* Text side */}
-      <div className="flex-1 text-center lg:text-left">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-6"
-        >
-          <Shield className="w-3 h-3" />
-          Secure & Confidential
-        </motion.div>
-
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-3">
-          <TypewriterText
-            texts={['Ready to Begin?', 'Let\'s Get Started.', 'Your Voice Matters.']}
-            className="text-foreground"
-            speed={60}
-            deleteSpeed={30}
-            pauseDuration={2500}
-          />
-        </h1>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-lg mx-auto lg:mx-0 mb-8"
-        >
-          <TypewriterText
-            texts={[
-              'Sign in with your credentials or find your account to get started.',
-              'Your feedback is completely anonymous and confidential.',
-            ]}
-            speed={25}
-            deleteSpeed={12}
-            pauseDuration={3000}
-          />
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
-        >
-          <Button size="lg" onClick={() => navigate('/login')} className="gap-2">
-            Sign In <ArrowRight className="w-4 h-4" />
-          </Button>
-          <Button size="lg" variant="outline" onClick={() => navigate('/find-account')} className="gap-2">
-            <Search className="w-4 h-4" /> Find My Account
-          </Button>
-        </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="text-xs text-muted-foreground mt-6 flex items-center justify-center lg:justify-start gap-1.5"
-        >
-          <Shield className="w-3 h-3" />
-          <TypewriterText
-            texts={[
-              'Only registered employees can access this platform.',
-              'All responses are encrypted and anonymised.',
-            ]}
-            speed={30}
-            deleteSpeed={15}
-            pauseDuration={3500}
-          />
-        </motion.p>
-      </div>
-
-      {/* Illustration side */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.85, x: 40 }}
-        animate={{ opacity: 1, scale: 1, x: 0 }}
-        transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="flex-shrink-0"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1 }}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 text-primary text-xs font-semibold mb-8"
       >
-        <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <img src={startImg} alt="Get Started" width={220} height={220} loading="lazy" className="drop-shadow-lg" />
-        </motion.div>
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        Secure & Confidential
+      </motion.div>
+
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] mb-4">
+        <TypewriterText
+          texts={['Ready to Begin?', 'Let\'s Get Started.', 'Your Voice Matters.']}
+          className="text-foreground"
+          speed={60}
+          deleteSpeed={30}
+          pauseDuration={2500}
+        />
+      </h1>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-lg mx-auto mb-10"
+      >
+        <TypewriterText
+          texts={[
+            'Sign in with your credentials or find your account to get started.',
+            'Your feedback is completely anonymous and confidential.',
+          ]}
+          speed={22}
+          deleteSpeed={10}
+          pauseDuration={3000}
+        />
+      </motion.p>
+
+      {/* CTA buttons */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="flex flex-col sm:flex-row gap-3 justify-center mb-8"
+      >
+        <Button size="lg" onClick={() => navigate('/login')} className="gap-2 px-8">
+          Sign In <ArrowRight className="w-4 h-4" />
+        </Button>
+        <Button size="lg" variant="outline" onClick={() => navigate('/find-account')} className="gap-2 px-8">
+          <Search className="w-4 h-4" /> Find My Account
+        </Button>
+      </motion.div>
+
+      {/* Trust bar */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+        className="flex items-center justify-center gap-6 text-xs text-muted-foreground"
+      >
+        <span className="flex items-center gap-1.5">
+          <Lock className="w-3.5 h-3.5" />
+          Employees Only
+        </span>
+        <span className="w-1 h-1 rounded-full bg-border" />
+        <span className="flex items-center gap-1.5">
+          <Shield className="w-3.5 h-3.5" />
+          Encrypted & Anonymous
+        </span>
       </motion.div>
     </motion.div>
   );
