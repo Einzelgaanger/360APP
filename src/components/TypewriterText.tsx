@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface TypewriterTextProps {
@@ -7,6 +7,7 @@ interface TypewriterTextProps {
   speed?: number;
   deleteSpeed?: number;
   pauseDuration?: number;
+  onCycleComplete?: () => void;
 }
 
 export default function TypewriterText({
@@ -15,15 +16,22 @@ export default function TypewriterText({
   speed = 80,
   deleteSpeed = 40,
   pauseDuration = 2000,
+  onCycleComplete,
 }: TypewriterTextProps) {
   const [displayText, setDisplayText] = useState('');
   const [textIndex, setTextIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  const hasFiredRef = useRef(false);
 
   useEffect(() => {
     const currentText = texts[textIndex];
 
     if (!isDeleting && displayText === currentText) {
+      // Full cycle complete when we finish typing the last text
+      if (textIndex === texts.length - 1 && !hasFiredRef.current) {
+        hasFiredRef.current = true;
+        onCycleComplete?.();
+      }
       const timeout = setTimeout(() => setIsDeleting(true), pauseDuration);
       return () => clearTimeout(timeout);
     }
@@ -43,7 +51,7 @@ export default function TypewriterText({
     }, isDeleting ? deleteSpeed : speed);
 
     return () => clearTimeout(timeout);
-  }, [displayText, isDeleting, textIndex, texts, speed, deleteSpeed, pauseDuration]);
+  }, [displayText, isDeleting, textIndex, texts, speed, deleteSpeed, pauseDuration, onCycleComplete]);
 
   return (
     <span className={className}>
