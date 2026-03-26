@@ -124,10 +124,6 @@ export default function WallOfFame() {
             Top performers based on peer review scores across all competencies.
           </p>
         </motion.div>
-          <p className="text-muted-foreground text-sm">
-            Top performers based on peer review scores across all competencies.
-          </p>
-        </motion.div>
 
         {/* Top 3 podium */}
         {rankings.length >= 3 && (
