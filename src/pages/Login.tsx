@@ -35,7 +35,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Left decorative panel */}
-      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-primary/90 to-accent/80 relative overflow-hidden items-center justify-center p-12">
+      <div className="hidden lg:flex lg:w-[45%] bg-primary relative overflow-hidden items-center justify-center p-12">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:3rem_3rem]" />
         <div className="relative z-10 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>

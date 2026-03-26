@@ -220,17 +220,17 @@ export default function AppraisalAdmin() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="gap-1">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="gap-1 flex-shrink-0">
               <ArrowLeft className="w-4 h-4" /> Dashboard
             </Button>
             <div>
-              <h1 className="text-lg font-bold gradient-text">360° Appraisal Monitor</h1>
+              <h1 className="text-base sm:text-lg font-bold text-primary">360° Appraisal Monitor</h1>
               <p className="text-xs text-muted-foreground">Real-time response tracking</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={loadAllData} className="gap-1">
               <RefreshCw className="w-3 h-3" /> Refresh
             </Button>
@@ -243,9 +243,9 @@ export default function AppraisalAdmin() {
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center">
           <Select value={selectedSubsidiary} onValueChange={(v) => { setSelectedSubsidiary(v); setSelectedEmployee(null); }}>
-            <SelectTrigger className="w-[200px] bg-secondary/50">
+            <SelectTrigger className="w-full sm:w-[200px] bg-secondary/50">
               <Building2 className="w-4 h-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="All Subsidiaries" />
             </SelectTrigger>
@@ -257,7 +257,7 @@ export default function AppraisalAdmin() {
             </SelectContent>
           </Select>
           <Select value={selectedEmployee || 'all'} onValueChange={(v) => setSelectedEmployee(v === 'all' ? null : v)}>
-            <SelectTrigger className="w-[220px] bg-secondary/50">
+            <SelectTrigger className="w-full sm:w-[220px] bg-secondary/50">
               <Users className="w-4 h-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="All Employees" />
             </SelectTrigger>

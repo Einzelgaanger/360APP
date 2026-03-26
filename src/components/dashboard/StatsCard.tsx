@@ -36,7 +36,7 @@ export default function StatsCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
-      className="glass-panel-hover p-6 group cursor-default"
+      className="glass-panel-hover p-4 sm:p-6 group cursor-default"
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1.5">
@@ -45,7 +45,7 @@ export default function StatsCard({
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ delay: delay + 0.1, type: 'spring' }}
-            className="text-3xl font-extrabold tracking-tight"
+            className="text-xl sm:text-3xl font-extrabold tracking-tight break-words"
           >
             {value}
           </motion.p>
