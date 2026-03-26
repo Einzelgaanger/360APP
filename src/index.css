@@ -6,29 +6,29 @@
 
 @layer base {
   :root {
-    /* Professional Light Theme — Navy & Slate */
-    --background: 210 20% 98%;
-    --foreground: 220 25% 14%;
+    /* VGG Branding — Green & Blue */
+    --background: 0 0% 100%;
+    --foreground: 160 25% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 14%;
+    --card-foreground: 160 25% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 14%;
+    --popover-foreground: 160 25% 12%;
 
-    --primary: 220 65% 42%;
+    --primary: 152 62% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 18% 94%;
-    --secondary-foreground: 220 20% 30%;
+    --secondary: 150 12% 94%;
+    --secondary-foreground: 160 20% 25%;
 
-    --muted: 215 15% 92%;
-    --muted-foreground: 220 12% 50%;
+    --muted: 150 10% 93%;
+    --muted-foreground: 160 8% 48%;
 
-    --accent: 220 65% 42%;
+    --accent: 210 72% 45%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 152 55% 40%;
+    --success: 152 62% 38%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 80% 50%;
@@ -37,56 +37,56 @@
     --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 15% 88%;
-    --input: 215 15% 88%;
-    --ring: 220 65% 42%;
+    --border: 150 12% 88%;
+    --input: 150 12% 88%;
+    --ring: 152 62% 38%;
 
     --radius: 0.5rem;
 
-    --chart-1: 220 65% 42%;
-    --chart-2: 220 45% 58%;
-    --chart-3: 220 30% 72%;
-    --chart-4: 152 55% 40%;
+    --chart-1: 152 62% 38%;
+    --chart-2: 210 72% 45%;
+    --chart-3: 152 40% 58%;
+    --chart-4: 210 50% 62%;
     --chart-5: 38 80% 50%;
 
-    --score-excellent: 152 55% 40%;
-    --score-good: 220 65% 42%;
+    --score-excellent: 152 62% 38%;
+    --score-good: 210 72% 45%;
     --score-average: 38 80% 50%;
     --score-poor: 0 65% 50%;
 
-    --sidebar-background: 220 30% 18%;
-    --sidebar-foreground: 210 20% 92%;
-    --sidebar-primary: 220 65% 55%;
+    --sidebar-background: 160 30% 14%;
+    --sidebar-foreground: 150 15% 92%;
+    --sidebar-primary: 152 62% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 30% 24%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 220 25% 25%;
-    --sidebar-ring: 220 65% 55%;
+    --sidebar-accent: 160 28% 20%;
+    --sidebar-accent-foreground: 150 15% 92%;
+    --sidebar-border: 160 22% 22%;
+    --sidebar-ring: 152 62% 45%;
   }
 
   .dark {
-    --background: 222 30% 8%;
-    --foreground: 210 20% 94%;
+    --background: 160 25% 7%;
+    --foreground: 150 15% 94%;
 
-    --card: 222 28% 12%;
-    --card-foreground: 210 20% 94%;
+    --card: 160 22% 11%;
+    --card-foreground: 150 15% 94%;
 
-    --popover: 222 28% 14%;
-    --popover-foreground: 210 20% 94%;
+    --popover: 160 22% 13%;
+    --popover-foreground: 150 15% 94%;
 
-    --primary: 220 65% 55%;
+    --primary: 152 62% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 25% 16%;
-    --secondary-foreground: 210 18% 85%;
+    --secondary: 160 20% 15%;
+    --secondary-foreground: 150 14% 85%;
 
-    --muted: 222 20% 18%;
-    --muted-foreground: 215 15% 52%;
+    --muted: 160 18% 16%;
+    --muted-foreground: 150 10% 52%;
 
-    --accent: 220 65% 55%;
+    --accent: 210 72% 52%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 152 55% 45%;
+    --success: 152 62% 45%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 80% 50%;
@@ -95,29 +95,29 @@
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 20% 20%;
-    --input: 222 20% 22%;
-    --ring: 220 65% 55%;
+    --border: 160 18% 18%;
+    --input: 160 18% 20%;
+    --ring: 152 62% 45%;
 
-    --chart-1: 220 65% 55%;
-    --chart-2: 220 45% 65%;
-    --chart-3: 220 30% 72%;
-    --chart-4: 152 55% 45%;
+    --chart-1: 152 62% 45%;
+    --chart-2: 210 72% 52%;
+    --chart-3: 152 40% 60%;
+    --chart-4: 210 50% 65%;
     --chart-5: 38 80% 50%;
 
-    --score-excellent: 152 55% 45%;
-    --score-good: 220 65% 55%;
+    --score-excellent: 152 62% 45%;
+    --score-good: 210 72% 52%;
     --score-average: 38 80% 50%;
     --score-poor: 0 65% 55%;
 
-    --sidebar-background: 222 30% 8%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 220 65% 55%;
+    --sidebar-background: 160 25% 7%;
+    --sidebar-foreground: 150 15% 90%;
+    --sidebar-primary: 152 62% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 28% 14%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 222 20% 20%;
-    --sidebar-ring: 220 65% 55%;
+    --sidebar-accent: 160 22% 13%;
+    --sidebar-accent-foreground: 150 15% 90%;
+    --sidebar-border: 160 18% 18%;
+    --sidebar-ring: 152 62% 45%;
   }
 }
 

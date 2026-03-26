@@ -8,6 +8,7 @@ import { Search, Users, BarChart3, ChevronRight, ChevronLeft, Shield, ArrowRight
 import welcomeImg from '@/assets/onboarding-welcome.png';
 import stepsImg from '@/assets/onboarding-steps.png';
 import startImg from '@/assets/onboarding-start.png';
+import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function Onboarding() {
   const [slide, setSlide] = useState(0);
@@ -57,11 +58,9 @@ export default function Onboarding() {
 
       {/* Top bar */}
       <header className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-            <span className="text-primary-foreground font-bold text-sm">V</span>
-          </div>
-          <span className="text-sm font-semibold text-foreground tracking-tight">VGG 360°</span>
+        <div className="flex items-center gap-3">
+          <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto" />
+          <span className="text-xs font-medium text-muted-foreground tracking-wide uppercase">360° Appraisal</span>
         </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
