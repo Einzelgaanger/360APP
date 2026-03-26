@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, Mail, AlertCircle, ShieldCheck } from 'lucide-react';
-import vggIcon from '@/assets/vgg-icon.png';
+import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function Login() {
   const [email, setEmail] = useState('');

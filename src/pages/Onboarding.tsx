@@ -8,7 +8,7 @@ import {
   Search, Users, BarChart3, ChevronRight, ChevronLeft,
   Shield, ArrowRight, Award, CheckCircle2, Lock, Eye,
 } from 'lucide-react';
-import vggIcon from '@/assets/vgg-icon.png';
+import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function Onboarding() {
   const [slide, setSlide] = useState(0);
