@@ -90,15 +90,15 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
     <div className="min-h-screen bg-background">
       {/* Demo Banner */}
       <div className="bg-amber-500/15 border-b border-amber-500/30">
-        <div className="container mx-auto px-4 py-2 flex items-center justify-center gap-3">
-          <Badge variant="outline" className="bg-amber-500/20 text-amber-200 border-amber-500/50">
+        <div className="container mx-auto px-4 py-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+          <Badge variant="outline" className="bg-amber-500/20 text-amber-700 dark:text-amber-200 border-amber-500/50">
             DEMO MODE
           </Badge>
-          <span className="text-sm text-amber-200/80">
-            This is a demonstration with sample data. Names and feedback are fictional.
+          <span className="text-xs sm:text-sm text-amber-700 dark:text-amber-200/80 text-center">
+            Demonstration with sample data. Names and feedback are fictional.
           </span>
           <Link to="/">
-            <Button variant="link" size="sm" className="text-amber-200 hover:text-amber-100">
+            <Button variant="link" size="sm" className="text-amber-700 dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100">
               Go to Login →
             </Button>
           </Link>
@@ -107,26 +107,24 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-xl font-bold">360° Analytics Demo</h1>
-              <p className="text-xs text-muted-foreground">Performance Intelligence Platform</p>
-            </div>
+        <div className="container mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold">360° Analytics Demo</h1>
+            <p className="text-xs text-muted-foreground">Performance Intelligence Platform</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
             <ExportButton managers={managerSummaries} responses={responses} />
-            <Button onClick={() => setChatOpen(true)} className="gap-2">
+            <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2">
               <Zap className="w-4 h-4" /> Analytics Copilot
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="container mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatsCard title="Total Responses" value={overallStats.totalResponses} icon={Users} variant="default" delay={0} />
           <StatsCard title="Managers Evaluated" value={overallStats.totalManagers} icon={Target} variant="primary" delay={0.1} />
           <StatsCard title="Average Score" value={`${overallStats.avgOverallScore}/4.0`} subtitle={`${((overallStats.avgOverallScore/4)*100).toFixed(0)}% performance`} icon={BarChart3} variant="accent" delay={0.2} />
@@ -134,14 +132,14 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-1"><ManagerLeaderboard managers={managerSummaries} onSelectManager={setSelectedManager} selectedManager={selectedManager?.manager_name} /></div>
-          <div className="lg:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start">
               <CompetencyRadar competencies={competencyScores} />
               <ScoreDistributionChart distribution={scoreDistribution} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start">
               <RelationshipPieChart distribution={relationshipDistribution} />
               <FeedbackThemes themes={feedbackThemes} />
             </div>
