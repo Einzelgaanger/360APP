@@ -24,9 +24,9 @@ function getScoreBg(score: number): string {
 }
 
 function getRankBadge(rank: number) {
-  if (rank === 1) return { icon: '🥇', class: 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400' };
-  if (rank === 2) return { icon: '🥈', class: 'bg-gray-400/15 text-gray-500 dark:text-gray-300' };
-  if (rank === 3) return { icon: '🥉', class: 'bg-orange-500/15 text-orange-500 dark:text-orange-400' };
+  if (rank === 1) return { icon: '🥇', class: 'bg-yellow-500/15 text-yellow-600' };
+  if (rank === 2) return { icon: '🥈', class: 'bg-gray-400/15 text-gray-500' };
+  if (rank === 3) return { icon: '🥉', class: 'bg-orange-500/15 text-orange-500' };
   return { icon: rank.toString(), class: 'bg-muted text-muted-foreground' };
 }
 

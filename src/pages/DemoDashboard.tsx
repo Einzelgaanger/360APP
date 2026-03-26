@@ -91,14 +91,14 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
       {/* Demo Banner */}
       <div className="bg-amber-500/15 border-b border-amber-500/30">
         <div className="container mx-auto px-4 py-2 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-          <Badge variant="outline" className="bg-amber-500/20 text-amber-700 dark:text-amber-200 border-amber-500/50">
+          <Badge variant="outline" className="bg-amber-500/20 text-amber-700 border-amber-500/50">
             DEMO MODE
           </Badge>
-          <span className="text-xs sm:text-sm text-amber-700 dark:text-amber-200/80 text-center">
+          <span className="text-xs sm:text-sm text-amber-700 text-center">
             Demonstration with sample data. Names and feedback are fictional.
           </span>
           <Link to="/">
-            <Button variant="link" size="sm" className="text-amber-700 dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100">
+            <Button variant="link" size="sm" className="text-amber-700 hover:text-amber-900">
               Go to Login →
             </Button>
           </Link>
