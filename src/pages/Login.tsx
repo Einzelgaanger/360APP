@@ -6,7 +6,8 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { Lock, Mail, AlertCircle, ShieldCheck } from 'lucide-react';
+import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -32,33 +33,42 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
+    <div className="min-h-screen flex bg-background">
+      {/* Left decorative panel */}
+      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-primary/90 to-accent/80 relative overflow-hidden items-center justify-center p-12">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:3rem_3rem]" />
+        <div className="relative z-10 text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <ShieldCheck className="w-16 h-16 text-white/90 mx-auto mb-6" />
+            <h2 className="text-3xl font-bold text-white mb-3 font-serif">Admin Console</h2>
+            <p className="text-white/70 text-sm leading-relaxed max-w-sm">
+              Access the analytics dashboard, manage appraisal data, and generate performance insights across the organisation.
+            </p>
+          </motion.div>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-sm px-6"
-      >
-        <div className="glass-panel p-8">
-          {/* Brand */}
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
-              <span className="text-primary-foreground font-bold text-xl font-sans">V</span>
-            </div>
-            <h1 className="text-xl font-semibold">Admin Sign In</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              VGG 360° Analytics Platform
+      {/* Right form panel */}
+      <div className="flex-1 flex items-center justify-center relative p-6">
+        <div className="absolute top-5 right-5"><ThemeToggle /></div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-sm"
+        >
+          <div className="mb-8">
+            <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto mb-8" />
+            <h1 className="text-2xl font-bold font-serif mb-1">Administrator Sign In</h1>
+            <p className="text-muted-foreground text-sm">
+              VGG 360° Performance Analytics
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium">Email address</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -67,14 +77,14 @@ export default function Login() {
                   placeholder="admin@vgg.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-11"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -83,7 +93,7 @@ export default function Login() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-11"
                   required
                 />
               </div>
@@ -100,7 +110,7 @@ export default function Login() {
               </motion.div>
             )}
 
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button type="submit" disabled={loading} className="w-full h-11 font-semibold">
               {loading ? (
                 <motion.div
                   animate={{ rotate: 360 }}
@@ -112,8 +122,8 @@ export default function Login() {
               )}
             </Button>
           </form>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }
