@@ -89,7 +89,7 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
   return (
     <div className="min-h-screen bg-background">
       {/* Demo Banner */}
-      <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 border-b border-amber-500/30">
+      <div className="bg-amber-500/15 border-b border-amber-500/30">
         <div className="container mx-auto px-4 py-2 flex items-center justify-center gap-3">
           <Badge variant="outline" className="bg-amber-500/20 text-amber-200 border-amber-500/50">
             DEMO MODE
@@ -117,7 +117,7 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
           <div className="flex items-center gap-3">
             <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
             <ExportButton managers={managerSummaries} responses={responses} />
-            <Button onClick={() => setChatOpen(true)} className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90">
+            <Button onClick={() => setChatOpen(true)} className="gap-2">
               <Zap className="w-4 h-4" /> Analytics Copilot
             </Button>
           </div>

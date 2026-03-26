@@ -177,7 +177,7 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
           className="fixed inset-y-0 right-0 w-full max-w-md bg-background border-l border-border shadow-2xl z-50 flex flex-col"
         >
           {/* Header */}
-          <div className="p-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/10 to-accent/10">
+          <div className="p-4 border-b border-border flex items-center justify-between bg-primary/5">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/20">
                 <Brain className="w-5 h-5 text-primary" />
@@ -200,7 +200,7 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center px-6 mb-6"
               >
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                   <MessageCircle className="w-7 h-7 text-primary" />
                 </div>
                 <h4 className="text-lg font-medium mb-1">What would you like to know?</h4>

@@ -75,7 +75,7 @@ export default function Onboarding() {
       </div>
 
       {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 py-6 flex items-center justify-center gap-4 bg-gradient-to-t from-background via-background/90 to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 z-20 py-6 flex items-center justify-center gap-4 bg-background">
         <Button
           variant="outline"
           size="sm"
@@ -205,7 +205,7 @@ const STEPS = [
     icon: Search,
     title: 'Find Your Profile',
     desc: 'Look up your name to locate your account and set up your credentials securely.',
-    gradient: 'from-primary/10 to-primary/5',
+    bg: 'bg-primary/5',
     iconBg: 'bg-primary/15',
     iconColor: 'text-primary',
   },
@@ -213,7 +213,7 @@ const STEPS = [
     icon: Users,
     title: 'Review Your Colleagues',
     desc: 'Provide honest, anonymous feedback across key competencies for your peers.',
-    gradient: 'from-accent/10 to-accent/5',
+    bg: 'bg-accent/5',
     iconBg: 'bg-accent/15',
     iconColor: 'text-accent',
   },
@@ -221,7 +221,7 @@ const STEPS = [
     icon: BarChart3,
     title: 'View Your Insights',
     desc: 'Access your personal dashboard, see benchmarks, and track your progress.',
-    gradient: 'from-warning/10 to-warning/5',
+    bg: 'bg-warning/5',
     iconBg: 'bg-warning/15',
     iconColor: 'text-warning',
   },
@@ -282,7 +282,7 @@ function SlideHowItWorks({ onComplete }: { onComplete: () => void }) {
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-            className={`relative p-6 rounded-2xl bg-gradient-to-b ${step.gradient} border border-border/40 text-left group hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}
+            className={`relative p-6 rounded-2xl ${step.bg} border border-border/40 text-left group hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}
           >
             <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground mb-4">
               Step {i + 1}
