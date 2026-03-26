@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock, Mail, AlertCircle, ArrowLeft, Users } from 'lucide-react';
-import vggIcon from '@/assets/vgg-icon.png';
+import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function EmployeeLogin() {
   const [email, setEmail] = useState('');
@@ -71,7 +71,7 @@ export default function EmployeeLogin() {
           className="w-full max-w-sm"
         >
           <div className="mb-8">
-            <img src={vggIcon} alt="Venture Garden Group" className="h-10 w-auto mb-8" />
+            <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto mb-8" />
             <h1 className="text-2xl font-bold font-serif mb-1">Sign In</h1>
             <p className="text-muted-foreground text-sm">
               VGG 360° Appraisal Platform

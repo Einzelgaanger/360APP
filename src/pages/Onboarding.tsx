@@ -8,7 +8,7 @@ import {
   Search, Users, BarChart3, ChevronRight, ChevronLeft,
   Shield, ArrowRight, Award, CheckCircle2, Lock, Eye,
 } from 'lucide-react';
-import vggIcon from '@/assets/vgg-icon.png';
+import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function Onboarding() {
   const [slide, setSlide] = useState(0);
@@ -32,7 +32,7 @@ export default function Onboarding() {
       {/* Top bar */}
       <header className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-5">
         <div className="flex items-center gap-3">
-          <img src={vggIcon} alt="Venture Garden Group" className="h-8 sm:h-9 w-auto" />
+          <img src={vggLogo} alt="Venture Garden Group" className="h-7 sm:h-8 w-auto" />
           <div className="hidden sm:block h-5 w-px bg-border" />
           <span className="hidden sm:block text-xs font-semibold text-muted-foreground tracking-widest uppercase">
             360° Appraisal
