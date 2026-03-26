@@ -177,21 +177,21 @@ export default function Survey() {
 
       {/* Step Indicator */}
       {step !== 'submitted' && (
-        <div className="max-w-3xl mx-auto px-4 pt-6 pb-2">
-          <div className="flex items-center gap-2">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6 pb-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {['Company', 'Person', 'Questions'].map((label, i) => (
-              <div key={label} className="flex items-center gap-2 flex-1">
-                <div className={`w-6 h-6 rounded-full text-xs font-medium flex items-center justify-center transition-colors ${
-                  i + 1 < stepNumber ? 'bg-primary text-primary-foreground'
-                  : i + 1 === stepNumber ? 'bg-primary text-primary-foreground'
+              <div key={label} className="flex items-center gap-1.5 sm:gap-2 flex-1">
+                <div className={`w-8 h-8 rounded-xl text-xs font-bold flex items-center justify-center transition-all duration-300 shadow-sm ${
+                  i + 1 < stepNumber ? 'bg-primary text-primary-foreground shadow-primary/20'
+                  : i + 1 === stepNumber ? 'bg-primary text-primary-foreground shadow-primary/20'
                   : 'bg-muted text-muted-foreground'
                 }`}>
-                  {i + 1 < stepNumber ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
+                  {i + 1 < stepNumber ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
                 </div>
-                <span className={`text-xs hidden sm:block ${i + 1 <= stepNumber ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                <span className={`text-xs hidden sm:block font-medium ${i + 1 <= stepNumber ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {label}
                 </span>
-                {i < 2 && <div className={`flex-1 h-px ${i + 1 < stepNumber ? 'bg-primary' : 'bg-border'}`} />}
+                {i < 2 && <div className={`flex-1 h-0.5 rounded-full ${i + 1 < stepNumber ? 'bg-primary' : 'bg-border'}`} />}
               </div>
             ))}
           </div>
@@ -200,43 +200,43 @@ export default function Survey() {
 
       {/* Progress Bar (during questions) */}
       {step === 'questions' && (
-        <div className="max-w-3xl mx-auto px-4 pt-3 pb-1">
-          <div className="flex justify-between text-[11px] text-muted-foreground mb-1.5">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-4 pb-1">
+          <div className="flex justify-between text-[11px] text-muted-foreground mb-2 font-medium">
             <span>Section {currentCategoryIndex + 1} of {categories.length} — {currentCategory?.name}</span>
-            <span>{Math.round(progress)}% complete</span>
+            <span className="text-primary font-bold">{Math.round(progress)}%</span>
           </div>
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-primary rounded-full"
+              className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
             />
           </div>
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         <AnimatePresence mode="wait">
           {/* Step 1: Subsidiary */}
           {step === 'subsidiary' && (
             <motion.div key="subsidiary" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
               <div className="glass-panel p-6 sm:p-8">
                 <div className="mb-6">
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <Building2 className="w-5 h-5 text-primary" />
-                    <h2 className="text-lg font-semibold">Select Company</h2>
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                    <Building2 className="w-6 h-6 text-primary" />
                   </div>
+                  <h2 className="text-xl font-bold mb-1">Select Company</h2>
                   <p className="text-muted-foreground text-sm">Choose the subsidiary of the person you would like to review.</p>
                 </div>
-                <div className="grid gap-2">
+                <div className="grid gap-2.5">
                   {subsidiaries.map(sub => (
                     <button
                       key={sub.id}
                       onClick={() => handleSelectSubsidiary(sub)}
-                      className="flex items-center justify-between p-4 rounded-lg border border-border bg-background hover:bg-muted/50 hover:border-primary/40 transition-all text-left group"
+                      className="flex items-center justify-between p-4 rounded-2xl border-2 border-border bg-background hover:bg-muted/50 hover:border-primary/30 hover:shadow-md transition-all duration-200 text-left group"
                     >
-                      <span className="font-medium text-sm">{sub.name}</span>
+                      <span className="font-semibold text-sm">{sub.name}</span>
                       <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </button>
                   ))}
