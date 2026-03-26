@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
-  Building2, User, ClipboardList, Send, Loader2, Shield
+  Building2, User, ClipboardList, Send, Loader2, Shield, BarChart3, Trophy, LogOut
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,6 +26,8 @@ const SCALE_OPTIONS = [
 ];
 
 export default function Survey() {
+  const { user, profile, logout } = useEmployeeAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState<'subsidiary' | 'employee' | 'questions' | 'submitted'>('subsidiary');
   const [subsidiaries, setSubsidiaries] = useState<Subsidiary[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -37,18 +41,29 @@ export default function Survey() {
   const [loading, setLoading] = useState(true);
   const [completedEmployees, setCompletedEmployees] = useState<Set<string>>(new Set());
 
+  // Load completions from database
   useEffect(() => {
-    const saved = localStorage.getItem('vgg_completed_reviews');
-    if (saved) {
-      try { setCompletedEmployees(new Set(JSON.parse(saved))); } catch { /* ignore */ }
+    if (user) {
+      supabase
+        .from('review_completions')
+        .select('employee_id')
+        .eq('reviewer_id', user.id)
+        .then(({ data }) => {
+          if (data) setCompletedEmployees(new Set(data.map(d => d.employee_id)));
+        });
     }
-  }, []);
+  }, [user]);
 
-  const markEmployeeCompleted = (employeeId: string) => {
+  const markEmployeeCompleted = async (employeeId: string) => {
+    if (user) {
+      await supabase.from('review_completions').insert({
+        reviewer_id: user.id,
+        employee_id: employeeId,
+      });
+    }
     setCompletedEmployees(prev => {
       const next = new Set(prev);
       next.add(employeeId);
-      localStorage.setItem('vgg_completed_reviews', JSON.stringify([...next]));
       return next;
     });
   };
@@ -148,15 +163,24 @@ export default function Survey() {
             </div>
             <div>
               <h1 className="text-sm font-semibold font-sans leading-none">VGG 360° Appraisal</h1>
-              <p className="text-[11px] text-muted-foreground leading-none mt-0.5">Performance Feedback</p>
+              <p className="text-[11px] text-muted-foreground leading-none mt-0.5">{profile?.name}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild className="h-7 text-xs gap-1">
+              <Link to="/my-dashboard"><BarChart3 className="w-3 h-3" /> Dashboard</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild className="h-7 text-xs gap-1">
+              <Link to="/wall-of-fame"><Trophy className="w-3 h-3" /> Rankings</Link>
+            </Button>
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <Shield className="w-3 h-3" />
               <span>Anonymous</span>
             </div>
             <ThemeToggle />
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={async () => { await logout(); navigate('/'); }}>
+              <LogOut className="w-3.5 h-3.5" />
+            </Button>
           </div>
         </div>
       </header>
