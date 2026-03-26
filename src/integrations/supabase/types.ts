@@ -308,6 +308,7 @@ export type Database = {
       employees: {
         Row: {
           created_at: string | null
+          email: string | null
           id: string
           name: string
           role: string | null
@@ -316,6 +317,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          email?: string | null
           id?: string
           name: string
           role?: string | null
@@ -324,6 +326,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          email?: string | null
           id?: string
           name?: string
           role?: string | null
@@ -375,6 +378,70 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string
+          employee_id: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email: string
+          employee_id?: string | null
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string
+          employee_id?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_completions: {
+        Row: {
+          completed_at: string | null
+          employee_id: string
+          id: string
+          reviewer_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          employee_id: string
+          id?: string
+          reviewer_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          employee_id?: string
+          id?: string
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_completions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subsidiaries: {
         Row: {
