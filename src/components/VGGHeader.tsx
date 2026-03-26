@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu, X } from 'lucide-react';
-import vggLogo from '@/assets/vgg-logo.webp';
+import vggIcon from '@/assets/vgg-icon.png';
 
 interface VGGHeaderProps {
   subtitle?: string;
@@ -19,7 +18,7 @@ export default function VGGHeader({ subtitle, userName, onLogout, actions, maxWi
     <header className="border-b border-border/60 bg-card/60 backdrop-blur-xl sticky top-0 z-20">
       <div className={`${maxWidth} mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between`}>
         <div className="flex items-center gap-3 min-w-0">
-          <img src={vggLogo} alt="Venture Garden Group" className="h-6 sm:h-7 w-auto flex-shrink-0" />
+          <img src={vggIcon} alt="Venture Garden Group" className="h-7 sm:h-8 w-auto flex-shrink-0" />
           <div className="hidden sm:block h-5 w-px bg-border flex-shrink-0" />
           <div className="hidden sm:block min-w-0">
             <p className="text-xs font-bold text-foreground tracking-tight leading-none">
@@ -36,7 +35,6 @@ export default function VGGHeader({ subtitle, userName, onLogout, actions, maxWi
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-2">
           {actions}
-          <ThemeToggle />
           {onLogout && (
             <Button variant="ghost" size="icon" onClick={onLogout} className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground">
               <LogOut className="w-4 h-4" />
@@ -46,7 +44,6 @@ export default function VGGHeader({ subtitle, userName, onLogout, actions, maxWi
 
         {/* Mobile hamburger */}
         <div className="flex md:hidden items-center gap-1.5">
-          <ThemeToggle />
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="h-9 w-9">
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
