@@ -3,12 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import VGGHeader from '@/components/VGGHeader';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
-  BarChart3, Users, Trophy, ClipboardList, LogOut, Loader2,
-  Lock, ChevronRight, Star,
+  BarChart3, Users, Trophy, ClipboardList, Loader2,
+  Lock, Star,
 } from 'lucide-react';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
@@ -152,20 +152,7 @@ export default function EmployeeDashboard() {
     const pct = totalEmployees > 0 ? Math.round((completedReviews / totalEmployees) * 100) : 0;
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-20">
-          <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">V</span>
-              </div>
-              <span className="text-sm font-semibold">My Dashboard</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
-            </div>
-          </div>
-        </header>
+        <VGGHeader subtitle="My Dashboard" onLogout={handleLogout} maxWidth="max-w-3xl" />
         <div className="flex items-center justify-center px-6 py-24">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -175,7 +162,7 @@ export default function EmployeeDashboard() {
             <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-5">
               <Lock className="w-7 h-7 text-primary" />
             </div>
-            <h1 className="text-xl font-semibold mb-2">Complete Your Reviews First</h1>
+            <h1 className="text-xl font-bold font-serif mb-2">Complete Your Reviews First</h1>
             <p className="text-muted-foreground text-sm mb-6">
               You need to review all your colleagues before accessing your personal dashboard.
             </p>
@@ -184,7 +171,7 @@ export default function EmployeeDashboard() {
               <span>{pct}%</span>
             </div>
             <Progress value={pct} className="mb-6" />
-            <Button onClick={() => navigate('/survey')} className="gap-2">
+            <Button onClick={() => navigate('/survey')} className="gap-2 h-11">
               <ClipboardList className="w-4 h-4" /> Continue Reviewing
             </Button>
           </motion.div>
@@ -195,35 +182,25 @@ export default function EmployeeDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">V</span>
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold leading-none">My Dashboard</h1>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{profile?.name}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/wall-of-fame" className="gap-1.5">
-                <Trophy className="w-4 h-4" /> Rankings
+      <VGGHeader
+        userName={profile?.name}
+        subtitle="My Dashboard"
+        onLogout={handleLogout}
+        actions={
+          <>
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link to="/wall-of-fame">
+                <Trophy className="w-3.5 h-3.5" /> Rankings
               </Link>
             </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/survey" className="gap-1.5">
-                <ClipboardList className="w-4 h-4" /> Survey
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link to="/survey">
+                <ClipboardList className="w-3.5 h-3.5" /> Survey
               </Link>
             </Button>
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {/* Stats row */}
