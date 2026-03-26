@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ThemeToggle } from '@/components/ThemeToggle';
+
 import TypewriterText from '@/components/TypewriterText';
 import { Button } from '@/components/ui/button';
 import {
   Search, Users, BarChart3, ChevronRight, ChevronLeft,
   Shield, ArrowRight, Award, CheckCircle2, Lock, Eye,
 } from 'lucide-react';
-import vggLogo from '@/assets/vgg-logo.webp';
+import vggIcon from '@/assets/vgg-icon.png';
 
 export default function Onboarding() {
   const [slide, setSlide] = useState(0);
@@ -32,14 +32,14 @@ export default function Onboarding() {
       {/* Top bar */}
       <header className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-5">
         <div className="flex items-center gap-3">
-          <img src={vggLogo} alt="Venture Garden Group" className="h-7 sm:h-8 w-auto" />
+          <img src={vggIcon} alt="Venture Garden Group" className="h-8 sm:h-9 w-auto" />
           <div className="hidden sm:block h-5 w-px bg-border" />
           <span className="hidden sm:block text-xs font-semibold text-muted-foreground tracking-widest uppercase">
             360° Appraisal
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <ThemeToggle />
+          
           <Button variant="outline" size="sm" onClick={() => navigate('/login')} className="text-xs">
             Sign In
           </Button>

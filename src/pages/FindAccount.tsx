@@ -3,14 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
-import { ThemeToggle } from '@/components/ThemeToggle';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Search, ArrowLeft, CheckCircle2, AlertCircle, Loader2, Building2, User,
 } from 'lucide-react';
-import vggLogo from '@/assets/vgg-logo.webp';
+import vggIcon from '@/assets/vgg-icon.png';
 
 interface EmployeeResult {
   id: string;
@@ -110,7 +110,7 @@ export default function FindAccount() {
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
       </div>
-      <div className="absolute top-5 right-5"><ThemeToggle /></div>
+      
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -118,7 +118,7 @@ export default function FindAccount() {
         className="w-full max-w-md"
       >
         <div className="mb-8">
-          <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto mb-8" />
+          <img src={vggIcon} alt="Venture Garden Group" className="h-10 w-auto mb-8" />
           <h1 className="text-2xl font-bold font-serif mb-1">Find Your Account</h1>
           <p className="text-muted-foreground text-sm">
             Search your name to locate your profile and set up your password.
