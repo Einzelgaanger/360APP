@@ -249,17 +249,17 @@ export default function Survey() {
           {step === 'employee' && (
             <motion.div key="employee" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
               <div className="glass-panel p-6 sm:p-8">
-                <button onClick={() => setStep('subsidiary')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
+                <button onClick={() => setStep('subsidiary')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-5 transition-colors font-medium">
                   <ChevronLeft className="w-4 h-4" /> Back
                 </button>
                 <div className="mb-6">
-                  <div className="flex items-center gap-2.5 mb-1">
-                    <User className="w-5 h-5 text-primary" />
-                    <h2 className="text-lg font-semibold">Select Person to Review</h2>
+                  <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center mb-4">
+                    <User className="w-6 h-6 text-accent" />
                   </div>
+                  <h2 className="text-xl font-bold mb-1">Select Person to Review</h2>
                   <p className="text-muted-foreground text-sm">{selectedSubsidiary?.name}</p>
                 </div>
-                <div className="grid gap-1.5 max-h-[60vh] overflow-y-auto scrollbar-thin">
+                <div className="grid gap-2 max-h-[60vh] overflow-y-auto scrollbar-thin pr-1">
                   {employees.map(emp => {
                     const isCompleted = completedEmployees.has(emp.id);
                     return (
@@ -267,19 +267,26 @@ export default function Survey() {
                         key={emp.id}
                         onClick={() => !isCompleted && handleSelectEmployee(emp)}
                         disabled={isCompleted}
-                        className={`flex items-center justify-between p-3.5 rounded-lg border transition-all text-left group ${
+                        className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 text-left group ${
                           isCompleted
-                            ? 'border-primary/20 bg-primary/5 cursor-not-allowed'
-                            : 'border-border bg-background hover:bg-muted/50 hover:border-primary/40'
+                            ? 'border-primary/15 bg-primary/[0.03] cursor-not-allowed'
+                            : 'border-border bg-background hover:bg-muted/50 hover:border-primary/30 hover:shadow-md'
                         }`}
                       >
-                        <div>
-                          <span className={`font-medium text-sm ${isCompleted ? 'text-muted-foreground' : ''}`}>{emp.name}</span>
-                          {emp.role && <span className="block text-xs text-muted-foreground mt-0.5">{emp.role}</span>}
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold ${
+                            isCompleted ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {emp.name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <span className={`font-semibold text-sm block ${isCompleted ? 'text-muted-foreground' : ''}`}>{emp.name}</span>
+                            {emp.role && <span className="text-xs text-muted-foreground">{emp.role}</span>}
+                          </div>
                         </div>
                         {isCompleted ? (
                           <div className="flex items-center gap-1.5 text-primary">
-                            <span className="text-xs font-medium">Reviewed</span>
+                            <span className="text-xs font-semibold">Reviewed</span>
                             <CheckCircle2 className="w-4 h-4" />
                           </div>
                         ) : (
