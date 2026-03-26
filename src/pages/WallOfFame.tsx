@@ -84,9 +84,9 @@ export default function WallOfFame() {
   };
 
   const getRankIcon = (rank: number) => {
-    if (rank === 0) return <Trophy className="w-5 h-5 text-yellow-500" />;
-    if (rank === 1) return <Medal className="w-5 h-5 text-gray-400" />;
-    if (rank === 2) return <Award className="w-5 h-5 text-amber-600" />;
+    if (rank === 0) return <Trophy className="w-5 h-5 text-warning" />;
+    if (rank === 1) return <Medal className="w-5 h-5 text-muted-foreground" />;
+    if (rank === 2) return <Award className="w-5 h-5 text-primary" />;
     return <span className="w-5 h-5 flex items-center justify-center text-xs font-bold text-muted-foreground">{rank + 1}</span>;
   };
 
