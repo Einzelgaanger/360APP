@@ -84,7 +84,7 @@ QUALITATIVE FEEDBACK - CONTINUE DOING (Strengths):
 ${feedbackData.continueDoing || '• No feedback available'}`;
   }, [managerSummaries, overallStats, competencyScores, relationshipDistribution, scoreDistribution, feedbackThemes]);
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = async () => { legacyLogout(); await employeeLogout(); navigate('/'); };
 
   if (loading) {
     return (
