@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,7 +60,8 @@ interface QuestionRow {
 const CHART_COLORS = ['hsl(173, 80%, 40%)', 'hsl(38, 92%, 50%)', 'hsl(262, 83%, 58%)', 'hsl(142, 71%, 45%)', 'hsl(0, 72%, 51%)', 'hsl(200, 80%, 50%)', 'hsl(320, 70%, 50%)'];
 
 export default function AppraisalAdmin() {
-  const { user, logout } = useAuth();
+  const { logout: legacyLogout } = useAuth();
+  const { logout: employeeLogout, isAdmin } = useEmployeeAuth();
   const navigate = useNavigate();
   const [responses, setResponses] = useState<ResponseRow[]>([]);
   const [answers, setAnswers] = useState<AnswerRow[]>([]);
@@ -234,7 +236,7 @@ export default function AppraisalAdmin() {
             <Button variant="ghost" size="sm" onClick={loadAllData} className="gap-1">
               <RefreshCw className="w-3 h-3" /> Refresh
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/'); }}>
+            <Button variant="ghost" size="sm" onClick={async () => { legacyLogout(); await employeeLogout(); navigate('/'); }}>
               <LogOut className="w-4 h-4" />
             </Button>
           </div>

@@ -26,7 +26,7 @@ const SCALE_OPTIONS = [
 ];
 
 export default function Survey() {
-  const { user, profile, logout } = useEmployeeAuth();
+  const { user, profile, isAdmin, logout } = useEmployeeAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<'subsidiary' | 'employee' | 'questions' | 'submitted'>('subsidiary');
   const [subsidiaries, setSubsidiaries] = useState<Subsidiary[]>([]);
@@ -160,7 +160,12 @@ export default function Survey() {
         onLogout={async () => { await logout(); navigate('/'); }}
         maxWidth="max-w-3xl"
         actions={
-          <>
+           <>
+            {isAdmin && (
+              <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5 border-primary/30 text-primary">
+                <Link to="/appraisal"><ClipboardList className="w-3.5 h-3.5" /> Admin</Link>
+              </Button>
+            )}
             <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
               <Link to="/my-dashboard"><BarChart3 className="w-3.5 h-3.5" /> Dashboard</Link>
             </Button>

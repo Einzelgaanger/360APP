@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppraisalData } from '@/hooks/useAppraisalData';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { useNavigate } from 'react-router-dom';
 import StatsCard from '@/components/dashboard/StatsCard';
 import ManagerLeaderboard from '@/components/dashboard/ManagerLeaderboard';
@@ -19,7 +20,8 @@ import { ManagerSummary } from '@/types/appraisal';
 import { BarChart3, Users, Trophy, Target, Zap, Loader2, ClipboardList } from 'lucide-react';
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { logout: legacyLogout } = useAuth();
+  const { logout: employeeLogout } = useEmployeeAuth();
   const navigate = useNavigate();
   const {
     responses, managerSummaries, competencyScores, relationshipDistribution,
@@ -82,7 +84,7 @@ QUALITATIVE FEEDBACK - CONTINUE DOING (Strengths):
 ${feedbackData.continueDoing || '• No feedback available'}`;
   }, [managerSummaries, overallStats, competencyScores, relationshipDistribution, scoreDistribution, feedbackThemes]);
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = async () => { legacyLogout(); await employeeLogout(); navigate('/'); };
 
   if (loading) {
     return (

@@ -16,6 +16,7 @@ interface EmployeeAuthContextType {
   session: Session | null;
   profile: Profile | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
@@ -29,6 +30,7 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch profile when user changes
+  // Fetch profile and admin role when user changes
   useEffect(() => {
     if (user) {
       supabase
@@ -56,8 +58,17 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
         .eq('id', user.id)
         .maybeSingle()
         .then(({ data }) => setProfile(data as Profile | null));
+      
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle()
+        .then(({ data }) => setIsAdmin(!!data));
     } else {
       setProfile(null);
+      setIsAdmin(false);
     }
   }, [user]);
 
@@ -88,6 +99,7 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
       value={{
         user, session, profile,
         isAuthenticated: !!session,
+        isAdmin,
         isLoading,
         login, logout, resetPassword, updatePassword,
       }}
