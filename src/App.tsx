@@ -23,8 +23,11 @@ import { Loader2 } from "lucide-react";
 const queryClient = new QueryClient();
 
 function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/admin" replace />;
+  const { isAuthenticated: isLegacyAdmin } = useAuth();
+  const { isAuthenticated: isEmployee, isAdmin, isLoading } = useEmployeeAuth();
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (isLegacyAdmin || (isEmployee && isAdmin)) return <>{children}</>;
+  return <Navigate to="/admin" replace />;
 }
 
 function ProtectedEmployeeRoute({ children }: { children: React.ReactNode }) {
