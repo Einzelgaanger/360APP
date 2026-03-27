@@ -38,11 +38,13 @@ function ProtectedEmployeeRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const { isAuthenticated: isAdmin } = useAuth();
-  const { isAuthenticated: isEmployee, isLoading } = useEmployeeAuth();
+  const { isAuthenticated: isEmployee, isAdmin: isEmployeeAdmin, isLoading } = useEmployeeAuth();
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
+
+  const canAccessAdmin = isAdmin || (isEmployee && isEmployeeAdmin);
 
   return (
     <Routes>
@@ -53,7 +55,7 @@ function AppRoutes() {
       <Route path="/survey" element={<ProtectedEmployeeRoute><Survey /></ProtectedEmployeeRoute>} />
       <Route path="/my-dashboard" element={<ProtectedEmployeeRoute><EmployeeDashboard /></ProtectedEmployeeRoute>} />
       <Route path="/wall-of-fame" element={<ProtectedEmployeeRoute><WallOfFame /></ProtectedEmployeeRoute>} />
-      <Route path="/admin" element={isAdmin ? <Navigate to="/dashboard" replace /> : <Login />} />
+      <Route path="/admin" element={canAccessAdmin ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/dashboard" element={<ProtectedAdminRoute><Dashboard /></ProtectedAdminRoute>} />
       <Route path="/appraisal" element={<ProtectedAdminRoute><AppraisalAdmin /></ProtectedAdminRoute>} />
       <Route path="/demo" element={<DemoDashboard />} />
