@@ -13,10 +13,8 @@ import ResetPassword from "./pages/ResetPassword";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import DemoDashboard from "./pages/DemoDashboard";
-import Survey from "./pages/Survey";
+import EmployeeHub from "./pages/EmployeeHub";
 import AppraisalAdmin from "./pages/AppraisalAdmin";
-import EmployeeDashboard from "./pages/EmployeeDashboard";
-import WallOfFame from "./pages/WallOfFame";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -53,13 +51,15 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={isEmployee ? <Navigate to="/survey" /> : <Onboarding />} />
-      <Route path="/login" element={isEmployee ? <Navigate to="/survey" /> : <EmployeeLogin />} />
+      <Route path="/" element={isEmployee ? <Navigate to="/hub" /> : <Onboarding />} />
+      <Route path="/login" element={isEmployee ? <Navigate to="/hub" /> : <EmployeeLogin />} />
       <Route path="/find-account" element={<FindAccount />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/survey" element={<ProtectedEmployeeRoute><Survey /></ProtectedEmployeeRoute>} />
-      <Route path="/my-dashboard" element={<ProtectedEmployeeRoute><EmployeeDashboard /></ProtectedEmployeeRoute>} />
-      <Route path="/wall-of-fame" element={<ProtectedEmployeeRoute><WallOfFame /></ProtectedEmployeeRoute>} />
+      <Route path="/hub" element={<ProtectedEmployeeRoute><EmployeeHub /></ProtectedEmployeeRoute>} />
+      {/* Legacy routes redirect to hub */}
+      <Route path="/survey" element={<Navigate to="/hub?tab=survey" replace />} />
+      <Route path="/my-dashboard" element={<Navigate to="/hub?tab=dashboard" replace />} />
+      <Route path="/wall-of-fame" element={<Navigate to="/hub?tab=rankings" replace />} />
       <Route path="/admin" element={<AdminGate />} />
       <Route path="/dashboard" element={<ProtectedAdminRoute><Dashboard /></ProtectedAdminRoute>} />
       <Route path="/appraisal" element={<ProtectedAdminRoute><AppraisalAdmin /></ProtectedAdminRoute>} />
