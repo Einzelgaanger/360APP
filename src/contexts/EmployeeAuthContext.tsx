@@ -99,6 +99,7 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
       value={{
         user, session, profile,
         isAuthenticated: !!session,
+        isAdmin,
         isLoading,
         login, logout, resetPassword, updatePassword,
       }}
