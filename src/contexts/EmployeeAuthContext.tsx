@@ -49,7 +49,7 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch profile when user changes
+  // Fetch profile and admin role when user changes
   useEffect(() => {
     if (user) {
       supabase
@@ -58,8 +58,17 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
         .eq('id', user.id)
         .maybeSingle()
         .then(({ data }) => setProfile(data as Profile | null));
+      
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle()
+        .then(({ data }) => setIsAdmin(!!data));
     } else {
       setProfile(null);
+      setIsAdmin(false);
     }
   }, [user]);
 
