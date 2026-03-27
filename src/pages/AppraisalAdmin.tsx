@@ -236,7 +236,7 @@ export default function AppraisalAdmin() {
             <Button variant="ghost" size="sm" onClick={loadAllData} className="gap-1">
               <RefreshCw className="w-3 h-3" /> Refresh
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/'); }}>
+            <Button variant="ghost" size="sm" onClick={async () => { legacyLogout(); await employeeLogout(); navigate('/'); }}>
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
