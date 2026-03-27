@@ -26,7 +26,7 @@ const SCALE_OPTIONS = [
 ];
 
 export default function Survey() {
-  const { user, profile, logout } = useEmployeeAuth();
+  const { user, profile, isAdmin, logout } = useEmployeeAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<'subsidiary' | 'employee' | 'questions' | 'submitted'>('subsidiary');
   const [subsidiaries, setSubsidiaries] = useState<Subsidiary[]>([]);
