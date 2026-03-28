@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'VGG 360° Appraisal — Confirm Your Email',
+  invite: "VGG 360° Appraisal — You've Been Invited",
+  magiclink: 'VGG 360° Appraisal — Your Secure Login Link',
+  recovery: 'VGG 360° Appraisal — Reset Your Password',
+  email_change: 'VGG 360° Appraisal — Confirm Email Change',
+  reauthentication: 'VGG 360° Appraisal — Verification Code',
 }
 
 // Template mapping
@@ -36,17 +36,12 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "appraisal-muse"
+const SITE_NAME = "VGG 360° Appraisal"
 const SENDER_DOMAIN = "notify.appraisal.vgg.app"
 const ROOT_DOMAIN = "appraisal.vgg.app"
-const FROM_DOMAIN = "appraisal.vgg.app" // Domain shown in From address (may be root or sender subdomain)
+const FROM_DOMAIN = "appraisal.vgg.app"
 
-// Sample data for preview mode ONLY (not used in actual email sending).
-// URLs are baked in at scaffold time from the project's real data.
-// The sample email uses a fixed placeholder (RFC 6761 .test TLD) so the Go backend
-// can always find-and-replace it with the actual recipient when sending test emails,
-// even if the project's domain has changed since the template was scaffolded.
-const SAMPLE_PROJECT_URL = "https://appraisal-muse.lovable.app"
+const SAMPLE_PROJECT_URL = "https://vgg360appraisal.lovable.app"
 const SAMPLE_EMAIL = "user@example.test"
 const SAMPLE_DATA: Record<string, object> = {
   signup: {
