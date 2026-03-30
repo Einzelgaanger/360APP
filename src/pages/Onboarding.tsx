@@ -10,6 +10,21 @@ import {
 } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
 
+const TRANSITION_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+/** Shared headline typewriter — one rhythm across all 3 slides */
+const HEADLINE_TYPE = {
+  speed: 108,
+  deleteSpeed: 52,
+  pauseDuration: 4200,
+} as const;
+
+const SLIDE_ENTER = { duration: 0.65, ease: TRANSITION_EASE };
+const BADGE_REVEAL = { delay: 0.12, duration: 0.55, ease: TRANSITION_EASE };
+/** Subtitle appears after headline has room to start (no competing typewriter) */
+const SUBTITLE_REVEAL = { delay: 0.95, duration: 0.75, ease: TRANSITION_EASE };
+const CARDS_REVEAL = { delay: 1.15, duration: 0.65, ease: TRANSITION_EASE };
+
 export default function Onboarding() {
   const [slide, setSlide] = useState(0);
   const navigate = useNavigate();
@@ -57,7 +72,7 @@ export default function Onboarding() {
               <motion.div
                 initial={false}
                 animate={{ width: i <= slide ? '100%' : '0%' }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 1.05, ease: TRANSITION_EASE }}
                 className="h-full bg-primary rounded-full"
               />
             </motion.div>
@@ -121,17 +136,17 @@ export default function Onboarding() {
 function SlideWelcome({ onComplete }: { onComplete: () => void }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={SLIDE_ENTER}
       className="max-w-3xl w-full text-center"
     >
       {/* Badge */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.15 }}
+        transition={BADGE_REVEAL}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 text-primary text-xs font-semibold mb-8"
       >
         <Shield className="w-3.5 h-3.5" />
@@ -139,43 +154,34 @@ function SlideWelcome({ onComplete }: { onComplete: () => void }) {
       </motion.div>
 
       {/* Main heading */}
-      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground leading-[1.1] mb-6">
+      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground leading-[1.1] mb-6 min-h-[2.6em] sm:min-h-[2.4em]">
         <span className="block mb-2">Powering</span>
         <TypewriterText
           texts={['Performance.', 'Growth.', 'Excellence.']}
           className="gradient-text"
-          speed={70}
-          deleteSpeed={35}
-          pauseDuration={2200}
+          speed={HEADLINE_TYPE.speed}
+          deleteSpeed={HEADLINE_TYPE.deleteSpeed}
+          pauseDuration={HEADLINE_TYPE.pauseDuration}
           onCycleComplete={onComplete}
         />
       </h1>
 
-      {/* Subtitle */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
+      {/* Subtitle — static copy so it stays in sync with the headline rhythm */}
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="max-w-lg mx-auto mb-10"
+        transition={SUBTITLE_REVEAL}
+        className="max-w-lg mx-auto mb-10 text-muted-foreground text-base sm:text-lg leading-relaxed"
       >
-        <p className="text-muted-foreground text-base sm:text-lg leading-relaxed">
-          <TypewriterText
-            texts={[
-              'A comprehensive peer review platform designed to unlock your team\'s full potential.',
-              'Structured, anonymous feedback that fuels real development.',
-            ]}
-            speed={22}
-            deleteSpeed={10}
-            pauseDuration={3000}
-          />
-        </p>
-      </motion.div>
+        A comprehensive peer review platform for structured, anonymous feedback—built to unlock your
+        team&apos;s potential.
+      </motion.p>
 
       {/* Feature cards */}
       <motion.div
-        initial={{ opacity: 0, y: 15 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
+        transition={CARDS_REVEAL}
         className="flex flex-wrap gap-3 justify-center"
       >
         {[
@@ -185,9 +191,9 @@ function SlideWelcome({ onComplete }: { onComplete: () => void }) {
         ].map(({ icon: Icon, label }, i) => (
           <motion.div
             key={label}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 + i * 0.1 }}
+            transition={{ delay: CARDS_REVEAL.delay + 0.08 + i * 0.12, duration: 0.6, ease: TRANSITION_EASE }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card border border-border/60 shadow-sm text-sm text-muted-foreground"
           >
             <Icon className="w-4 h-4 text-primary" />
@@ -230,48 +236,40 @@ const STEPS = [
 function SlideHowItWorks({ onComplete }: { onComplete: () => void }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={SLIDE_ENTER}
       className="max-w-3xl w-full text-center"
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.1 }}
+        transition={BADGE_REVEAL}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/8 border border-accent/15 text-accent text-xs font-semibold mb-8"
       >
         <Award className="w-3.5 h-3.5" />
         Simple 3-Step Process
       </motion.div>
 
-      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] mb-4">
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] mb-4 min-h-[1.35em]">
         <TypewriterText
           texts={['How It Works', 'Your Journey Begins', 'Three Simple Steps']}
           className="text-foreground"
-          speed={60}
-          deleteSpeed={30}
-          pauseDuration={2500}
+          speed={HEADLINE_TYPE.speed}
+          deleteSpeed={HEADLINE_TYPE.deleteSpeed}
+          pauseDuration={HEADLINE_TYPE.pauseDuration}
           onCycleComplete={onComplete}
         />
       </h1>
 
       <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto mb-10"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={SUBTITLE_REVEAL}
+        className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto mb-10 leading-relaxed"
       >
-        <TypewriterText
-          texts={[
-            'From account setup to actionable insights in minutes.',
-            'A streamlined process designed for busy professionals.',
-          ]}
-          speed={22}
-          deleteSpeed={10}
-          pauseDuration={3000}
-        />
+        From secure account setup to actionable insights—a streamlined flow for busy teams.
       </motion.p>
 
       {/* Step cards */}
@@ -279,9 +277,9 @@ function SlideHowItWorks({ onComplete }: { onComplete: () => void }) {
         {STEPS.map((step, i) => (
           <motion.div
             key={step.title}
-            initial={{ opacity: 0, y: 25 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ delay: CARDS_REVEAL.delay + i * 0.12, duration: 0.65, ease: TRANSITION_EASE }}
             className={`relative p-6 rounded-2xl ${step.bg} border border-border/40 text-left group hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}
           >
             <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground mb-4">
@@ -303,54 +301,46 @@ function SlideHowItWorks({ onComplete }: { onComplete: () => void }) {
 function SlideGetStarted({ navigate }: { navigate: (path: string) => void }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={SLIDE_ENTER}
       className="max-w-2xl w-full text-center"
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.1 }}
+        transition={BADGE_REVEAL}
         className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 text-primary text-xs font-semibold mb-8"
       >
         <CheckCircle2 className="w-3.5 h-3.5" />
         Secure & Confidential
       </motion.div>
 
-      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] mb-4">
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] mb-4 min-h-[1.35em]">
         <TypewriterText
           texts={['Ready to Begin?', 'Let\'s Get Started.', 'Your Voice Matters.']}
           className="text-foreground"
-          speed={60}
-          deleteSpeed={30}
-          pauseDuration={2500}
+          speed={HEADLINE_TYPE.speed}
+          deleteSpeed={HEADLINE_TYPE.deleteSpeed}
+          pauseDuration={HEADLINE_TYPE.pauseDuration}
         />
       </h1>
 
       <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={SUBTITLE_REVEAL}
         className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-lg mx-auto mb-10"
       >
-        <TypewriterText
-          texts={[
-            'Sign in with your credentials or find your account to get started.',
-            'Your feedback is completely anonymous and confidential.',
-          ]}
-          speed={22}
-          deleteSpeed={10}
-          pauseDuration={3000}
-        />
+        Sign in with your credentials or find your account. Your feedback stays anonymous and confidential.
       </motion.p>
 
       {/* CTA buttons */}
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: CARDS_REVEAL.delay, duration: 0.65, ease: TRANSITION_EASE }}
         className="flex flex-col sm:flex-row gap-3 justify-center mb-8"
       >
         <Button size="lg" onClick={() => navigate('/login')} className="gap-2 px-8">
@@ -365,7 +355,7 @@ function SlideGetStarted({ navigate }: { navigate: (path: string) => void }) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
+        transition={{ delay: CARDS_REVEAL.delay + 0.45, duration: 0.65, ease: TRANSITION_EASE }}
         className="flex items-center justify-center gap-6 text-xs text-muted-foreground"
       >
         <span className="flex items-center gap-1.5">

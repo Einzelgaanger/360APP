@@ -40,7 +40,7 @@ export default function Login() {
         <div className="relative z-10 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <ShieldCheck className="w-16 h-16 text-white/90 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-white mb-3 font-serif">Admin Console</h2>
+            <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">Admin Console</h2>
             <p className="text-white/70 text-sm leading-relaxed max-w-sm">
               Access the analytics dashboard, manage appraisal data, and generate performance insights across the organisation.
             </p>
@@ -60,7 +60,7 @@ export default function Login() {
         >
           <div className="mb-8">
             <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto mb-8" />
-            <h1 className="text-2xl font-bold font-serif mb-1">Administrator Sign In</h1>
+            <h1 className="text-2xl font-bold tracking-tight mb-1">Administrator Sign In</h1>
             <p className="text-muted-foreground text-sm">
               VGG 360° Performance Analytics
             </p>

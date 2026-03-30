@@ -71,25 +71,52 @@
     @apply border-border;
   }
 
+  html {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased leading-relaxed;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.008em;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     @apply font-bold tracking-tight;
   }
+
+  h1 {
+    @apply text-3xl sm:text-4xl leading-tight;
+  }
+
+  h2 {
+    @apply text-2xl sm:text-3xl leading-tight;
+  }
+
+  h3 {
+    @apply text-xl sm:text-2xl leading-snug;
+  }
+
+  p {
+    @apply leading-relaxed;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
+  }
 }
 
 @layer components {
   .glass-panel {
-    @apply bg-card/80 backdrop-blur-xl border border-border/60 rounded-2xl shadow-lg shadow-black/[0.03];
+    @apply bg-card/[0.88] backdrop-blur-xl border border-border/70 rounded-2xl shadow-lg shadow-black/[0.04];
   }
 
   .glass-panel-hover {
-    @apply glass-panel hover:shadow-xl hover:shadow-black/[0.06] hover:border-primary/20 transition-all duration-300;
+    @apply glass-panel hover:shadow-xl hover:shadow-black/[0.08] hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-300;
   }
 
   .gradient-text {
@@ -97,7 +124,7 @@
   }
 
   .stat-card {
-    @apply glass-panel p-6 hover:shadow-xl hover:shadow-black/[0.06] hover:-translate-y-0.5 transition-all duration-300;
+    @apply glass-panel p-6 hover:shadow-xl hover:shadow-black/[0.08] hover:-translate-y-0.5 transition-all duration-300;
   }
 
   .score-badge {
@@ -133,7 +160,19 @@
   }
 
   .input-field {
-    @apply rounded-xl border-2 border-border bg-background px-4 py-3 text-sm transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 focus:outline-none placeholder:text-muted-foreground/60;
+    @apply rounded-xl border border-border bg-background px-4 py-3 text-sm transition-all duration-200 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none placeholder:text-muted-foreground/70;
+  }
+
+  .section-shell {
+    @apply glass-panel p-5 sm:p-6;
+  }
+
+  .section-title {
+    @apply text-sm font-semibold tracking-tight text-foreground;
+  }
+
+  .section-subtitle {
+    @apply text-xs text-muted-foreground;
   }
 }
 

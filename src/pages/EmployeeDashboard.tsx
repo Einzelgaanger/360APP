@@ -162,7 +162,7 @@ export default function EmployeeDashboard() {
             <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-5">
               <Lock className="w-7 h-7 text-primary" />
             </div>
-            <h1 className="text-xl font-bold font-serif mb-2">Complete Your Reviews First</h1>
+            <h1 className="text-xl font-bold tracking-tight mb-2">Complete Your Reviews First</h1>
             <p className="text-muted-foreground text-sm mb-6">
               You need to review all your colleagues before accessing your personal dashboard.
             </p>

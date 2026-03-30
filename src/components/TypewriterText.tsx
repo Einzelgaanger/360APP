@@ -8,6 +8,8 @@ interface TypewriterTextProps {
   deleteSpeed?: number;
   pauseDuration?: number;
   onCycleComplete?: () => void;
+  /** When true, hides the blinking caret (calmer for paired layouts). */
+  hideCursor?: boolean;
 }
 
 export default function TypewriterText({
@@ -17,6 +19,7 @@ export default function TypewriterText({
   deleteSpeed = 40,
   pauseDuration = 2000,
   onCycleComplete,
+  hideCursor = false,
 }: TypewriterTextProps) {
   const [displayText, setDisplayText] = useState('');
   const [textIndex, setTextIndex] = useState(0);
@@ -56,11 +59,19 @@ export default function TypewriterText({
   return (
     <span className={className}>
       {displayText}
-      <motion.span
-        animate={{ opacity: [1, 0] }}
-        transition={{ duration: 0.53, repeat: Infinity, repeatType: 'reverse' }}
-        className="inline-block w-[3px] h-[0.85em] bg-current ml-0.5 align-middle rounded-full"
-      />
+      {!hideCursor && (
+        <motion.span
+          aria-hidden
+          animate={{ opacity: [1, 0.2] }}
+          transition={{
+            duration: 1.05,
+            repeat: Infinity,
+            repeatType: 'reverse',
+            ease: 'easeInOut',
+          }}
+          className="inline-block w-[3px] h-[0.85em] bg-current ml-0.5 align-middle rounded-full"
+        />
+      )}
     </span>
   );
 }
