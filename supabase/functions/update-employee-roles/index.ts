@@ -18,29 +18,27 @@ Deno.serve(async (req) => {
 
   const entries = Object.entries(mapping as Record<string, string>);
   let updated = 0;
-  let notFound = 0;
   const errors: string[] = [];
 
-  // Process in batches of 50
-  for (let i = 0; i < entries.length; i += 50) {
-    const batch = entries.slice(i, i + 50);
-    
-    for (const [email, title] of batch) {
-      const { data, error } = await supabase
+  // Process in parallel batches of 20
+  for (let i = 0; i < entries.length; i += 20) {
+    const batch = entries.slice(i, i + 20);
+    const promises = batch.map(async ([email, title]) => {
+      const { error } = await supabase
         .from("employees")
         .update({ role: title })
         .ilike("email", email);
-      
       if (error) {
         errors.push(`${email}: ${error.message}`);
       } else {
         updated++;
       }
-    }
+    });
+    await Promise.all(promises);
   }
 
   return new Response(
-    JSON.stringify({ updated, notFound, totalMappings: entries.length, errors: errors.slice(0, 20) }),
+    JSON.stringify({ updated, totalMappings: entries.length, errorCount: errors.length, sampleErrors: errors.slice(0, 5) }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });
