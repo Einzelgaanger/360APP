@@ -153,11 +153,10 @@ export default function EmployeeHub() {
       if (myResponses?.length) {
         const responseIds = myResponses.map(r => r.id);
 
-        // Build direction map: response_id -> feedback_direction
+        // Build direction map
         const directionMap: Record<string, string> = {};
         myResponses.forEach(r => { directionMap[r.id] = r.feedback_direction || 'peer'; });
 
-        // Count reviews by direction
         const counts = { above: 0, peer: 0, below: 0 };
         myResponses.forEach(r => {
           const dir = (r.feedback_direction || 'peer') as keyof typeof counts;
@@ -165,58 +164,64 @@ export default function EmployeeHub() {
         });
         setDirectionCounts(counts);
 
-        const { data: myAnswers } = await supabase
-          .from('survey_answers')
-          .select('score, response_id, survey_questions(question_text, survey_categories(name))')
-          .in('response_id', responseIds)
-          .not('score', 'is', null);
+        // Fetch only MY answers (not all org answers) - batch if needed
+        const batchSize = 200;
+        let allMyAnswers: any[] = [];
+        for (let i = 0; i < responseIds.length; i += batchSize) {
+          const batch = responseIds.slice(i, i + batchSize);
+          const { data } = await supabase
+            .from('survey_answers')
+            .select('score, response_id, question_id')
+            .in('response_id', batch)
+            .not('score', 'is', null);
+          if (data) allMyAnswers = allMyAnswers.concat(data);
+        }
 
-        const { data: allAnswers } = await supabase
-          .from('survey_answers')
-          .select('score, survey_questions(survey_categories(name))')
-          .not('score', 'is', null);
+        // Fetch questions with categories for mapping
+        const { data: questionsWithCats } = await supabase
+          .from('survey_questions')
+          .select('id, survey_categories(name)');
+
+        const questionCatMap: Record<string, string> = {};
+        (questionsWithCats as any[])?.forEach(q => {
+          if (q.survey_categories?.name) questionCatMap[q.id] = q.survey_categories.name;
+        });
 
         // Overall scores
         const myCatScores: Record<string, number[]> = {};
-        const orgCatScores: Record<string, number[]> = {};
-        // Direction-segmented scores
         const dirCatScores: Record<string, Record<string, number[]>> = { above: {}, peer: {}, below: {} };
 
-        (myAnswers as any[])?.forEach(a => {
-          const cat = a.survey_questions?.survey_categories?.name;
+        allMyAnswers.forEach(a => {
+          const cat = questionCatMap[a.question_id];
           if (cat && a.score) {
             if (!myCatScores[cat]) myCatScores[cat] = [];
             myCatScores[cat].push(a.score);
 
             const dir = directionMap[a.response_id] || 'peer';
+            if (!dirCatScores[dir]) dirCatScores[dir] = {};
             if (!dirCatScores[dir][cat]) dirCatScores[dir][cat] = [];
             dirCatScores[dir][cat].push(a.score);
-          }
-        });
-
-        (allAnswers as any[])?.forEach(a => {
-          const cat = a.survey_questions?.survey_categories?.name;
-          if (cat && a.score) {
-            if (!orgCatScores[cat]) orgCatScores[cat] = [];
-            orgCatScores[cat].push(a.score);
           }
         });
 
         const cats = Object.keys(myCatScores);
         const avgArr = (arr: number[]) => arr.length ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2)) : 0;
 
-        setMyScores(cats.map(cat => ({
+        // For org average, use a lightweight RPC or just compute from limited sample
+        // Instead of fetching ALL answers, we'll skip org avg or use a rough estimate
+        // For now, set org avg to 0 and compute it in background
+        const scores = cats.map(cat => ({
           category: cat,
           myScore: avgArr(myCatScores[cat]),
-          orgAvg: orgCatScores[cat] ? avgArr(orgCatScores[cat]) : 0,
-        })));
+          orgAvg: 0,
+        }));
+        setMyScores(scores);
 
-        // Build direction scores
         const buildDirScores = (dir: string): CategoryScore[] =>
           cats.map(cat => ({
             category: cat,
-            myScore: dirCatScores[dir][cat] ? avgArr(dirCatScores[dir][cat]) : 0,
-            orgAvg: orgCatScores[cat] ? avgArr(orgCatScores[cat]) : 0,
+            myScore: dirCatScores[dir]?.[cat] ? avgArr(dirCatScores[dir][cat]) : 0,
+            orgAvg: 0,
           })).filter(s => s.myScore > 0);
 
         setDirectionScores({
@@ -224,8 +229,29 @@ export default function EmployeeHub() {
           peer: buildDirScores('peer'),
           below: buildDirScores('below'),
         });
-
         setTotalReviews(myResponses.length);
+
+        // Load org averages in background (sample-based for speed)
+        supabase
+          .from('survey_answers')
+          .select('score, question_id')
+          .not('score', 'is', null)
+          .limit(5000)
+          .then(({ data: sampleAnswers }) => {
+            if (!sampleAnswers) return;
+            const orgCatScores: Record<string, number[]> = {};
+            (sampleAnswers as any[]).forEach(a => {
+              const cat = questionCatMap[a.question_id];
+              if (cat && a.score) {
+                if (!orgCatScores[cat]) orgCatScores[cat] = [];
+                orgCatScores[cat].push(a.score);
+              }
+            });
+            setMyScores(prev => prev.map(s => ({
+              ...s,
+              orgAvg: orgCatScores[s.category] ? avgArr(orgCatScores[s.category]) : 0,
+            })));
+          });
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
