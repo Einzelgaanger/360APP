@@ -77,6 +77,8 @@ export default function EmployeeHub() {
 
   // Dashboard state
   const [myScores, setMyScores] = useState<CategoryScore[]>([]);
+  const [directionScores, setDirectionScores] = useState<DirectionScores>({ above: [], peer: [], below: [] });
+  const [directionCounts, setDirectionCounts] = useState<{ above: number; peer: number; below: number }>({ above: 0, peer: 0, below: 0 });
   const [totalReviews, setTotalReviews] = useState(0);
   const [dashboardLoading, setDashboardLoading] = useState(true);
 
