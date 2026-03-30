@@ -12,7 +12,7 @@ import VGGHeader from '@/components/VGGHeader';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
   Building2, User, ClipboardList, Send, Loader2, Shield,
-  BarChart3, Trophy, Star, Users, Search, X
+  BarChart3, Trophy, Star, Users, Search, X, ArrowUp, ArrowDown, ArrowLeftRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -369,6 +369,13 @@ export default function EmployeeHub() {
     return counts;
   }, [selectedSubsidiary, allEmployees]);
 
+  // Get the logged-in user's hierarchy level
+  const myHierarchyLevel = useMemo(() => {
+    if (!profile?.employee_id) return 3;
+    const myEmp = allEmployees.find(e => e.id === profile.employee_id);
+    return myEmp?.hierarchy_level ?? 3;
+  }, [profile, allEmployees]);
+
   // Subsidiary employee counts
   const subsidiaryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -387,16 +394,35 @@ export default function EmployeeHub() {
     );
   }, [employees, employeeSearch]);
 
-  // Group employees by department
-  const employeesByDepartment = useMemo(() => {
-    const groups: Record<string, Employee[]> = {};
-    filteredEmployees.forEach(e => {
-      const dept = e.department || 'Unassigned';
-      if (!groups[dept]) groups[dept] = [];
-      groups[dept].push(e);
+  // Group employees into hierarchy pools: Above, Peers, Below
+  const hierarchyPools = useMemo(() => {
+    const above: Employee[] = [];
+    const peers: Employee[] = [];
+    const below: Employee[] = [];
+
+    filteredEmployees.forEach(emp => {
+      if (emp.id === profile?.employee_id) return;
+      const level = emp.hierarchy_level ?? 3;
+      if (level > myHierarchyLevel) above.push(emp);
+      else if (level < myHierarchyLevel) below.push(emp);
+      else peers.push(emp);
     });
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [filteredEmployees]);
+
+    return { above, peers, below };
+  }, [filteredEmployees, myHierarchyLevel, profile]);
+
+  // Pool counts across ALL employees (not just selected subsidiary)
+  const globalPoolCounts = useMemo(() => {
+    let above = 0, peers = 0, below = 0;
+    allEmployees.forEach(emp => {
+      if (emp.id === profile?.employee_id) return;
+      const level = emp.hierarchy_level ?? 3;
+      if (level > myHierarchyLevel) above++;
+      else if (level < myHierarchyLevel) below++;
+      else peers++;
+    });
+    return { above, peers, below, total: above + peers + below };
+  }, [allEmployees, myHierarchyLevel, profile]);
 
   const overallScore = useMemo(() => {
     if (!myScores.length) return 0;
@@ -553,13 +579,20 @@ export default function EmployeeHub() {
                       </div>
                       <h2 className="text-xl font-bold mb-1">Select Person to Review</h2>
                       <p className="text-muted-foreground text-sm">{selectedSubsidiary?.name}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Your level: <span className="font-semibold text-foreground">{HIERARCHY_LABELS[myHierarchyLevel] || `L${myHierarchyLevel}`}</span>
+                      </p>
                     </div>
 
-                    {/* Department badges */}
+                    {/* Pool badges */}
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {Object.entries(departmentCounts).map(([dept, count]) => (
-                        <Badge key={dept} variant="outline" className="text-[10px] gap-1">
-                          {dept} <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-bold">{count}</span>
+                      {[
+                        { label: 'Above You', count: hierarchyPools.above.length, icon: <ArrowUp className="w-3 h-3" />, color: 'text-blue-600 bg-blue-500/10 border-blue-500/30' },
+                        { label: 'Peers', count: hierarchyPools.peers.length, icon: <ArrowLeftRight className="w-3 h-3" />, color: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/30' },
+                        { label: 'Below You', count: hierarchyPools.below.length, icon: <ArrowDown className="w-3 h-3" />, color: 'text-amber-600 bg-amber-500/10 border-amber-500/30' },
+                      ].map(p => (
+                        <Badge key={p.label} variant="outline" className={`text-[10px] gap-1 ${p.color}`}>
+                          {p.icon} {p.label} <span className="font-bold">{p.count}</span>
                         </Badge>
                       ))}
                     </div>
@@ -580,52 +613,72 @@ export default function EmployeeHub() {
                       )}
                     </div>
 
-                    <div className="max-h-[55vh] overflow-y-auto scrollbar-thin pr-1 space-y-4">
-                      {employeesByDepartment.map(([dept, emps]) => (
-                        <div key={dept}>
-                          <div className="flex items-center gap-2 mb-2 sticky top-0 bg-card/95 backdrop-blur-sm py-1 z-10">
-                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{dept}</h3>
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{emps.length}</Badge>
+                    <div className="max-h-[55vh] overflow-y-auto scrollbar-thin pr-1 space-y-5">
+                      {([
+                        { key: 'above' as const, label: 'Above You', sublabel: 'Leadership & Senior Colleagues', icon: <ArrowUp className="w-3.5 h-3.5" />, color: 'text-blue-600', bg: 'bg-blue-500/10', border: 'border-l-blue-500' },
+                        { key: 'peers' as const, label: 'Your Peers', sublabel: 'Same hierarchy level as you', icon: <ArrowLeftRight className="w-3.5 h-3.5" />, color: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-l-emerald-500' },
+                        { key: 'below' as const, label: 'Below You', sublabel: 'Team members & junior colleagues', icon: <ArrowDown className="w-3.5 h-3.5" />, color: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-l-amber-500' },
+                      ] as const).map(pool => {
+                        const poolEmps = hierarchyPools[pool.key];
+                        if (poolEmps.length === 0) return null;
+                        return (
+                          <div key={pool.key} className={`border-l-2 ${pool.border} pl-3`}>
+                            <div className="flex items-center gap-2 mb-2 sticky top-0 bg-card/95 backdrop-blur-sm py-1 z-10">
+                              <span className={`${pool.color} ${pool.bg} w-6 h-6 rounded-md flex items-center justify-center`}>{pool.icon}</span>
+                              <div>
+                                <h3 className="text-xs font-bold">{pool.label}</h3>
+                                <p className="text-[10px] text-muted-foreground">{pool.sublabel}</p>
+                              </div>
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-auto">{poolEmps.length}</Badge>
+                            </div>
+                            <div className="grid gap-1.5">
+                              {poolEmps.map(emp => {
+                                const isCompleted = completedEmployees.has(emp.id);
+                                return (
+                                  <button
+                                    key={emp.id}
+                                    onClick={() => !isCompleted && handleSelectEmployee(emp)}
+                                    disabled={isCompleted}
+                                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 text-left group ${
+                                      isCompleted
+                                        ? 'border-primary/15 bg-primary/[0.03] cursor-not-allowed opacity-60'
+                                        : 'border-border bg-background hover:bg-muted/50 hover:border-primary/30 hover:shadow-sm'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold ${
+                                        isCompleted ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                                      }`}>
+                                        {emp.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                      </div>
+                                      <div>
+                                        <span className={`font-medium text-sm block ${isCompleted ? 'text-muted-foreground line-through' : ''}`}>{emp.name}</span>
+                                        <div className="flex items-center gap-1.5">
+                                          {emp.role && <span className="text-xs text-muted-foreground">{emp.role}</span>}
+                                          {emp.department && <span className="text-[10px] text-muted-foreground/60">• {emp.department}</span>}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {isCompleted ? (
+                                      <div className="flex items-center gap-1.5 text-primary">
+                                        <span className="text-[10px] font-semibold">Reviewed</span>
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1.5">
+                                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 hidden sm:inline-flex">
+                                          {HIERARCHY_LABELS[emp.hierarchy_level ?? 3] || `L${emp.hierarchy_level}`}
+                                        </Badge>
+                                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                          <div className="grid gap-1.5">
-                            {emps.map(emp => {
-                              const isCompleted = completedEmployees.has(emp.id);
-                              return (
-                                <button
-                                  key={emp.id}
-                                  onClick={() => !isCompleted && handleSelectEmployee(emp)}
-                                  disabled={isCompleted}
-                                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 text-left group ${
-                                    isCompleted
-                                      ? 'border-primary/15 bg-primary/[0.03] cursor-not-allowed opacity-60'
-                                      : 'border-border bg-background hover:bg-muted/50 hover:border-primary/30 hover:shadow-sm'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold ${
-                                      isCompleted ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                                    }`}>
-                                      {emp.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                                    </div>
-                                    <div>
-                                      <span className={`font-medium text-sm block ${isCompleted ? 'text-muted-foreground line-through' : ''}`}>{emp.name}</span>
-                                      {emp.role && <span className="text-xs text-muted-foreground">{emp.role}</span>}
-                                    </div>
-                                  </div>
-                                  {isCompleted ? (
-                                    <div className="flex items-center gap-1.5 text-primary">
-                                      <span className="text-[10px] font-semibold">Reviewed</span>
-                                      <CheckCircle2 className="w-3.5 h-3.5" />
-                                    </div>
-                                  ) : (
-                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {filteredEmployees.length === 0 && (
                         <div className="text-center py-8 text-muted-foreground text-sm">
                           No employees match your search.
@@ -788,6 +841,36 @@ export default function EmployeeHub() {
                 </div>
               ) : (
                 <div className="space-y-6">
+                  {/* Your Level & Pool Summary */}
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Users className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold">Your Appraisal Pool</h3>
+                          <p className="text-[10px] text-muted-foreground">Level: {HIERARCHY_LABELS[myHierarchyLevel] || `L${myHierarchyLevel}`} — {globalPoolCounts.total} people can review you</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'Above You', count: globalPoolCounts.above, icon: <ArrowUp className="w-3.5 h-3.5" />, color: 'text-blue-600 bg-blue-500/10' },
+                        { label: 'Your Peers', count: globalPoolCounts.peers, icon: <ArrowLeftRight className="w-3.5 h-3.5" />, color: 'text-emerald-600 bg-emerald-500/10' },
+                        { label: 'Below You', count: globalPoolCounts.below, icon: <ArrowDown className="w-3.5 h-3.5" />, color: 'text-amber-600 bg-amber-500/10' },
+                      ].map(p => (
+                        <div key={p.label} className="flex items-center gap-2 p-2.5 rounded-xl bg-muted/40">
+                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${p.color}`}>{p.icon}</span>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">{p.label}</p>
+                            <p className="text-sm font-bold">{p.count}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+
                   {/* Stats row */}
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
