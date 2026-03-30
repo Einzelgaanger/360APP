@@ -12,7 +12,7 @@ import VGGHeader from '@/components/VGGHeader';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
   Building2, User, ClipboardList, Send, Loader2, Shield,
-  BarChart3, Trophy, Star, Users, Search, X
+  BarChart3, Trophy, Star, Users, Search, X, ArrowUp, ArrowDown, ArrowLeftRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
