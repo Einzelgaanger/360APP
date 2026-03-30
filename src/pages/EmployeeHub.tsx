@@ -283,12 +283,24 @@ export default function EmployeeHub() {
   const progress = totalScoredQuestions > 0 ? (answeredScoredQuestions / totalScoredQuestions) * 100 : 0;
 
   const handleSubmit = async () => {
-    if (!selectedEmployee || !selectedSubsidiary) return;
+    if (!selectedEmployee || !selectedSubsidiary || !user) return;
     setSubmitting(true);
     try {
+      // Get reviewer's hierarchy level from their profile's employee record
+      const reviewerEmp = allEmployees.find(e => e.id === profile?.employee_id);
+      const reviewerLevel = reviewerEmp?.hierarchy_level ?? 3;
+      const revieweeLevel = selectedEmployee.hierarchy_level ?? 3;
+      const direction = getFeedbackDirection(reviewerLevel, revieweeLevel);
+
       const { data: responseData, error: responseError } = await supabase
         .from('survey_responses')
-        .insert({ employee_id: selectedEmployee.id, subsidiary_id: selectedSubsidiary.id })
+        .insert({
+          employee_id: selectedEmployee.id,
+          subsidiary_id: selectedSubsidiary.id,
+          reviewer_hierarchy_level: reviewerLevel,
+          reviewee_hierarchy_level: revieweeLevel,
+          feedback_direction: direction,
+        })
         .select('id')
         .single();
       if (responseError) throw responseError;
