@@ -310,6 +310,7 @@ export type Database = {
           created_at: string | null
           department: string | null
           email: string | null
+          hierarchy_level: number | null
           id: string
           name: string
           role: string | null
@@ -320,6 +321,7 @@ export type Database = {
           created_at?: string | null
           department?: string | null
           email?: string | null
+          hierarchy_level?: number | null
           id?: string
           name: string
           role?: string | null
@@ -330,6 +332,7 @@ export type Database = {
           created_at?: string | null
           department?: string | null
           email?: string | null
+          hierarchy_level?: number | null
           id?: string
           name?: string
           role?: string | null
@@ -590,19 +593,28 @@ export type Database = {
         Row: {
           created_at: string | null
           employee_id: string
+          feedback_direction: string | null
           id: string
+          reviewee_hierarchy_level: number | null
+          reviewer_hierarchy_level: number | null
           subsidiary_id: string
         }
         Insert: {
           created_at?: string | null
           employee_id: string
+          feedback_direction?: string | null
           id?: string
+          reviewee_hierarchy_level?: number | null
+          reviewer_hierarchy_level?: number | null
           subsidiary_id: string
         }
         Update: {
           created_at?: string | null
           employee_id?: string
+          feedback_direction?: string | null
           id?: string
+          reviewee_hierarchy_level?: number | null
+          reviewer_hierarchy_level?: number | null
           subsidiary_id?: string
         }
         Relationships: [
