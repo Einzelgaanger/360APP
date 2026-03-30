@@ -5,9 +5,7 @@ import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import VGGHeader from '@/components/VGGHeader';
 import { Button } from '@/components/ui/button';
-import {
-  Trophy, Medal, Award, ArrowLeft, Loader2, Star, Users,
-} from 'lucide-react';
+import { Trophy, Medal, Award, ArrowLeft, Loader2, Star, Users } from 'lucide-react';
 
 interface RankedEmployee {
   employee_id: string;
@@ -23,51 +21,66 @@ export default function WallOfFame() {
   const [rankings, setRankings] = useState<RankedEmployee[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadRankings();
-  }, []);
+  useEffect(() => { loadRankings(); }, []);
 
   const loadRankings = async () => {
     try {
-      // Get all employees with subsidiary names
-      const { data: employees } = await supabase
-        .from('employees')
-        .select('id, name, subsidiaries(name)');
+      // Fetch employees, subsidiaries, and responses separately to avoid heavy nested joins
+      const [empsRes, subsRes, responsesRes] = await Promise.all([
+        supabase.from('employees').select('id, name, subsidiary_id'),
+        supabase.from('subsidiaries').select('id, name'),
+        supabase.from('survey_responses').select('id, employee_id'),
+      ]);
 
-      if (!employees) return;
+      if (!empsRes.data || !responsesRes.data || !subsRes.data) return;
 
-      // Get all survey responses with answers
-      const { data: responses } = await supabase
-        .from('survey_responses')
-        .select('employee_id, survey_answers(score)');
+      const subMap: Record<string, string> = {};
+      subsRes.data.forEach((s: any) => { subMap[s.id] = s.name; });
 
-      if (!responses) return;
+      const empResponseIds: Record<string, string[]> = {};
+      responsesRes.data.forEach((r: any) => {
+        if (!empResponseIds[r.employee_id]) empResponseIds[r.employee_id] = [];
+        empResponseIds[r.employee_id].push(r.id);
+      });
 
-      // Aggregate scores per employee
+      const allResponseIds = responsesRes.data.map((r: any) => r.id);
+
+      // Batch fetch scores
+      const batchSize = 500;
+      let allScores: any[] = [];
+      for (let i = 0; i < allResponseIds.length; i += batchSize) {
+        const batch = allResponseIds.slice(i, i + batchSize);
+        const { data } = await supabase
+          .from('survey_answers')
+          .select('response_id, score')
+          .in('response_id', batch)
+          .not('score', 'is', null);
+        if (data) allScores = allScores.concat(data);
+      }
+
+      const responseScoreMap: Record<string, number[]> = {};
+      allScores.forEach((a: any) => {
+        if (!responseScoreMap[a.response_id]) responseScoreMap[a.response_id] = [];
+        responseScoreMap[a.response_id].push(a.score);
+      });
+
       const scoreMap: Record<string, { scores: number[]; count: number }> = {};
-      responses.forEach((r: any) => {
-        if (!scoreMap[r.employee_id]) scoreMap[r.employee_id] = { scores: [], count: 0 };
-        scoreMap[r.employee_id].count++;
-        r.survey_answers?.forEach((a: any) => {
-          if (a.score) scoreMap[r.employee_id].scores.push(a.score);
+      Object.entries(empResponseIds).forEach(([empId, rIds]) => {
+        scoreMap[empId] = { scores: [], count: rIds.length };
+        rIds.forEach(rId => {
+          if (responseScoreMap[rId]) scoreMap[empId].scores.push(...responseScoreMap[rId]);
         });
       });
 
-      // Build rankings
-      const ranked: RankedEmployee[] = employees
+      const ranked: RankedEmployee[] = empsRes.data
         .filter((e: any) => scoreMap[e.id]?.scores.length > 0)
-        .map((e: any) => {
-          const data = scoreMap[e.id];
-          return {
-            employee_id: e.id,
-            name: e.name,
-            subsidiary: e.subsidiaries?.name || 'Unknown',
-            avgScore: parseFloat(
-              (data.scores.reduce((a, b) => a + b, 0) / data.scores.length).toFixed(2)
-            ),
-            totalReviews: data.count,
-          };
-        })
+        .map((e: any) => ({
+          employee_id: e.id,
+          name: e.name,
+          subsidiary: subMap[e.subsidiary_id] || 'Unknown',
+          avgScore: parseFloat((scoreMap[e.id].scores.reduce((a: number, b: number) => a + b, 0) / scoreMap[e.id].scores.length).toFixed(2)),
+          totalReviews: scoreMap[e.id].count,
+        }))
         .sort((a, b) => b.avgScore - a.avgScore);
 
       setRankings(ranked);
@@ -78,10 +91,7 @@ export default function WallOfFame() {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
+  const handleLogout = async () => { await logout(); navigate('/'); };
 
   const getRankIcon = (rank: number) => {
     if (rank === 0) return <Trophy className="w-5 h-5 text-warning" />;
@@ -106,23 +116,15 @@ export default function WallOfFame() {
         maxWidth="max-w-3xl"
         actions={
           <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
-            <Link to="/my-dashboard">
-              <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
-            </Link>
+            <Link to="/my-dashboard"><ArrowLeft className="w-3.5 h-3.5" /> Dashboard</Link>
           </Button>
         }
       />
 
       <main className="max-w-3xl mx-auto px-4 py-6">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="text-2xl font-bold font-serif mb-2">Performance Rankings</h1>
-          <p className="text-muted-foreground text-sm">
-            Top performers based on peer review scores across all competencies.
-          </p>
+          <p className="text-muted-foreground text-sm">Top performers based on peer review scores across all competencies.</p>
         </motion.div>
 
         {/* Top 3 podium */}
@@ -140,9 +142,7 @@ export default function WallOfFame() {
                   className={`glass-panel p-5 text-center ${isFirst ? 'sm:-mt-4 border-primary/30 bg-primary/5' : ''}`}
                 >
                   <div className="mb-3">{getRankIcon(idx)}</div>
-                  <div className={`w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center ${
-                    isFirst ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                  }`}>
+                  <div className={`w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center ${isFirst ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                     <span className="font-bold text-sm">{person.name.split(' ').map(n => n[0]).join('')}</span>
                   </div>
                   <p className="text-sm font-semibold truncate">{person.name}</p>
@@ -170,16 +170,12 @@ export default function WallOfFame() {
                 key={person.employee_id}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.05 * i }}
+                transition={{ delay: 0.05 * Math.min(i, 20) }}
                 className={`flex items-center gap-4 px-5 py-3.5 ${isMe ? 'bg-primary/5' : ''}`}
               >
-                <div className="w-8 flex-shrink-0 text-center">
-                  {getRankIcon(i)}
-                </div>
+                <div className="w-8 flex-shrink-0 text-center">{getRankIcon(i)}</div>
                 <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    {person.name.split(' ').map(n => n[0]).join('')}
-                  </span>
+                  <span className="text-xs font-semibold text-muted-foreground">{person.name.split(' ').map(n => n[0]).join('')}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
@@ -202,9 +198,7 @@ export default function WallOfFame() {
             <div className="p-12 text-center">
               <Trophy className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-lg font-semibold mb-2">No Rankings Yet</h2>
-              <p className="text-muted-foreground text-sm">
-                Rankings will appear once reviews are submitted.
-              </p>
+              <p className="text-muted-foreground text-sm">Rankings will appear once reviews are submitted.</p>
             </div>
           )}
         </div>
