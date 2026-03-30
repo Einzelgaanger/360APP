@@ -841,6 +841,36 @@ export default function EmployeeHub() {
                 </div>
               ) : (
                 <div className="space-y-6">
+                  {/* Your Level & Pool Summary */}
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Users className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold">Your Appraisal Pool</h3>
+                          <p className="text-[10px] text-muted-foreground">Level: {HIERARCHY_LABELS[myHierarchyLevel] || `L${myHierarchyLevel}`} — {globalPoolCounts.total} people can review you</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'Above You', count: globalPoolCounts.above, icon: <ArrowUp className="w-3.5 h-3.5" />, color: 'text-blue-600 bg-blue-500/10' },
+                        { label: 'Your Peers', count: globalPoolCounts.peers, icon: <ArrowLeftRight className="w-3.5 h-3.5" />, color: 'text-emerald-600 bg-emerald-500/10' },
+                        { label: 'Below You', count: globalPoolCounts.below, icon: <ArrowDown className="w-3.5 h-3.5" />, color: 'text-amber-600 bg-amber-500/10' },
+                      ].map(p => (
+                        <div key={p.label} className="flex items-center gap-2 p-2.5 rounded-xl bg-muted/40">
+                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${p.color}`}>{p.icon}</span>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">{p.label}</p>
+                            <p className="text-sm font-bold">{p.count}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+
                   {/* Stats row */}
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
