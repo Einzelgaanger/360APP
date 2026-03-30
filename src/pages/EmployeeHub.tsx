@@ -21,10 +21,22 @@ import {
 } from 'recharts';
 
 interface Subsidiary { id: string; name: string; }
-interface Employee { id: string; name: string; role: string | null; department: string | null; subsidiary_id: string; email: string | null; }
+interface Employee { id: string; name: string; role: string | null; department: string | null; subsidiary_id: string; email: string | null; hierarchy_level: number | null; }
 interface Category { id: string; name: string; sort_order: number; }
 interface Question { id: string; category_id: string; question_text: string; question_type: string; sort_order: number; }
 interface CategoryScore { category: string; myScore: number; orgAvg: number; }
+interface DirectionScores { above: CategoryScore[]; peer: CategoryScore[]; below: CategoryScore[]; }
+
+const HIERARCHY_LABELS: Record<number, string> = {
+  0: 'Intern', 1: 'Junior', 2: 'Analyst', 3: 'Associate', 4: 'Senior Associate',
+  5: 'Manager', 6: 'Principal/Head', 7: 'C-Suite', 8: 'Partner',
+};
+
+function getFeedbackDirection(reviewerLevel: number, revieweeLevel: number): string {
+  if (reviewerLevel > revieweeLevel) return 'above';
+  if (reviewerLevel < revieweeLevel) return 'below';
+  return 'peer';
+}
 interface RankedEmployee { employee_id: string; name: string; subsidiary: string; avgScore: number; totalReviews: number; }
 
 const SCALE_OPTIONS = [
