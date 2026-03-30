@@ -147,14 +147,27 @@ export default function EmployeeHub() {
     try {
       const { data: myResponses } = await supabase
         .from('survey_responses')
-        .select('id')
+        .select('id, feedback_direction')
         .eq('employee_id', profile.employee_id);
 
       if (myResponses?.length) {
         const responseIds = myResponses.map(r => r.id);
+
+        // Build direction map: response_id -> feedback_direction
+        const directionMap: Record<string, string> = {};
+        myResponses.forEach(r => { directionMap[r.id] = r.feedback_direction || 'peer'; });
+
+        // Count reviews by direction
+        const counts = { above: 0, peer: 0, below: 0 };
+        myResponses.forEach(r => {
+          const dir = (r.feedback_direction || 'peer') as keyof typeof counts;
+          if (counts[dir] !== undefined) counts[dir]++;
+        });
+        setDirectionCounts(counts);
+
         const { data: myAnswers } = await supabase
           .from('survey_answers')
-          .select('score, survey_questions(question_text, survey_categories(name))')
+          .select('score, response_id, survey_questions(question_text, survey_categories(name))')
           .in('response_id', responseIds)
           .not('score', 'is', null);
 
@@ -163,14 +176,21 @@ export default function EmployeeHub() {
           .select('score, survey_questions(survey_categories(name))')
           .not('score', 'is', null);
 
+        // Overall scores
         const myCatScores: Record<string, number[]> = {};
         const orgCatScores: Record<string, number[]> = {};
+        // Direction-segmented scores
+        const dirCatScores: Record<string, Record<string, number[]>> = { above: {}, peer: {}, below: {} };
 
         (myAnswers as any[])?.forEach(a => {
           const cat = a.survey_questions?.survey_categories?.name;
           if (cat && a.score) {
             if (!myCatScores[cat]) myCatScores[cat] = [];
             myCatScores[cat].push(a.score);
+
+            const dir = directionMap[a.response_id] || 'peer';
+            if (!dirCatScores[dir][cat]) dirCatScores[dir][cat] = [];
+            dirCatScores[dir][cat].push(a.score);
           }
         });
 
@@ -183,13 +203,28 @@ export default function EmployeeHub() {
         });
 
         const cats = Object.keys(myCatScores);
+        const avgArr = (arr: number[]) => arr.length ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2)) : 0;
+
         setMyScores(cats.map(cat => ({
           category: cat,
-          myScore: parseFloat((myCatScores[cat].reduce((a, b) => a + b, 0) / myCatScores[cat].length).toFixed(2)),
-          orgAvg: orgCatScores[cat]
-            ? parseFloat((orgCatScores[cat].reduce((a, b) => a + b, 0) / orgCatScores[cat].length).toFixed(2))
-            : 0,
+          myScore: avgArr(myCatScores[cat]),
+          orgAvg: orgCatScores[cat] ? avgArr(orgCatScores[cat]) : 0,
         })));
+
+        // Build direction scores
+        const buildDirScores = (dir: string): CategoryScore[] =>
+          cats.map(cat => ({
+            category: cat,
+            myScore: dirCatScores[dir][cat] ? avgArr(dirCatScores[dir][cat]) : 0,
+            orgAvg: orgCatScores[cat] ? avgArr(orgCatScores[cat]) : 0,
+          })).filter(s => s.myScore > 0);
+
+        setDirectionScores({
+          above: buildDirScores('above'),
+          peer: buildDirScores('peer'),
+          below: buildDirScores('below'),
+        });
+
         setTotalReviews(myResponses.length);
       }
     } catch (err) {
