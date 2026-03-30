@@ -6,7 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, Mail, AlertCircle, ShieldCheck } from 'lucide-react';
+import { AuthHeroPanel } from '@/components/auth/AuthHeroPanel';
+import { Lock, Mail, AlertCircle } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function Login() {
@@ -33,20 +34,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Left decorative panel */}
-      <div className="hidden lg:flex lg:w-[45%] bg-primary relative overflow-hidden items-center justify-center p-12">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:3rem_3rem]" />
-        <div className="relative z-10 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <ShieldCheck className="w-16 h-16 text-white/90 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">Admin Console</h2>
-            <p className="text-white/70 text-sm leading-relaxed max-w-sm">
-              Access the analytics dashboard, manage appraisal data, and generate performance insights across the organisation.
-            </p>
-          </motion.div>
-        </div>
-      </div>
+    <div className="app-page flex">
+      <AuthHeroPanel
+        eyebrow="Administrator"
+        title="Performance insights, one secure console"
+        description="Access analytics dashboards, manage appraisal data, and generate evidence-led insights across the organisation."
+      />
 
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center relative p-6">

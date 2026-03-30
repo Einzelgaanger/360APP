@@ -37,7 +37,7 @@ export default function Onboarding() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col overflow-hidden relative">
+    <div className="app-page flex flex-col overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-primary/[0.04] blur-3xl" />
@@ -61,72 +61,60 @@ export default function Onboarding() {
         </div>
       </header>
 
-      {/* Progress bar */}
-      <div className="relative z-10 px-6 sm:px-10">
-        <div className="max-w-2xl mx-auto flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="h-1 flex-1 rounded-full overflow-hidden bg-muted"
+      {/* Progress — segments are clickable to jump between steps */}
+      <div className="relative z-10 px-6 sm:px-10" role="navigation" aria-label="Onboarding progress">
+        <div className="mx-auto flex max-w-2xl gap-2">
+          {(['Welcome', 'How it works', 'Get started'] as const).map((label, i) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => setSlide(i)}
+              className="h-1 min-h-[6px] flex-1 overflow-hidden rounded-full bg-muted text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label={`Go to ${label}`}
+              aria-current={i === slide ? 'step' : undefined}
             >
               <motion.div
                 initial={false}
                 animate={{ width: i <= slide ? '100%' : '0%' }}
                 transition={{ duration: 1.05, ease: TRANSITION_EASE }}
-                className="h-full bg-primary rounded-full"
+                className="h-full rounded-full bg-primary"
               />
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Slide content */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-6 pb-24 pt-8">
-        <AnimatePresence mode="wait">
-          {slide === 0 && <SlideWelcome key="welcome" onComplete={handleAutoAdvance} />}
-          {slide === 1 && <SlideHowItWorks key="how" onComplete={handleAutoAdvance} />}
-          {slide === 2 && <SlideGetStarted key="start" navigate={navigate} />}
-        </AnimatePresence>
-      </div>
-
-      {/* Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 py-6 flex items-center justify-center gap-4 bg-background">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={prev}
-          disabled={slide === 0}
-          className="rounded-full h-10 w-10 p-0"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-
-        <div className="flex gap-2.5 items-center">
-          {['Welcome', 'How it works', 'Get started'].map((label, i) => (
-            <button
-              key={i}
-              onClick={() => setSlide(i)}
-              className="flex items-center gap-1.5 group"
-            >
-              <div className={`h-2.5 rounded-full transition-all duration-300 ${
-                i === slide
-                  ? 'w-8 bg-primary'
-                  : i < slide
-                  ? 'w-2.5 bg-primary/40'
-                  : 'w-2.5 bg-muted-foreground/20 group-hover:bg-muted-foreground/40'
-              }`} />
             </button>
           ))}
         </div>
+      </div>
 
+      {/* Slides with prev/next on left & right of the screen */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <Button
+          type="button"
           variant="outline"
-          size="sm"
-          onClick={slide === 2 ? () => navigate('/login') : next}
-          className="rounded-full h-10 w-10 p-0"
+          size="icon"
+          onClick={prev}
+          disabled={slide === 0}
+          className="absolute left-2 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full shadow-sm sm:left-4"
+          aria-label="Previous step"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronLeft className="h-4 w-4" aria-hidden />
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={slide === 2 ? () => navigate('/login') : next}
+          className="absolute right-2 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full shadow-sm sm:right-4"
+          aria-label={slide === 2 ? 'Continue to sign in' : 'Next step'}
+        >
+          <ChevronRight className="h-4 w-4" aria-hidden />
+        </Button>
+
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-14 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6 sm:px-20">
+          <AnimatePresence mode="wait">
+            {slide === 0 && <SlideWelcome key="welcome" onComplete={handleAutoAdvance} />}
+            {slide === 1 && <SlideHowItWorks key="how" onComplete={handleAutoAdvance} />}
+            {slide === 2 && <SlideGetStarted key="start" navigate={navigate} />}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

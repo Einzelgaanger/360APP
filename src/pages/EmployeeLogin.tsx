@@ -6,7 +6,8 @@ import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, Mail, AlertCircle, ArrowLeft, Users } from 'lucide-react';
+import { AuthHeroPanel } from '@/components/auth/AuthHeroPanel';
+import { Lock, Mail, AlertCircle, ArrowLeft } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function EmployeeLogin() {
@@ -33,27 +34,23 @@ export default function EmployeeLogin() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Left decorative panel */}
-      <div className="hidden lg:flex lg:w-[45%] bg-primary relative overflow-hidden items-center justify-center p-12">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:3rem_3rem]" />
-        <div className="relative z-10 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Users className="w-16 h-16 text-white/90 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-white mb-3 font-serif">Welcome Back</h2>
-            <p className="text-white/70 text-sm leading-relaxed max-w-sm">
-              Sign in to provide anonymous peer feedback, view your personal dashboard, and see how you rank against your colleagues.
-            </p>
-            <div className="flex gap-3 justify-center mt-8">
-              {['Anonymous', 'Confidential', 'Secure'].map((label) => (
-                <span key={label} className="px-3 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-medium backdrop-blur-sm border border-white/10">
-                  {label}
-                </span>
-              ))}
-            </div>
-          </motion.div>
+    <div className="app-page flex">
+      <AuthHeroPanel
+        eyebrow="Employee sign in"
+        title="Welcome back"
+        description="Provide anonymous peer feedback, view your personal dashboard, and track your development alongside colleagues."
+      >
+        <div className="mt-8 flex flex-wrap gap-2">
+          {['Anonymous', 'Confidential', 'Secure'].map((label) => (
+            <span
+              key={label}
+              className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-sm"
+            >
+              {label}
+            </span>
+          ))}
         </div>
-      </div>
+      </AuthHeroPanel>
 
       {/* Right form panel */}
       <div className="flex-1 flex items-center justify-center relative p-6">

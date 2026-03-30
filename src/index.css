@@ -7,7 +7,7 @@
 @layer base {
   :root {
     /* VGG Branding — Green & Blue, Formal Corporate */
-    --background: 0 0% 100%;
+    --background: 150 24% 98%;
     --foreground: 160 25% 12%;
 
     --card: 0 0% 100%;
@@ -81,6 +81,48 @@
     @apply bg-background text-foreground antialiased leading-relaxed;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     letter-spacing: -0.008em;
+    position: relative;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(circle at 12% 16%, hsl(var(--primary) / 0.08) 0, transparent 34%),
+      radial-gradient(circle at 84% 11%, hsl(var(--accent) / 0.07) 0, transparent 28%),
+      radial-gradient(circle at 78% 84%, hsl(var(--primary) / 0.06) 0, transparent 30%),
+      linear-gradient(160deg, hsl(var(--background)) 0%, hsl(150 23% 99%) 52%, hsl(210 26% 98%) 100%);
+    background-attachment: fixed;
+  }
+
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    inset: auto;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  body::before {
+    width: 34rem;
+    height: 34rem;
+    top: -12rem;
+    right: -10rem;
+    border-radius: 9999px;
+    background:
+      radial-gradient(circle at 30% 30%, hsl(var(--accent) / 0.17) 0, hsl(var(--accent) / 0.06) 42%, transparent 72%);
+    filter: blur(40px);
+    animation: float-orb-a 18s ease-in-out infinite;
+  }
+
+  body::after {
+    width: 30rem;
+    height: 30rem;
+    bottom: -12rem;
+    left: -9rem;
+    border-radius: 9999px;
+    background:
+      radial-gradient(circle at 65% 35%, hsl(var(--primary) / 0.2) 0, hsl(var(--primary) / 0.08) 40%, transparent 72%);
+    filter: blur(44px);
+    animation: float-orb-b 22s ease-in-out infinite;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -111,6 +153,48 @@
 }
 
 @layer components {
+  .app-page {
+    @apply min-h-screen relative overflow-hidden;
+    background-image:
+      radial-gradient(circle at 8% 12%, hsl(var(--primary) / 0.14) 0, transparent 30%),
+      radial-gradient(circle at 88% 10%, hsl(var(--accent) / 0.12) 0, transparent 26%),
+      linear-gradient(160deg, hsl(var(--background) / 0.95) 0%, hsl(150 20% 98% / 0.94) 50%, hsl(210 24% 98% / 0.94) 100%);
+  }
+
+  .app-page::before,
+  .app-page::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    border-radius: 9999px;
+    z-index: 0;
+  }
+
+  .app-page::before {
+    width: 30rem;
+    height: 30rem;
+    top: -9rem;
+    right: -9rem;
+    background: radial-gradient(circle at 35% 35%, hsl(var(--accent) / 0.2) 0, hsl(var(--accent) / 0.07) 42%, transparent 72%);
+    filter: blur(32px);
+    animation: float-orb-a 18s ease-in-out infinite;
+  }
+
+  .app-page::after {
+    width: 26rem;
+    height: 26rem;
+    bottom: -9rem;
+    left: -8rem;
+    background: radial-gradient(circle at 60% 40%, hsl(var(--primary) / 0.22) 0, hsl(var(--primary) / 0.08) 44%, transparent 74%);
+    filter: blur(30px);
+    animation: float-orb-b 22s ease-in-out infinite;
+  }
+
+  .app-page > * {
+    position: relative;
+    z-index: 1;
+  }
+
   .glass-panel {
     @apply bg-card/[0.88] backdrop-blur-xl border border-border/70 rounded-2xl shadow-lg shadow-black/[0.04];
   }
@@ -198,5 +282,23 @@
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground));
+  }
+}
+
+@keyframes float-orb-a {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-26px, 18px, 0) scale(1.05);
+  }
+}
+
+@keyframes float-orb-b {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(22px, -14px, 0) scale(1.04);
   }
 }
