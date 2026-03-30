@@ -21,6 +21,16 @@ interface EmployeeResult {
   subsidiaries: { name: string } | null;
 }
 
+const normalizeSearchText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const compactSearchText = (value: string) => value.replace(/[^a-z0-9]/g, '');
+
 export default function FindAccount() {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<EmployeeResult[]>([]);
@@ -30,10 +40,27 @@ export default function FindAccount() {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [employeeIndex, setEmployeeIndex] = useState<EmployeeResult[] | null>(null);
   const { resetPassword } = useEmployeeAuth();
   const navigate = useNavigate();
 
-  // Debounced live search
+  const fetchEmployeeIndex = useCallback(async () => {
+    if (employeeIndex) return employeeIndex;
+
+    const { data, error: err } = await supabase
+      .from('employees')
+      .select('id, name, role, email, department, subsidiaries(name)')
+      .order('name')
+      .limit(1000);
+
+    if (err) throw err;
+
+    const records = (data as unknown as EmployeeResult[]) || [];
+    setEmployeeIndex(records);
+    return records;
+  }, [employeeIndex]);
+
+  // Debounced live search over full employee index
   useEffect(() => {
     const query = searchQuery.trim();
     if (query.length < 2) {
@@ -47,25 +74,40 @@ export default function FindAccount() {
       setSearching(true);
       setError('');
       try {
-        // Search by name OR email using or() filter
-        const { data, error: err } = await supabase
-          .from('employees')
-          .select('id, name, role, email, department, subsidiaries(name)')
-          .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
-          .order('name')
-          .limit(15);
-        if (err) throw err;
-        setResults((data as unknown as EmployeeResult[]) || []);
+        const employees = await fetchEmployeeIndex();
+        const normalizedQuery = normalizeSearchText(query);
+        const compactQuery = compactSearchText(normalizedQuery);
+        const tokens = normalizedQuery.split(' ').filter(Boolean);
+
+        if (!tokens.length && compactQuery.length < 2) {
+          setResults([]);
+          setHasSearched(true);
+          return;
+        }
+
+        const filtered = employees
+          .filter((employee) => {
+            const searchable = normalizeSearchText(`${employee.name} ${employee.email ?? ''}`);
+            const compactSearchable = compactSearchText(searchable);
+
+            const tokenMatch = tokens.every((token) => searchable.includes(token));
+            const compactMatch = compactQuery.length >= 2 && compactSearchable.includes(compactQuery);
+
+            return tokenMatch || compactMatch;
+          })
+          .slice(0, 150);
+
+        setResults(filtered);
         setHasSearched(true);
       } catch {
         setError('Search failed. Please try again.');
       } finally {
         setSearching(false);
       }
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(timeout);
-  }, [searchQuery]);
+  }, [searchQuery, fetchEmployeeIndex]);
 
   const handleSendReset = async (employee: EmployeeResult) => {
     if (!employee.email) {
@@ -90,11 +132,16 @@ export default function FindAccount() {
   const highlightMatch = (text: string) => {
     const query = searchQuery.trim();
     if (!query || query.length < 2) return text;
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
     const parts = text.split(regex);
-    return parts.map((part, i) =>
-      regex.test(part) ? <mark key={i} className="bg-primary/20 text-primary font-semibold rounded-sm px-0.5">{part}</mark> : part
-    );
+    const loweredQuery = query.toLowerCase();
+
+    return parts.map((part, i) => (
+      part.toLowerCase() === loweredQuery
+        ? <mark key={i} className="bg-primary/20 text-primary font-semibold rounded-sm px-0.5">{part}</mark>
+        : part
+    ));
   };
 
   if (sent) {
