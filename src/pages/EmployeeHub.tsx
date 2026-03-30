@@ -369,34 +369,43 @@ export default function EmployeeHub() {
     return counts;
   }, [selectedSubsidiary, allEmployees]);
 
-  // Subsidiary employee counts
-  const subsidiaryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    allEmployees.forEach(e => { counts[e.subsidiary_id] = (counts[e.subsidiary_id] || 0) + 1; });
-    return counts;
-  }, [allEmployees]);
+  // Get the logged-in user's hierarchy level
+  const myHierarchyLevel = useMemo(() => {
+    if (!profile?.employee_id) return 3;
+    const myEmp = allEmployees.find(e => e.id === profile.employee_id);
+    return myEmp?.hierarchy_level ?? 3;
+  }, [profile, allEmployees]);
 
-  // Filter employees by search
-  const filteredEmployees = useMemo(() => {
-    if (!employeeSearch.trim()) return employees;
-    const q = employeeSearch.toLowerCase();
-    return employees.filter(e =>
-      e.name.toLowerCase().includes(q) ||
-      (e.email && e.email.toLowerCase().includes(q)) ||
-      (e.department && e.department.toLowerCase().includes(q))
-    );
-  }, [employees, employeeSearch]);
+  // Group employees into hierarchy pools: Above, Peers, Below
+  const hierarchyPools = useMemo(() => {
+    const above: Employee[] = [];
+    const peers: Employee[] = [];
+    const below: Employee[] = [];
 
-  // Group employees by department
-  const employeesByDepartment = useMemo(() => {
-    const groups: Record<string, Employee[]> = {};
-    filteredEmployees.forEach(e => {
-      const dept = e.department || 'Unassigned';
-      if (!groups[dept]) groups[dept] = [];
-      groups[dept].push(e);
+    filteredEmployees.forEach(emp => {
+      // Don't show the logged-in user in the list
+      if (emp.id === profile?.employee_id) return;
+      const level = emp.hierarchy_level ?? 3;
+      if (level > myHierarchyLevel) above.push(emp);
+      else if (level < myHierarchyLevel) below.push(emp);
+      else peers.push(emp);
     });
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [filteredEmployees]);
+
+    return { above, peers, below };
+  }, [filteredEmployees, myHierarchyLevel, profile]);
+
+  // Pool counts across ALL employees (not just selected subsidiary)
+  const globalPoolCounts = useMemo(() => {
+    let above = 0, peers = 0, below = 0;
+    allEmployees.forEach(emp => {
+      if (emp.id === profile?.employee_id) return;
+      const level = emp.hierarchy_level ?? 3;
+      if (level > myHierarchyLevel) above++;
+      else if (level < myHierarchyLevel) below++;
+      else peers++;
+    });
+    return { above, peers, below, total: above + peers + below };
+  }, [allEmployees, myHierarchyLevel, profile]);
 
   const overallScore = useMemo(() => {
     if (!myScores.length) return 0;
