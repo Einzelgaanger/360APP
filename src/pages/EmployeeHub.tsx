@@ -376,6 +376,24 @@ export default function EmployeeHub() {
     return myEmp?.hierarchy_level ?? 3;
   }, [profile, allEmployees]);
 
+  // Subsidiary employee counts
+  const subsidiaryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    allEmployees.forEach(e => { counts[e.subsidiary_id] = (counts[e.subsidiary_id] || 0) + 1; });
+    return counts;
+  }, [allEmployees]);
+
+  // Filter employees by search
+  const filteredEmployees = useMemo(() => {
+    if (!employeeSearch.trim()) return employees;
+    const q = employeeSearch.toLowerCase();
+    return employees.filter(e =>
+      e.name.toLowerCase().includes(q) ||
+      (e.email && e.email.toLowerCase().includes(q)) ||
+      (e.department && e.department.toLowerCase().includes(q))
+    );
+  }, [employees, employeeSearch]);
+
   // Group employees into hierarchy pools: Above, Peers, Below
   const hierarchyPools = useMemo(() => {
     const above: Employee[] = [];
@@ -383,7 +401,6 @@ export default function EmployeeHub() {
     const below: Employee[] = [];
 
     filteredEmployees.forEach(emp => {
-      // Don't show the logged-in user in the list
       if (emp.id === profile?.employee_id) return;
       const level = emp.hierarchy_level ?? 3;
       if (level > myHierarchyLevel) above.push(emp);
