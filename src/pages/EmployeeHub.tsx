@@ -153,11 +153,10 @@ export default function EmployeeHub() {
       if (myResponses?.length) {
         const responseIds = myResponses.map(r => r.id);
 
-        // Build direction map: response_id -> feedback_direction
+        // Build direction map
         const directionMap: Record<string, string> = {};
         myResponses.forEach(r => { directionMap[r.id] = r.feedback_direction || 'peer'; });
 
-        // Count reviews by direction
         const counts = { above: 0, peer: 0, below: 0 };
         myResponses.forEach(r => {
           const dir = (r.feedback_direction || 'peer') as keyof typeof counts;
@@ -165,58 +164,64 @@ export default function EmployeeHub() {
         });
         setDirectionCounts(counts);
 
-        const { data: myAnswers } = await supabase
-          .from('survey_answers')
-          .select('score, response_id, survey_questions(question_text, survey_categories(name))')
-          .in('response_id', responseIds)
-          .not('score', 'is', null);
+        // Fetch only MY answers (not all org answers) - batch if needed
+        const batchSize = 200;
+        let allMyAnswers: any[] = [];
+        for (let i = 0; i < responseIds.length; i += batchSize) {
+          const batch = responseIds.slice(i, i + batchSize);
+          const { data } = await supabase
+            .from('survey_answers')
+            .select('score, response_id, question_id')
+            .in('response_id', batch)
+            .not('score', 'is', null);
+          if (data) allMyAnswers = allMyAnswers.concat(data);
+        }
 
-        const { data: allAnswers } = await supabase
-          .from('survey_answers')
-          .select('score, survey_questions(survey_categories(name))')
-          .not('score', 'is', null);
+        // Fetch questions with categories for mapping
+        const { data: questionsWithCats } = await supabase
+          .from('survey_questions')
+          .select('id, survey_categories(name)');
+
+        const questionCatMap: Record<string, string> = {};
+        (questionsWithCats as any[])?.forEach(q => {
+          if (q.survey_categories?.name) questionCatMap[q.id] = q.survey_categories.name;
+        });
 
         // Overall scores
         const myCatScores: Record<string, number[]> = {};
-        const orgCatScores: Record<string, number[]> = {};
-        // Direction-segmented scores
         const dirCatScores: Record<string, Record<string, number[]>> = { above: {}, peer: {}, below: {} };
 
-        (myAnswers as any[])?.forEach(a => {
-          const cat = a.survey_questions?.survey_categories?.name;
+        allMyAnswers.forEach(a => {
+          const cat = questionCatMap[a.question_id];
           if (cat && a.score) {
             if (!myCatScores[cat]) myCatScores[cat] = [];
             myCatScores[cat].push(a.score);
 
             const dir = directionMap[a.response_id] || 'peer';
+            if (!dirCatScores[dir]) dirCatScores[dir] = {};
             if (!dirCatScores[dir][cat]) dirCatScores[dir][cat] = [];
             dirCatScores[dir][cat].push(a.score);
-          }
-        });
-
-        (allAnswers as any[])?.forEach(a => {
-          const cat = a.survey_questions?.survey_categories?.name;
-          if (cat && a.score) {
-            if (!orgCatScores[cat]) orgCatScores[cat] = [];
-            orgCatScores[cat].push(a.score);
           }
         });
 
         const cats = Object.keys(myCatScores);
         const avgArr = (arr: number[]) => arr.length ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2)) : 0;
 
-        setMyScores(cats.map(cat => ({
+        // For org average, use a lightweight RPC or just compute from limited sample
+        // Instead of fetching ALL answers, we'll skip org avg or use a rough estimate
+        // For now, set org avg to 0 and compute it in background
+        const scores = cats.map(cat => ({
           category: cat,
           myScore: avgArr(myCatScores[cat]),
-          orgAvg: orgCatScores[cat] ? avgArr(orgCatScores[cat]) : 0,
-        })));
+          orgAvg: 0,
+        }));
+        setMyScores(scores);
 
-        // Build direction scores
         const buildDirScores = (dir: string): CategoryScore[] =>
           cats.map(cat => ({
             category: cat,
-            myScore: dirCatScores[dir][cat] ? avgArr(dirCatScores[dir][cat]) : 0,
-            orgAvg: orgCatScores[cat] ? avgArr(orgCatScores[cat]) : 0,
+            myScore: dirCatScores[dir]?.[cat] ? avgArr(dirCatScores[dir][cat]) : 0,
+            orgAvg: 0,
           })).filter(s => s.myScore > 0);
 
         setDirectionScores({
@@ -224,8 +229,29 @@ export default function EmployeeHub() {
           peer: buildDirScores('peer'),
           below: buildDirScores('below'),
         });
-
         setTotalReviews(myResponses.length);
+
+        // Load org averages in background (sample-based for speed)
+        supabase
+          .from('survey_answers')
+          .select('score, question_id')
+          .not('score', 'is', null)
+          .limit(5000)
+          .then(({ data: sampleAnswers }) => {
+            if (!sampleAnswers) return;
+            const orgCatScores: Record<string, number[]> = {};
+            (sampleAnswers as any[]).forEach(a => {
+              const cat = questionCatMap[a.question_id];
+              if (cat && a.score) {
+                if (!orgCatScores[cat]) orgCatScores[cat] = [];
+                orgCatScores[cat].push(a.score);
+              }
+            });
+            setMyScores(prev => prev.map(s => ({
+              ...s,
+              orgAvg: orgCatScores[s.category] ? avgArr(orgCatScores[s.category]) : 0,
+            })));
+          });
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
@@ -244,30 +270,66 @@ export default function EmployeeHub() {
   const loadRankings = async () => {
     setRankingsLoading(true);
     try {
-      const { data: emps } = await supabase.from('employees').select('id, name, subsidiaries(name)');
-      const { data: responses } = await supabase.from('survey_responses').select('employee_id, survey_answers(score)');
+      // Fetch employees and responses separately to avoid massive nested joins
+      const [empsRes, responsesRes] = await Promise.all([
+        supabase.from('employees').select('id, name, subsidiary_id'),
+        supabase.from('survey_responses').select('id, employee_id'),
+      ]);
 
-      if (!emps || !responses) return;
+      if (!empsRes.data || !responsesRes.data) return;
+
+      // Get subsidiary names
+      const subMap: Record<string, string> = {};
+      subsidiaries.forEach(s => { subMap[s.id] = s.name; });
+
+      // Build a map of employee_id -> response_ids
+      const empResponseIds: Record<string, string[]> = {};
+      responsesRes.data.forEach((r: any) => {
+        if (!empResponseIds[r.employee_id]) empResponseIds[r.employee_id] = [];
+        empResponseIds[r.employee_id].push(r.id);
+      });
+
+      // Only fetch scores for employees that have responses
+      const allResponseIds = responsesRes.data.map((r: any) => r.id);
+      
+      // Batch fetch scores
+      const batchSize = 500;
+      let allScores: any[] = [];
+      for (let i = 0; i < allResponseIds.length; i += batchSize) {
+        const batch = allResponseIds.slice(i, i + batchSize);
+        const { data } = await supabase
+          .from('survey_answers')
+          .select('response_id, score')
+          .in('response_id', batch)
+          .not('score', 'is', null);
+        if (data) allScores = allScores.concat(data);
+      }
+
+      // Map response scores back to employees
+      const responseScoreMap: Record<string, number[]> = {};
+      allScores.forEach((a: any) => {
+        if (!responseScoreMap[a.response_id]) responseScoreMap[a.response_id] = [];
+        responseScoreMap[a.response_id].push(a.score);
+      });
 
       const scoreMap: Record<string, { scores: number[]; count: number }> = {};
-      responses.forEach((r: any) => {
-        if (!scoreMap[r.employee_id]) scoreMap[r.employee_id] = { scores: [], count: 0 };
-        scoreMap[r.employee_id].count++;
-        r.survey_answers?.forEach((a: any) => {
-          if (a.score) scoreMap[r.employee_id].scores.push(a.score);
+      Object.entries(empResponseIds).forEach(([empId, rIds]) => {
+        scoreMap[empId] = { scores: [], count: rIds.length };
+        rIds.forEach(rId => {
+          if (responseScoreMap[rId]) scoreMap[empId].scores.push(...responseScoreMap[rId]);
         });
       });
 
-      const ranked: RankedEmployee[] = emps
+      const ranked: RankedEmployee[] = empsRes.data
         .filter((e: any) => scoreMap[e.id]?.scores.length > 0)
         .map((e: any) => ({
           employee_id: e.id,
           name: e.name,
-          subsidiary: e.subsidiaries?.name || 'Unknown',
-          avgScore: parseFloat((scoreMap[e.id].scores.reduce((a, b) => a + b, 0) / scoreMap[e.id].scores.length).toFixed(2)),
+          subsidiary: subMap[e.subsidiary_id] || 'Unknown',
+          avgScore: parseFloat((scoreMap[e.id].scores.reduce((a: number, b: number) => a + b, 0) / scoreMap[e.id].scores.length).toFixed(2)),
           totalReviews: scoreMap[e.id].count,
         }))
-        .sort((a, b) => b.avgScore - a.avgScore);
+        .sort((a: RankedEmployee, b: RankedEmployee) => b.avgScore - a.avgScore);
 
       setRankings(ranked);
     } catch (err) { console.error(err); }
