@@ -30,6 +30,7 @@ const normalizeSearchText = (value: string) =>
     .trim();
 
 const compactSearchText = (value: string) => value.replace(/[^a-z0-9]/g, '');
+const EMPLOYEE_FETCH_BATCH = 1000;
 
 export default function FindAccount() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,15 +48,26 @@ export default function FindAccount() {
   const fetchEmployeeIndex = useCallback(async () => {
     if (employeeIndex) return employeeIndex;
 
-    const { data, error: err } = await supabase
-      .from('employees')
-      .select('id, name, role, email, department, subsidiaries(name)')
-      .order('name')
-      .limit(1000);
+    let from = 0;
+    const records: EmployeeResult[] = [];
 
-    if (err) throw err;
+    while (true) {
+      const to = from + EMPLOYEE_FETCH_BATCH - 1;
+      const { data, error: err } = await supabase
+        .from('employees')
+        .select('id, name, role, email, department, subsidiaries(name)')
+        .order('name')
+        .range(from, to);
 
-    const records = (data as unknown as EmployeeResult[]) || [];
+      if (err) throw err;
+
+      const batch = (data as unknown as EmployeeResult[]) || [];
+      records.push(...batch);
+
+      if (batch.length < EMPLOYEE_FETCH_BATCH) break;
+      from += EMPLOYEE_FETCH_BATCH;
+    }
+
     setEmployeeIndex(records);
     return records;
   }, [employeeIndex]);
@@ -63,12 +75,6 @@ export default function FindAccount() {
   // Debounced live search over full employee index
   useEffect(() => {
     const query = searchQuery.trim();
-    if (query.length < 2) {
-      setResults([]);
-      setHasSearched(false);
-      setError('');
-      return;
-    }
 
     const timeout = setTimeout(async () => {
       setSearching(true);
@@ -79,23 +85,17 @@ export default function FindAccount() {
         const compactQuery = compactSearchText(normalizedQuery);
         const tokens = normalizedQuery.split(' ').filter(Boolean);
 
-        if (!tokens.length && compactQuery.length < 2) {
-          setResults([]);
-          setHasSearched(true);
-          return;
-        }
+        const filtered = !normalizedQuery
+          ? employees
+          : employees.filter((employee) => {
+              const searchable = normalizeSearchText(`${employee.name} ${employee.email ?? ''}`);
+              const compactSearchable = compactSearchText(searchable);
 
-        const filtered = employees
-          .filter((employee) => {
-            const searchable = normalizeSearchText(`${employee.name} ${employee.email ?? ''}`);
-            const compactSearchable = compactSearchText(searchable);
+              const tokenMatch = tokens.length > 0 && tokens.every((token) => searchable.includes(token));
+              const compactMatch = compactQuery.length > 0 && compactSearchable.includes(compactQuery);
 
-            const tokenMatch = tokens.every((token) => searchable.includes(token));
-            const compactMatch = compactQuery.length >= 2 && compactSearchable.includes(compactQuery);
-
-            return tokenMatch || compactMatch;
-          })
-          .slice(0, 150);
+              return tokenMatch || compactMatch;
+            });
 
         setResults(filtered);
         setHasSearched(true);
@@ -131,7 +131,7 @@ export default function FindAccount() {
   // Highlight matching text
   const highlightMatch = (text: string) => {
     const query = searchQuery.trim();
-    if (!query || query.length < 2) return text;
+    if (!query) return text;
     const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escapedQuery})`, 'gi');
     const parts = text.split(regex);
@@ -219,8 +219,8 @@ export default function FindAccount() {
               <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
             )}
           </div>
-          {searchQuery.trim().length > 0 && searchQuery.trim().length < 2 && (
-            <p className="text-xs text-muted-foreground">Type at least 2 characters to search…</p>
+          {searchQuery.trim().length === 0 && (
+            <p className="text-xs text-muted-foreground">Showing all accounts — type to narrow the list.</p>
           )}
         </div>
 
