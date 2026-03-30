@@ -33,12 +33,13 @@ Deno.serve(async (req) => {
     for (const user of users) {
       const { email, name } = user;
       if (!email) continue;
+      const normalizedEmail = email.trim().toLowerCase();
 
       try {
         // Create auth user with confirmed email
         const { data: userData, error: createError } =
           await supabaseAdmin.auth.admin.createUser({
-            email: email.toLowerCase(),
+            email: normalizedEmail,
             password: default_password,
             email_confirm: true,
           });
@@ -58,13 +59,13 @@ Deno.serve(async (req) => {
         const { data: empData } = await supabaseAdmin
           .from("employees")
           .select("id, department")
-          .ilike("email", email)
+          .ilike("email", normalizedEmail)
           .maybeSingle();
 
         // Create profile
         await supabaseAdmin.from("profiles").upsert({
           id: userId,
-          email: email.toLowerCase(),
+          email: normalizedEmail,
           name: name || email.split("@")[0],
           department: empData?.department || null,
           employee_id: empData?.id || null,

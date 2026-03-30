@@ -51,25 +51,67 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch profile and admin role when user changes
   useEffect(() => {
-    if (user) {
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle()
-        .then(({ data }) => setProfile(data as Profile | null));
-      
-      supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle()
-        .then(({ data }) => setIsAdmin(!!data));
-    } else {
-      setProfile(null);
-      setIsAdmin(false);
-    }
+    let cancelled = false;
+
+    const loadUserContext = async () => {
+      if (!user) {
+        setProfile(null);
+        setIsAdmin(false);
+        return;
+      }
+
+      const [{ data: profileData }, { data: roleData }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle(),
+      ]);
+
+      let resolvedProfile = profileData as Profile | null;
+      const normalizedEmail = resolvedProfile?.email?.trim().toLowerCase();
+
+      if (resolvedProfile && !resolvedProfile.employee_id && normalizedEmail) {
+        const { data: employeeData } = await supabase
+          .from('employees')
+          .select('id, department')
+          .ilike('email', normalizedEmail)
+          .maybeSingle();
+
+        if (employeeData) {
+          const nextDepartment = resolvedProfile.department ?? employeeData.department;
+          resolvedProfile = {
+            ...resolvedProfile,
+            employee_id: employeeData.id,
+            department: nextDepartment,
+          };
+
+          void supabase
+            .from('profiles')
+            .update({
+              employee_id: employeeData.id,
+              department: nextDepartment,
+            })
+            .eq('id', user.id);
+        }
+      }
+
+      if (cancelled) return;
+      setProfile(resolvedProfile);
+      setIsAdmin(!!roleData);
+    };
+
+    void loadUserContext();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const login = async (email: string, password: string) => {
