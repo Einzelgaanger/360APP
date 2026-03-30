@@ -21,10 +21,22 @@ import {
 } from 'recharts';
 
 interface Subsidiary { id: string; name: string; }
-interface Employee { id: string; name: string; role: string | null; department: string | null; subsidiary_id: string; email: string | null; }
+interface Employee { id: string; name: string; role: string | null; department: string | null; subsidiary_id: string; email: string | null; hierarchy_level: number | null; }
 interface Category { id: string; name: string; sort_order: number; }
 interface Question { id: string; category_id: string; question_text: string; question_type: string; sort_order: number; }
 interface CategoryScore { category: string; myScore: number; orgAvg: number; }
+interface DirectionScores { above: CategoryScore[]; peer: CategoryScore[]; below: CategoryScore[]; }
+
+const HIERARCHY_LABELS: Record<number, string> = {
+  0: 'Intern', 1: 'Junior', 2: 'Analyst', 3: 'Associate', 4: 'Senior Associate',
+  5: 'Manager', 6: 'Principal/Head', 7: 'C-Suite', 8: 'Partner',
+};
+
+function getFeedbackDirection(reviewerLevel: number, revieweeLevel: number): string {
+  if (reviewerLevel > revieweeLevel) return 'above';
+  if (reviewerLevel < revieweeLevel) return 'below';
+  return 'peer';
+}
 interface RankedEmployee { employee_id: string; name: string; subsidiary: string; avgScore: number; totalReviews: number; }
 
 const SCALE_OPTIONS = [
@@ -65,6 +77,8 @@ export default function EmployeeHub() {
 
   // Dashboard state
   const [myScores, setMyScores] = useState<CategoryScore[]>([]);
+  const [directionScores, setDirectionScores] = useState<DirectionScores>({ above: [], peer: [], below: [] });
+  const [directionCounts, setDirectionCounts] = useState<{ above: number; peer: number; below: number }>({ above: 0, peer: 0, below: 0 });
   const [totalReviews, setTotalReviews] = useState(0);
   const [dashboardLoading, setDashboardLoading] = useState(true);
 
@@ -133,14 +147,27 @@ export default function EmployeeHub() {
     try {
       const { data: myResponses } = await supabase
         .from('survey_responses')
-        .select('id')
+        .select('id, feedback_direction')
         .eq('employee_id', profile.employee_id);
 
       if (myResponses?.length) {
         const responseIds = myResponses.map(r => r.id);
+
+        // Build direction map: response_id -> feedback_direction
+        const directionMap: Record<string, string> = {};
+        myResponses.forEach(r => { directionMap[r.id] = r.feedback_direction || 'peer'; });
+
+        // Count reviews by direction
+        const counts = { above: 0, peer: 0, below: 0 };
+        myResponses.forEach(r => {
+          const dir = (r.feedback_direction || 'peer') as keyof typeof counts;
+          if (counts[dir] !== undefined) counts[dir]++;
+        });
+        setDirectionCounts(counts);
+
         const { data: myAnswers } = await supabase
           .from('survey_answers')
-          .select('score, survey_questions(question_text, survey_categories(name))')
+          .select('score, response_id, survey_questions(question_text, survey_categories(name))')
           .in('response_id', responseIds)
           .not('score', 'is', null);
 
@@ -149,14 +176,21 @@ export default function EmployeeHub() {
           .select('score, survey_questions(survey_categories(name))')
           .not('score', 'is', null);
 
+        // Overall scores
         const myCatScores: Record<string, number[]> = {};
         const orgCatScores: Record<string, number[]> = {};
+        // Direction-segmented scores
+        const dirCatScores: Record<string, Record<string, number[]>> = { above: {}, peer: {}, below: {} };
 
         (myAnswers as any[])?.forEach(a => {
           const cat = a.survey_questions?.survey_categories?.name;
           if (cat && a.score) {
             if (!myCatScores[cat]) myCatScores[cat] = [];
             myCatScores[cat].push(a.score);
+
+            const dir = directionMap[a.response_id] || 'peer';
+            if (!dirCatScores[dir][cat]) dirCatScores[dir][cat] = [];
+            dirCatScores[dir][cat].push(a.score);
           }
         });
 
@@ -169,13 +203,28 @@ export default function EmployeeHub() {
         });
 
         const cats = Object.keys(myCatScores);
+        const avgArr = (arr: number[]) => arr.length ? parseFloat((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2)) : 0;
+
         setMyScores(cats.map(cat => ({
           category: cat,
-          myScore: parseFloat((myCatScores[cat].reduce((a, b) => a + b, 0) / myCatScores[cat].length).toFixed(2)),
-          orgAvg: orgCatScores[cat]
-            ? parseFloat((orgCatScores[cat].reduce((a, b) => a + b, 0) / orgCatScores[cat].length).toFixed(2))
-            : 0,
+          myScore: avgArr(myCatScores[cat]),
+          orgAvg: orgCatScores[cat] ? avgArr(orgCatScores[cat]) : 0,
         })));
+
+        // Build direction scores
+        const buildDirScores = (dir: string): CategoryScore[] =>
+          cats.map(cat => ({
+            category: cat,
+            myScore: dirCatScores[dir][cat] ? avgArr(dirCatScores[dir][cat]) : 0,
+            orgAvg: orgCatScores[cat] ? avgArr(orgCatScores[cat]) : 0,
+          })).filter(s => s.myScore > 0);
+
+        setDirectionScores({
+          above: buildDirScores('above'),
+          peer: buildDirScores('peer'),
+          below: buildDirScores('below'),
+        });
+
         setTotalReviews(myResponses.length);
       }
     } catch (err) {
@@ -269,12 +318,24 @@ export default function EmployeeHub() {
   const progress = totalScoredQuestions > 0 ? (answeredScoredQuestions / totalScoredQuestions) * 100 : 0;
 
   const handleSubmit = async () => {
-    if (!selectedEmployee || !selectedSubsidiary) return;
+    if (!selectedEmployee || !selectedSubsidiary || !user) return;
     setSubmitting(true);
     try {
+      // Get reviewer's hierarchy level from their profile's employee record
+      const reviewerEmp = allEmployees.find(e => e.id === profile?.employee_id);
+      const reviewerLevel = reviewerEmp?.hierarchy_level ?? 3;
+      const revieweeLevel = selectedEmployee.hierarchy_level ?? 3;
+      const direction = getFeedbackDirection(reviewerLevel, revieweeLevel);
+
       const { data: responseData, error: responseError } = await supabase
         .from('survey_responses')
-        .insert({ employee_id: selectedEmployee.id, subsidiary_id: selectedSubsidiary.id })
+        .insert({
+          employee_id: selectedEmployee.id,
+          subsidiary_id: selectedSubsidiary.id,
+          reviewer_hierarchy_level: reviewerLevel,
+          reviewee_hierarchy_level: revieweeLevel,
+          feedback_direction: direction,
+        })
         .select('id')
         .single();
       if (responseError) throw responseError;
@@ -728,74 +789,142 @@ export default function EmployeeHub() {
               ) : (
                 <div className="space-y-6">
                   {/* Stats row */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Star className="w-4 h-4 text-primary" />
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Star className="w-3.5 h-3.5 text-primary" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Your Overall Score</p>
-                          <p className="text-2xl font-bold">{overallScore}<span className="text-sm font-normal text-muted-foreground">/5</span></p>
+                          <p className="text-[10px] text-muted-foreground">Overall</p>
+                          <p className="text-xl font-bold">{overallScore}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
                         </div>
                       </div>
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
-                          <BarChart3 className="w-4 h-4 text-accent" />
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                          <BarChart3 className="w-3.5 h-3.5 text-accent" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Organisation Average</p>
-                          <p className="text-2xl font-bold">{orgOverall}<span className="text-sm font-normal text-muted-foreground">/5</span></p>
+                          <p className="text-[10px] text-muted-foreground">Org Avg</p>
+                          <p className="text-xl font-bold">{orgOverall}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
                         </div>
                       </div>
                     </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-panel p-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Users className="w-4 h-4 text-primary" />
+                    {/* Direction counts */}
+                    {[
+                      { label: 'From Above', count: directionCounts.above, icon: '↓', color: 'text-blue-500 bg-blue-500/10' },
+                      { label: 'From Peers', count: directionCounts.peer, icon: '↔', color: 'text-emerald-500 bg-emerald-500/10' },
+                      { label: 'From Below', count: directionCounts.below, icon: '↑', color: 'text-amber-500 bg-amber-500/10' },
+                    ].map((d, i) => (
+                      <motion.div key={d.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="glass-panel p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${d.color}`}>{d.icon}</div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">{d.label}</p>
+                            <p className="text-xl font-bold">{d.count}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Reviews Received</p>
-                          <p className="text-2xl font-bold">{totalReviews}</p>
-                        </div>
-                      </div>
-                    </motion.div>
+                      </motion.div>
+                    ))}
                   </div>
 
                   {myScores.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-6">
-                        <h2 className="text-sm font-semibold mb-4">Competency Overview</h2>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <RadarChart data={myScores}>
-                            <PolarGrid stroke="hsl(var(--border))" />
-                            <PolarAngleAxis dataKey="category" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                            <Radar name="You" dataKey="myScore" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
-                            <Radar name="Org Avg" dataKey="orgAvg" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.05} strokeWidth={1} strokeDasharray="4 4" />
-                          </RadarChart>
-                        </ResponsiveContainer>
-                        <div className="flex gap-4 justify-center mt-2 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-primary rounded" /> You</span>
-                          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-muted-foreground rounded" /> Org Average</span>
-                        </div>
-                      </motion.div>
+                    <>
+                      {/* Overall charts */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-6">
+                          <h2 className="text-sm font-semibold mb-4">Overall Competency Overview</h2>
+                          <ResponsiveContainer width="100%" height={280}>
+                            <RadarChart data={myScores}>
+                              <PolarGrid stroke="hsl(var(--border))" />
+                              <PolarAngleAxis dataKey="category" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                              <Radar name="You" dataKey="myScore" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
+                              <Radar name="Org Avg" dataKey="orgAvg" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.05} strokeWidth={1} strokeDasharray="4 4" />
+                            </RadarChart>
+                          </ResponsiveContainer>
+                          <div className="flex gap-4 justify-center mt-2 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-primary rounded" /> You</span>
+                            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-muted-foreground rounded" /> Org Average</span>
+                          </div>
+                        </motion.div>
 
-                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-panel p-6">
-                        <h2 className="text-sm font-semibold mb-4">Score Comparison by Category</h2>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={myScores} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                            <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                            <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                            <Bar dataKey="myScore" name="You" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                            <Bar dataKey="orgAvg" name="Org Avg" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </motion.div>
-                    </div>
+                        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-panel p-6">
+                          <h2 className="text-sm font-semibold mb-4">Score Comparison by Category</h2>
+                          <ResponsiveContainer width="100%" height={280}>
+                            <BarChart data={myScores} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                              <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                              <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
+                              <Bar dataKey="myScore" name="You" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                              <Bar dataKey="orgAvg" name="Org Avg" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </motion.div>
+                      </div>
+
+                      {/* Segmented Feedback by Direction */}
+                      <div>
+                        <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                          <Users className="w-4 h-4 text-primary" />
+                          Feedback by Source
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {[
+                            { key: 'above' as const, label: 'From Leadership Above', icon: '↓', color: 'border-blue-500/30', accent: 'hsl(210, 80%, 55%)', desc: 'Scores from people above your level' },
+                            { key: 'peer' as const, label: 'From Peers', icon: '↔', color: 'border-emerald-500/30', accent: 'hsl(160, 60%, 45%)', desc: 'Scores from people at your level' },
+                            { key: 'below' as const, label: 'From Reports Below', icon: '↑', color: 'border-amber-500/30', accent: 'hsl(40, 80%, 50%)', desc: 'Scores from people below your level' },
+                          ].map(({ key, label, icon, color, accent, desc }) => {
+                            const scores = directionScores[key];
+                            const avg = scores.length
+                              ? parseFloat((scores.reduce((s, c) => s + c.myScore, 0) / scores.length).toFixed(2))
+                              : 0;
+                            return (
+                              <motion.div
+                                key={key}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`glass-panel p-5 border-l-4 ${color}`}
+                              >
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="text-lg">{icon}</span>
+                                  <div>
+                                    <h3 className="text-xs font-bold">{label}</h3>
+                                    <p className="text-[10px] text-muted-foreground">{desc}</p>
+                                  </div>
+                                </div>
+                                {scores.length > 0 ? (
+                                  <>
+                                    <div className="text-center mb-3">
+                                      <span className="text-2xl font-bold">{avg}</span>
+                                      <span className="text-xs text-muted-foreground">/5</span>
+                                      <p className="text-[10px] text-muted-foreground mt-0.5">{directionCounts[key]} review{directionCounts[key] !== 1 ? 's' : ''}</p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      {scores.map(s => (
+                                        <div key={s.category} className="flex items-center gap-2">
+                                          <span className="text-[10px] text-muted-foreground w-20 truncate">{s.category}</span>
+                                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                            <div className="h-full rounded-full" style={{ width: `${(s.myScore / 5) * 100}%`, backgroundColor: accent }} />
+                                          </div>
+                                          <span className="text-[10px] font-semibold w-6 text-right">{s.myScore}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-center py-4">
+                                    <p className="text-xs text-muted-foreground">No reviews from this source yet</p>
+                                  </div>
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
                   ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center">
                       <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
