@@ -312,6 +312,7 @@ export type Database = {
           email: string | null
           hierarchy_level: number | null
           id: string
+          manager_id: string | null
           name: string
           role: string | null
           sort_order: number | null
@@ -323,6 +324,7 @@ export type Database = {
           email?: string | null
           hierarchy_level?: number | null
           id?: string
+          manager_id?: string | null
           name: string
           role?: string | null
           sort_order?: number | null
@@ -334,12 +336,20 @@ export type Database = {
           email?: string | null
           hierarchy_level?: number | null
           id?: string
+          manager_id?: string | null
           name?: string
           role?: string | null
           sort_order?: number | null
           subsidiary_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "employees_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "employees_subsidiary_id_fkey"
             columns: ["subsidiary_id"]
