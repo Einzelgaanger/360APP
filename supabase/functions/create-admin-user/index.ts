@@ -13,8 +13,9 @@ Deno.serve(async (req) => {
 
   try {
     const { email, password, name, department } = await req.json();
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return new Response(
         JSON.stringify({ error: "Email and password required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
     // Create the auth user
     const { data: userData, error: createError } =
       await supabaseAdmin.auth.admin.createUser({
-        email,
+        email: normalizedEmail,
         password,
         email_confirm: true,
       });
@@ -48,13 +49,13 @@ Deno.serve(async (req) => {
     const { data: empData } = await supabaseAdmin
       .from("employees")
       .select("id")
-      .eq("email", email)
+      .ilike("email", normalizedEmail)
       .maybeSingle();
 
     // Create profile
     await supabaseAdmin.from("profiles").upsert({
       id: userId,
-      email,
+      email: normalizedEmail,
       name: name || email.split("@")[0],
       department: department || null,
       employee_id: empData?.id || null,

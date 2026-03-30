@@ -89,6 +89,19 @@ export default function EmployeeHub() {
   // All employees for department counts
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
 
+  const normalizedProfileEmail = profile?.email?.trim().toLowerCase() ?? '';
+
+  const currentEmployee = useMemo(() => {
+    if (profile?.employee_id) {
+      const matchedById = allEmployees.find(employee => employee.id === profile.employee_id);
+      if (matchedById) return matchedById;
+    }
+
+    if (!normalizedProfileEmail) return null;
+
+    return allEmployees.find(employee => (employee.email ?? '').trim().toLowerCase() === normalizedProfileEmail) ?? null;
+  }, [allEmployees, normalizedProfileEmail, profile?.employee_id]);
+
   // Load completions from database
   useEffect(() => {
     if (user) {
@@ -136,19 +149,33 @@ export default function EmployeeHub() {
 
   // Load dashboard data
   useEffect(() => {
-    if (activeTab === 'dashboard' && user && profile?.employee_id) {
-      loadDashboardData();
-    }
-  }, [activeTab, user, profile]);
+    if (activeTab !== 'dashboard') return;
 
-  const loadDashboardData = async () => {
-    if (!profile?.employee_id || !user) return;
+    if (!user) {
+      setDashboardLoading(false);
+      return;
+    }
+
+    if (!currentEmployee?.id) {
+      setMyScores([]);
+      setDirectionScores({ above: [], peer: [], below: [] });
+      setDirectionCounts({ above: 0, peer: 0, below: 0 });
+      setTotalReviews(0);
+      setDashboardLoading(false);
+      return;
+    }
+
+    void loadDashboardData(currentEmployee.id);
+  }, [activeTab, currentEmployee?.id, user]);
+
+  const loadDashboardData = async (employeeId: string) => {
+    if (!user) return;
     setDashboardLoading(true);
     try {
       const { data: myResponses } = await supabase
         .from('survey_responses')
         .select('id, feedback_direction')
-        .eq('employee_id', profile.employee_id);
+        .eq('employee_id', employeeId);
 
       if (myResponses?.length) {
         const responseIds = myResponses.map(r => r.id);
@@ -252,6 +279,11 @@ export default function EmployeeHub() {
               orgAvg: orgCatScores[s.category] ? avgArr(orgCatScores[s.category]) : 0,
             })));
           });
+      } else {
+        setMyScores([]);
+        setDirectionScores({ above: [], peer: [], below: [] });
+        setDirectionCounts({ above: 0, peer: 0, below: 0 });
+        setTotalReviews(0);
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
@@ -341,13 +373,17 @@ export default function EmployeeHub() {
     const channel = supabase
       .channel('employee-hub-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'survey_responses' }, () => {
-        if (activeTab === 'dashboard') loadDashboardData();
-        if (activeTab === 'rankings') loadRankings();
+        if (activeTab === 'dashboard' && currentEmployee?.id) void loadDashboardData(currentEmployee.id);
+        if (activeTab === 'rankings') void loadRankings();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'survey_answers' }, () => {
+        if (activeTab === 'dashboard' && currentEmployee?.id) void loadDashboardData(currentEmployee.id);
+        if (activeTab === 'rankings') void loadRankings();
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [activeTab]);
+  }, [activeTab, currentEmployee?.id]);
 
   const loadEmployees = async (subsidiaryId: string) => {
     const { data } = await supabase.from('employees').select('*').eq('subsidiary_id', subsidiaryId).order('name');
@@ -384,7 +420,7 @@ export default function EmployeeHub() {
     setSubmitting(true);
     try {
       // Get reviewer's hierarchy level from their profile's employee record
-      const reviewerEmp = allEmployees.find(e => e.id === profile?.employee_id);
+      const reviewerEmp = currentEmployee;
       const reviewerLevel = reviewerEmp?.hierarchy_level ?? 3;
       const revieweeLevel = selectedEmployee.hierarchy_level ?? 3;
       const direction = getFeedbackDirection(reviewerLevel, revieweeLevel);
@@ -433,10 +469,8 @@ export default function EmployeeHub() {
 
   // Get the logged-in user's hierarchy level
   const myHierarchyLevel = useMemo(() => {
-    if (!profile?.employee_id) return 3;
-    const myEmp = allEmployees.find(e => e.id === profile.employee_id);
-    return myEmp?.hierarchy_level ?? 3;
-  }, [profile, allEmployees]);
+    return currentEmployee?.hierarchy_level ?? 3;
+  }, [currentEmployee]);
 
   // Subsidiary employee counts
   const subsidiaryCounts = useMemo(() => {
@@ -463,7 +497,7 @@ export default function EmployeeHub() {
     const below: Employee[] = [];
 
     filteredEmployees.forEach(emp => {
-      if (emp.id === profile?.employee_id) return;
+      if (emp.id === currentEmployee?.id) return;
       const level = emp.hierarchy_level ?? 3;
       if (level > myHierarchyLevel) above.push(emp);
       else if (level < myHierarchyLevel) below.push(emp);
@@ -471,20 +505,20 @@ export default function EmployeeHub() {
     });
 
     return { above, peers, below };
-  }, [filteredEmployees, myHierarchyLevel, profile]);
+  }, [currentEmployee?.id, filteredEmployees, myHierarchyLevel]);
 
   // Pool counts across ALL employees (not just selected subsidiary)
   const globalPoolCounts = useMemo(() => {
     let above = 0, peers = 0, below = 0;
     allEmployees.forEach(emp => {
-      if (emp.id === profile?.employee_id) return;
+      if (emp.id === currentEmployee?.id) return;
       const level = emp.hierarchy_level ?? 3;
       if (level > myHierarchyLevel) above++;
       else if (level < myHierarchyLevel) below++;
       else peers++;
     });
     return { above, peers, below, total: above + peers + below };
-  }, [allEmployees, myHierarchyLevel, profile]);
+  }, [allEmployees, currentEmployee?.id, myHierarchyLevel]);
 
   const overallScore = useMemo(() => {
     if (!myScores.length) return 0;
@@ -1132,7 +1166,7 @@ export default function EmployeeHub() {
                   {/* Full list */}
                   <div className="glass-panel divide-y divide-border">
                     {rankings.map((person, i) => {
-                      const isMe = person.employee_id === profile?.employee_id;
+                      const isMe = person.employee_id === currentEmployee?.id;
                       return (
                         <motion.div
                           key={person.employee_id}
