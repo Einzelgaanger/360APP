@@ -268,6 +268,56 @@ export default function EmployeeHub() {
         });
         setTotalReviews(myResponses.length);
 
+        // Fetch qualitative (text) answers
+        let allTextAnswers: any[] = [];
+        for (let i = 0; i < responseIds.length; i += batchSize) {
+          const batch = responseIds.slice(i, i + batchSize);
+          const { data } = await supabase
+            .from('survey_answers')
+            .select('text_answer, response_id, question_id')
+            .in('response_id', batch)
+            .not('text_answer', 'is', null);
+          if (data) allTextAnswers = allTextAnswers.concat(data);
+        }
+
+        // Map questions to their text to identify start/stop/continue
+        const { data: allQs } = await supabase.from('survey_questions').select('id, question_text').eq('question_type', 'open_ended');
+        const qTextMap: Record<string, string> = {};
+        (allQs as any[])?.forEach(q => { qTextMap[q.id] = (q.question_text || '').toLowerCase(); });
+
+        const fb = { startDoing: [] as FeedbackItem[], stopDoing: [] as FeedbackItem[], continueDoing: [] as FeedbackItem[] };
+        allTextAnswers.forEach(a => {
+          if (!a.text_answer?.trim()) return;
+          const dir = directionMap[a.response_id] || 'peer';
+          const qText = qTextMap[a.question_id] || '';
+          const item: FeedbackItem = { text: a.text_answer.trim(), direction: dir };
+          if (qText.includes('stop')) fb.stopDoing.push(item);
+          else if (qText.includes('start')) fb.startDoing.push(item);
+          else if (qText.includes('continue')) fb.continueDoing.push(item);
+          else fb.continueDoing.push(item); // default bucket
+        });
+        setQualitativeFeedback(fb);
+
+        // Build AI context
+        const contextParts = [
+          `Employee Performance Data:`,
+          `Overall Score: ${avgArr(Object.values(myCatScores).flat())}/5`,
+          `Total Reviews: ${myResponses.length} (Above: ${counts.above}, Peer: ${counts.peer}, Below: ${counts.below})`,
+          `\nCategory Scores:`,
+          ...cats.map(cat => `• ${cat}: ${avgArr(myCatScores[cat])}/5`),
+          `\nScores by Source:`,
+          ...(['above', 'peer', 'below'] as const).map(dir => {
+            const ds = dirCatScores[dir] || {};
+            const entries = Object.entries(ds).map(([c, arr]) => `${c}: ${avgArr(arr)}`).join(', ');
+            return `• ${dir}: ${entries || 'No data'}`;
+          }),
+          `\nQualitative Feedback:`,
+          `Continue Doing (${fb.continueDoing.length}): ${fb.continueDoing.slice(0, 10).map(f => f.text).join(' | ')}`,
+          `Start Doing (${fb.startDoing.length}): ${fb.startDoing.slice(0, 10).map(f => f.text).join(' | ')}`,
+          `Stop Doing (${fb.stopDoing.length}): ${fb.stopDoing.slice(0, 10).map(f => f.text).join(' | ')}`,
+        ];
+        setAiDataContext(contextParts.join('\n'));
+
         // Load org averages in background (sample-based for speed)
         supabase
           .from('survey_answers')
