@@ -28,18 +28,20 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
     <Body style={main}>
       <Container style={outerContainer}>
         <Section style={headerSection}>
-          <Img src={LOGO_URL} alt="Venture Garden Group" width="160" height="auto" style={logo} />
+          <Img src={LOGO_URL} alt="Venture Garden Group" width="140" height="auto" style={logo} />
         </Section>
         <Section style={contentSection}>
           <Heading style={h1}>Verification Code</Heading>
-          <Text style={text}>Use the code below to confirm your identity:</Text>
+          <Text style={text}>
+            Please use the code below to verify your identity on the VGG 360° Appraisal platform. This code is time-sensitive and should not be shared with anyone.
+          </Text>
           <Section style={codeContainer}>
             <Text style={codeStyle}>{token}</Text>
           </Section>
-          <Text style={subtext}>This code will expire shortly. Do not share it with anyone.</Text>
+          <Text style={subtext}>This code will expire shortly. If you did not request it, no action is required.</Text>
         </Section>
         <Hr style={hr} />
-        <Text style={footer}>If you didn't request this code, you can safely ignore this email.</Text>
+        <Text style={footer}>If you did not initiate this request, you can safely disregard this email.</Text>
         <Text style={copyright}>© {new Date().getFullYear()} Venture Garden Group. All rights reserved.</Text>
       </Container>
     </Body>
@@ -48,16 +50,16 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
 
 export default ReauthenticationEmail
 
-const main = { backgroundColor: '#f4f6f8', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const outerContainer = { maxWidth: '560px', margin: '0 auto', padding: '40px 20px' }
-const headerSection = { textAlign: 'center' as const, padding: '0 0 24px' }
+const main = { backgroundColor: '#f4f6f8', fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }
+const outerContainer = { maxWidth: '560px', margin: '0 auto', padding: '48px 20px' }
+const headerSection = { textAlign: 'center' as const, padding: '0 0 32px' }
 const logo = { margin: '0 auto' }
-const contentSection = { backgroundColor: '#ffffff', borderRadius: '12px', padding: '40px 32px', border: '1px solid #e8ebe9' }
-const h1 = { fontSize: '24px', fontWeight: '700' as const, color: '#1a2e22', margin: '0 0 16px', lineHeight: '1.3' }
-const text = { fontSize: '15px', color: '#4a5d52', lineHeight: '1.6', margin: '0 0 24px' }
-const codeContainer = { textAlign: 'center' as const, backgroundColor: '#f0f7f2', borderRadius: '10px', padding: '20px', margin: '0 0 24px', border: '1px solid #d4e8d9' }
-const codeStyle = { fontFamily: "'Plus Jakarta Sans', Courier, monospace", fontSize: '32px', fontWeight: '800' as const, color: '#2b8a3e', letterSpacing: '6px', margin: '0' }
-const subtext = { fontSize: '12px', color: '#8a9690', lineHeight: '1.5', margin: '0' }
-const hr = { borderColor: '#e8ebe9', margin: '24px 0 16px' }
-const footer = { fontSize: '12px', color: '#8a9690', textAlign: 'center' as const, margin: '0 0 8px' }
+const contentSection = { backgroundColor: '#ffffff', borderRadius: '16px', padding: '44px 36px', border: '1px solid #e2e6e3', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }
+const h1 = { fontSize: '22px', fontWeight: '700' as const, color: '#1a2e22', margin: '0 0 16px', lineHeight: '1.35', letterSpacing: '-0.3px' }
+const text = { fontSize: '15px', color: '#3d4f45', lineHeight: '1.7', margin: '0 0 28px' }
+const codeContainer = { textAlign: 'center' as const, backgroundColor: '#f0f7f2', borderRadius: '12px', padding: '24px', margin: '0 0 24px', border: '1px solid #d4e8d9' }
+const codeStyle = { fontFamily: "'Plus Jakarta Sans', 'SF Mono', Courier, monospace", fontSize: '32px', fontWeight: '800' as const, color: '#2b8a3e', letterSpacing: '8px', margin: '0' }
+const subtext = { fontSize: '12px', color: '#8a9690', lineHeight: '1.5', margin: '0', textAlign: 'center' as const }
+const hr = { borderColor: '#e8ebe9', margin: '28px 0 16px' }
+const footer = { fontSize: '12px', color: '#8a9690', textAlign: 'center' as const, margin: '0 0 8px', lineHeight: '1.5' }
 const copyright = { fontSize: '11px', color: '#b0b8b3', textAlign: 'center' as const, margin: '0' }
