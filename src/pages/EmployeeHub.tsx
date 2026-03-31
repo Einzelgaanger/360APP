@@ -19,6 +19,14 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
+import QualitativeFeedback from '@/components/employee-dashboard/QualitativeFeedback';
+import AIInsightsCarousel from '@/components/employee-dashboard/AIInsightsCarousel';
+import DetailedCategoryBreakdown from '@/components/employee-dashboard/DetailedCategoryBreakdown';
+
+interface FeedbackItem {
+  text: string;
+  direction: string;
+}
 
 interface Subsidiary { id: string; name: string; }
 interface Employee { id: string; name: string; role: string | null; department: string | null; subsidiary_id: string; email: string | null; hierarchy_level: number | null; }
@@ -81,6 +89,8 @@ export default function EmployeeHub() {
   const [directionCounts, setDirectionCounts] = useState<{ above: number; peer: number; below: number }>({ above: 0, peer: 0, below: 0 });
   const [totalReviews, setTotalReviews] = useState(0);
   const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [qualitativeFeedback, setQualitativeFeedback] = useState<{ startDoing: FeedbackItem[]; stopDoing: FeedbackItem[]; continueDoing: FeedbackItem[] }>({ startDoing: [], stopDoing: [], continueDoing: [] });
+  const [aiDataContext, setAiDataContext] = useState('');
 
   // Rankings state
   const [rankings, setRankings] = useState<RankedEmployee[]>([]);
@@ -160,6 +170,8 @@ export default function EmployeeHub() {
       setMyScores([]);
       setDirectionScores({ above: [], peer: [], below: [] });
       setDirectionCounts({ above: 0, peer: 0, below: 0 });
+      setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+      setAiDataContext('');
       setTotalReviews(0);
       setDashboardLoading(false);
       return;
@@ -258,6 +270,56 @@ export default function EmployeeHub() {
         });
         setTotalReviews(myResponses.length);
 
+        // Fetch qualitative (text) answers
+        let allTextAnswers: any[] = [];
+        for (let i = 0; i < responseIds.length; i += batchSize) {
+          const batch = responseIds.slice(i, i + batchSize);
+          const { data } = await supabase
+            .from('survey_answers')
+            .select('text_answer, response_id, question_id')
+            .in('response_id', batch)
+            .not('text_answer', 'is', null);
+          if (data) allTextAnswers = allTextAnswers.concat(data);
+        }
+
+        // Map questions to their text to identify start/stop/continue
+        const { data: allQs } = await supabase.from('survey_questions').select('id, question_text').eq('question_type', 'open_ended');
+        const qTextMap: Record<string, string> = {};
+        (allQs as any[])?.forEach(q => { qTextMap[q.id] = (q.question_text || '').toLowerCase(); });
+
+        const fb = { startDoing: [] as FeedbackItem[], stopDoing: [] as FeedbackItem[], continueDoing: [] as FeedbackItem[] };
+        allTextAnswers.forEach(a => {
+          if (!a.text_answer?.trim()) return;
+          const dir = directionMap[a.response_id] || 'peer';
+          const qText = qTextMap[a.question_id] || '';
+          const item: FeedbackItem = { text: a.text_answer.trim(), direction: dir };
+          if (qText.includes('stop')) fb.stopDoing.push(item);
+          else if (qText.includes('start')) fb.startDoing.push(item);
+          else if (qText.includes('continue')) fb.continueDoing.push(item);
+          else fb.continueDoing.push(item); // default bucket
+        });
+        setQualitativeFeedback(fb);
+
+        // Build AI context
+        const contextParts = [
+          `Employee Performance Data:`,
+          `Overall Score: ${avgArr(Object.values(myCatScores).flat())}/5`,
+          `Total Reviews: ${myResponses.length} (Above: ${counts.above}, Peer: ${counts.peer}, Below: ${counts.below})`,
+          `\nCategory Scores:`,
+          ...cats.map(cat => `• ${cat}: ${avgArr(myCatScores[cat])}/5`),
+          `\nScores by Source:`,
+          ...(['above', 'peer', 'below'] as const).map(dir => {
+            const ds = dirCatScores[dir] || {};
+            const entries = Object.entries(ds).map(([c, arr]) => `${c}: ${avgArr(arr)}`).join(', ');
+            return `• ${dir}: ${entries || 'No data'}`;
+          }),
+          `\nQualitative Feedback:`,
+          `Continue Doing (${fb.continueDoing.length}): ${fb.continueDoing.slice(0, 10).map(f => f.text).join(' | ')}`,
+          `Start Doing (${fb.startDoing.length}): ${fb.startDoing.slice(0, 10).map(f => f.text).join(' | ')}`,
+          `Stop Doing (${fb.stopDoing.length}): ${fb.stopDoing.slice(0, 10).map(f => f.text).join(' | ')}`,
+        ];
+        setAiDataContext(contextParts.join('\n'));
+
         // Load org averages in background (sample-based for speed)
         supabase
           .from('survey_answers')
@@ -284,6 +346,8 @@ export default function EmployeeHub() {
         setDirectionScores({ above: [], peer: [], below: [] });
         setDirectionCounts({ above: 0, peer: 0, below: 0 });
         setTotalReviews(0);
+        setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+        setAiDataContext('');
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
@@ -1014,6 +1078,9 @@ export default function EmployeeHub() {
 
                   {myScores.length > 0 ? (
                     <>
+                      {/* AI Insights Carousel */}
+                      {aiDataContext && <AIInsightsCarousel dataContext={aiDataContext} />}
+
                       {/* Overall charts */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-6">
@@ -1032,19 +1099,7 @@ export default function EmployeeHub() {
                           </div>
                         </motion.div>
 
-                        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-panel p-6">
-                          <h2 className="text-sm font-semibold mb-4">Score Comparison by Category</h2>
-                          <ResponsiveContainer width="100%" height={280}>
-                            <BarChart data={myScores} layout="vertical">
-                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                              <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                              <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                              <Bar dataKey="myScore" name="You" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                              <Bar dataKey="orgAvg" name="Org Avg" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </motion.div>
+                        <DetailedCategoryBreakdown scores={myScores} />
                       </div>
 
                       {/* Segmented Feedback by Direction */}
@@ -1106,6 +1161,13 @@ export default function EmployeeHub() {
                           })}
                         </div>
                       </div>
+
+                      {/* Qualitative Feedback Section */}
+                      <QualitativeFeedback
+                        startDoing={qualitativeFeedback.startDoing}
+                        stopDoing={qualitativeFeedback.stopDoing}
+                        continueDoing={qualitativeFeedback.continueDoing}
+                      />
                     </>
                   ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center">
