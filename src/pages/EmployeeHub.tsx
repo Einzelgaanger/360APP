@@ -89,6 +89,8 @@ export default function EmployeeHub() {
   const [directionCounts, setDirectionCounts] = useState<{ above: number; peer: number; below: number }>({ above: 0, peer: 0, below: 0 });
   const [totalReviews, setTotalReviews] = useState(0);
   const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [qualitativeFeedback, setQualitativeFeedback] = useState<{ startDoing: FeedbackItem[]; stopDoing: FeedbackItem[]; continueDoing: FeedbackItem[] }>({ startDoing: [], stopDoing: [], continueDoing: [] });
+  const [aiDataContext, setAiDataContext] = useState('');
 
   // Rankings state
   const [rankings, setRankings] = useState<RankedEmployee[]>([]);
