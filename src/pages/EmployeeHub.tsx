@@ -1074,6 +1074,9 @@ export default function EmployeeHub() {
 
                   {myScores.length > 0 ? (
                     <>
+                      {/* AI Insights Carousel */}
+                      {aiDataContext && <AIInsightsCarousel dataContext={aiDataContext} />}
+
                       {/* Overall charts */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-6">
@@ -1092,19 +1095,7 @@ export default function EmployeeHub() {
                           </div>
                         </motion.div>
 
-                        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-panel p-6">
-                          <h2 className="text-sm font-semibold mb-4">Score Comparison by Category</h2>
-                          <ResponsiveContainer width="100%" height={280}>
-                            <BarChart data={myScores} layout="vertical">
-                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                              <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                              <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                              <Bar dataKey="myScore" name="You" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                              <Bar dataKey="orgAvg" name="Org Avg" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </motion.div>
+                        <DetailedCategoryBreakdown scores={myScores} />
                       </div>
 
                       {/* Segmented Feedback by Direction */}
@@ -1166,6 +1157,13 @@ export default function EmployeeHub() {
                           })}
                         </div>
                       </div>
+
+                      {/* Qualitative Feedback Section */}
+                      <QualitativeFeedback
+                        startDoing={qualitativeFeedback.startDoing}
+                        stopDoing={qualitativeFeedback.stopDoing}
+                        continueDoing={qualitativeFeedback.continueDoing}
+                      />
                     </>
                   ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center">
