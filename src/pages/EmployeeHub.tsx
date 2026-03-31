@@ -346,6 +346,8 @@ export default function EmployeeHub() {
         setDirectionScores({ above: [], peer: [], below: [] });
         setDirectionCounts({ above: 0, peer: 0, below: 0 });
         setTotalReviews(0);
+        setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+        setAiDataContext('');
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
