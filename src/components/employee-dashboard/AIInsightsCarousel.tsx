@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+
+const REFRESH_INTERVAL_MS = 2 * 60 * 60 * 1000; // Re-generate every 2 hours
 
 interface AIInsightsCarouselProps {
   dataContext: string;
