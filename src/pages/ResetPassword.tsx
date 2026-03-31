@@ -60,7 +60,7 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="app-page flex items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -88,7 +88,7 @@ export default function ResetPassword() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="app-page flex items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -105,7 +105,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative">
+    <div className="app-page flex items-center justify-center relative">
       
 
       <motion.div

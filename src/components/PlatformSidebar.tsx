@@ -1,0 +1,160 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { LogOut, Menu, X } from 'lucide-react';
+import vggLogo from '@/assets/vgg-logo.webp';
+
+type SidebarItem = {
+  key: string;
+  label: string;
+  icon?: React.ReactNode;
+  to?: string;
+  onClick?: () => void;
+  active?: boolean;
+};
+
+type SidebarMetaItem = {
+  label: string;
+  value?: string | null;
+};
+
+interface PlatformSidebarProps {
+  title?: string;
+  subtitle?: string;
+  meta?: SidebarMetaItem[];
+  items: SidebarItem[];
+  onLogout?: () => void;
+  actions?: React.ReactNode;
+}
+
+export default function PlatformSidebar({
+  title = '360° Appraisal',
+  subtitle,
+  meta,
+  items,
+  onLogout,
+  actions,
+}: PlatformSidebarProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const visibleMeta = (meta ?? []).filter((entry) => Boolean(entry.value));
+
+  return (
+    <>
+      <aside className="hidden lg:flex fixed left-0 top-0 z-30 h-screen w-72 flex-col border-r border-border/60 bg-card/82 backdrop-blur-xl">
+        <div className="px-5 pt-5 pb-4 border-b border-border/50">
+          <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto" />
+          <h2 className="mt-4 text-base font-semibold text-foreground">{title}</h2>
+          {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+          {visibleMeta.length > 0 && (
+            <div className="mt-3 space-y-1.5 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5">
+              {visibleMeta.map((entry) => (
+                <div key={entry.label} className="flex items-start justify-between gap-2 text-[11px] leading-tight">
+                  <span className="text-muted-foreground">{entry.label}</span>
+                  <span className="font-medium text-foreground text-right">{entry.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto" aria-label="Sidebar Navigation">
+          {items.map((item) => {
+            const className = `w-full justify-start gap-2.5 rounded-xl text-sm ${
+              item.active
+                ? 'bg-primary/12 text-primary border border-primary/20'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
+            }`;
+
+            if (item.to) {
+              return (
+                <Button key={item.key} variant="ghost" size="sm" asChild className={className}>
+                  <Link to={item.to}>
+                    {item.icon}
+                    {item.label}
+                  </Link>
+                </Button>
+              );
+            }
+
+            return (
+              <Button
+                key={item.key}
+                variant="ghost"
+                size="sm"
+                className={className}
+                onClick={item.onClick}
+              >
+                {item.icon}
+                {item.label}
+              </Button>
+            );
+          })}
+        </nav>
+
+        <div className="px-4 py-4 border-t border-border/50 space-y-2">
+          {actions}
+          {onLogout && (
+            <Button variant="outline" size="sm" onClick={onLogout} className="w-full gap-2">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </Button>
+          )}
+        </div>
+      </aside>
+
+      <header className="lg:hidden sticky top-0 z-30 border-b border-border/60 bg-card/85 backdrop-blur-xl">
+        <div className="px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto" />
+            <span className="text-sm font-semibold">{title}</span>
+          </div>
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileOpen((v) => !v)}>
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+        </div>
+        {mobileOpen && (
+          <div className="border-t border-border/40 px-3 py-3 space-y-2 bg-card/95">
+            {items.map((item) => {
+              const className = `w-full justify-start gap-2.5 ${
+                item.active ? 'bg-primary text-primary-foreground' : ''
+              }`;
+
+              if (item.to) {
+                return (
+                  <Button key={item.key} variant={item.active ? 'default' : 'outline'} size="sm" asChild className={className}>
+                    <Link to={item.to} onClick={() => setMobileOpen(false)}>
+                      {item.icon}
+                      {item.label}
+                    </Link>
+                  </Button>
+                );
+              }
+
+              return (
+                <Button
+                  key={item.key}
+                  variant={item.active ? 'default' : 'outline'}
+                  size="sm"
+                  className={className}
+                  onClick={() => {
+                    item.onClick?.();
+                    setMobileOpen(false);
+                  }}
+                >
+                  {item.icon}
+                  {item.label}
+                </Button>
+              );
+            })}
+            {actions}
+            {onLogout && (
+              <Button variant="outline" size="sm" onClick={onLogout} className="w-full gap-2">
+                <LogOut className="w-4 h-4" /> Sign Out
+              </Button>
+            )}
+          </div>
+        )}
+      </header>
+    </>
+  );
+}
+

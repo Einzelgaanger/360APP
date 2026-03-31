@@ -14,7 +14,7 @@ import ManagerDetailPanel from '@/components/dashboard/ManagerDetailPanel';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 import ExportButton from '@/components/dashboard/ExportButton';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
-import VGGHeader from '@/components/VGGHeader';
+import PlatformSidebar from '@/components/PlatformSidebar';
 import { Button } from '@/components/ui/button';
 import { ManagerSummary } from '@/types/appraisal';
 import { BarChart3, Users, Trophy, Target, Zap, Loader2, ClipboardList } from 'lucide-react';
@@ -95,25 +95,29 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <VGGHeader
+    <div className="app-page">
+      <div className="app-page-grid" />
+      <PlatformSidebar
+        title="Admin Dashboard"
         subtitle="Performance Intelligence"
         onLogout={handleLogout}
+        items={[
+          { key: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" />, active: true, onClick: () => {} },
+          { key: 'appraisal', label: '360° Appraisal', icon: <ClipboardList className="w-4 h-4" />, to: '/appraisal' },
+        ]}
         actions={
-          <>
-            <Button variant="outline" size="sm" onClick={() => navigate('/appraisal')} className="gap-2 h-8 text-xs">
-              <ClipboardList className="w-3.5 h-3.5" /> 360° Appraisal
-            </Button>
-            <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
-            <ExportButton managers={managerSummaries} responses={responses} />
-            <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2 h-8 text-xs">
-              <Zap className="w-3.5 h-3.5" /> Analytics Copilot
-            </Button>
-          </>
+          <Button onClick={() => setChatOpen(true)} size="sm" className="w-full gap-2">
+            <Zap className="w-4 h-4" /> Analytics Copilot
+          </Button>
         }
       />
 
-      <main className="container mx-auto px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="lg:pl-72">
+      <main className="platform-content section-stack">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
+          <ExportButton managers={managerSummaries} responses={responses} />
+        </div>
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatsCard title="Total Responses" value={overallStats.totalResponses} icon={Users} variant="default" delay={0} />
@@ -137,6 +141,7 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
           </div>
         </div>
       </main>
+      </div>
 
       <AnimatePresence>
         {selectedManager && <ManagerDetailPanel manager={selectedManager} onClose={() => setSelectedManager(null)} />}

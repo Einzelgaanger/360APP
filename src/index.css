@@ -156,9 +156,10 @@
   .app-page {
     @apply min-h-screen relative overflow-hidden;
     background-image:
-      radial-gradient(circle at 8% 12%, hsl(var(--primary) / 0.14) 0, transparent 30%),
-      radial-gradient(circle at 88% 10%, hsl(var(--accent) / 0.12) 0, transparent 26%),
-      linear-gradient(160deg, hsl(var(--background) / 0.95) 0%, hsl(150 20% 98% / 0.94) 50%, hsl(210 24% 98% / 0.94) 100%);
+      radial-gradient(circle at 8% 12%, hsl(var(--primary) / 0.22) 0, transparent 34%),
+      radial-gradient(circle at 88% 10%, hsl(var(--accent) / 0.18) 0, transparent 30%),
+      radial-gradient(circle at 78% 88%, hsl(var(--primary) / 0.12) 0, transparent 32%),
+      linear-gradient(160deg, hsl(var(--background) / 0.98) 0%, hsl(150 22% 98% / 0.96) 52%, hsl(210 28% 98% / 0.95) 100%);
   }
 
   .app-page::before,
@@ -176,7 +177,7 @@
     top: -9rem;
     right: -9rem;
     background: radial-gradient(circle at 35% 35%, hsl(var(--accent) / 0.2) 0, hsl(var(--accent) / 0.07) 42%, transparent 72%);
-    filter: blur(32px);
+    filter: blur(36px);
     animation: float-orb-a 18s ease-in-out infinite;
   }
 
@@ -186,13 +187,42 @@
     bottom: -9rem;
     left: -8rem;
     background: radial-gradient(circle at 60% 40%, hsl(var(--primary) / 0.22) 0, hsl(var(--primary) / 0.08) 44%, transparent 74%);
-    filter: blur(30px);
+    filter: blur(34px);
     animation: float-orb-b 22s ease-in-out infinite;
   }
 
   .app-page > * {
     position: relative;
     z-index: 1;
+  }
+
+  .app-page-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(to right, hsl(var(--foreground) / 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(circle at center, black 25%, transparent 90%);
+    opacity: 0.33;
+  }
+
+  .page-shell {
+    @apply rounded-3xl border border-border/55 bg-card/80 backdrop-blur-xl shadow-xl shadow-black/[0.06];
+  }
+
+  .platform-canvas {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .platform-content {
+    @apply platform-canvas page-shell mt-6 mb-10 p-5 sm:p-7 lg:p-9;
+  }
+
+  .section-stack {
+    @apply space-y-6 sm:space-y-8;
   }
 
   .glass-panel {

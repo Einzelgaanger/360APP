@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import VGGHeader from '@/components/VGGHeader';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import PlatformSidebar from '@/components/PlatformSidebar';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
   Building2, User, ClipboardList, Send, Loader2, Shield,
@@ -538,7 +538,7 @@ export default function EmployeeHub() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="app-page flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
@@ -552,22 +552,36 @@ export default function EmployeeHub() {
   };
 
   const stepNumber = step === 'subsidiary' ? 1 : step === 'employee' ? 2 : step === 'questions' ? 3 : 4;
+  const currentEmployeeSubsidiary = currentEmployee
+    ? subsidiaries.find((s) => s.id === currentEmployee.subsidiary_id)?.name
+    : null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <VGGHeader
+    <div className="app-page">
+      <div className="app-page-grid" />
+      <PlatformSidebar
+        title="360° Appraisal"
         subtitle={profile?.name}
+        meta={[
+          { label: 'Subsidiary', value: currentEmployeeSubsidiary ?? 'Unlisted' },
+          { label: 'Department', value: currentEmployee?.department ?? profile?.department ?? 'Unassigned' },
+          { label: 'Role', value: currentEmployee?.role ?? 'Employee' },
+        ]}
         onLogout={handleLogout}
-        maxWidth="max-w-4xl"
+        items={[
+          { key: 'dashboard', label: 'My Dashboard', icon: <BarChart3 className="w-4 h-4" />, active: activeTab === 'dashboard', onClick: () => setTab('dashboard') },
+          { key: 'rankings', label: 'Rankings', icon: <Trophy className="w-4 h-4" />, active: activeTab === 'rankings', onClick: () => setTab('rankings') },
+          { key: 'survey', label: 'Survey', icon: <ClipboardList className="w-4 h-4" />, active: activeTab === 'survey', onClick: () => setTab('survey') },
+        ]}
         actions={
           <>
             {isAdmin && (
-              <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5 border-primary/30 text-primary">
-                <Link to="/admin"><Shield className="w-3.5 h-3.5" /> Admin</Link>
+              <Button variant="outline" size="sm" asChild className="w-full gap-2 border-primary/30 text-primary">
+                <Link to="/admin"><Shield className="w-4 h-4" /> Admin</Link>
               </Button>
             )}
-            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground px-2">
-              <Shield className="w-3 h-3" />
+            <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-muted-foreground px-1">
+              <Shield className="w-3.5 h-3.5" />
               <span>Anonymous</span>
             </div>
           </>
@@ -575,20 +589,9 @@ export default function EmployeeHub() {
       />
 
       {/* Tabs */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-4">
+      <div className="lg:pl-72">
+      <div className="platform-content section-stack">
         <Tabs value={activeTab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-3 h-11">
-            <TabsTrigger value="survey" className="gap-2 text-xs sm:text-sm">
-              <ClipboardList className="w-3.5 h-3.5" /> Survey
-            </TabsTrigger>
-            <TabsTrigger value="dashboard" className="gap-2 text-xs sm:text-sm">
-              <BarChart3 className="w-3.5 h-3.5" /> My Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="rankings" className="gap-2 text-xs sm:text-sm">
-              <Trophy className="w-3.5 h-3.5" /> Rankings
-            </TabsTrigger>
-          </TabsList>
-
           {/* ============ SURVEY TAB ============ */}
           <TabsContent value="survey" className="mt-4">
             {/* Step Indicator */}
@@ -1209,6 +1212,7 @@ export default function EmployeeHub() {
             </motion.div>
           </TabsContent>
         </Tabs>
+      </div>
       </div>
     </div>
   );

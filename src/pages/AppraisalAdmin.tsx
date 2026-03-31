@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
-import VGGHeader from '@/components/VGGHeader';
 import {
   BarChart3, Users, Building2, ClipboardCheck, ArrowLeft, RefreshCw,
   TrendingUp, Clock, ChevronDown, ChevronUp, Loader2, Zap, Search,
@@ -257,16 +256,17 @@ ${feedbackSample || '• No text feedback yet'}`;
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="app-page flex items-center justify-center">
         <RefreshCw className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="app-page">
+      <div className="app-page-grid" />
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="platform-canvas py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="gap-1 flex-shrink-0">
               <ArrowLeft className="w-4 h-4" /> Dashboard
@@ -297,7 +297,7 @@ ${feedbackSample || '• No text feedback yet'}`;
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <main className="platform-content section-stack">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center">
           <Select value={selectedSubsidiary} onValueChange={v => { setSelectedSubsidiary(v); setSelectedEmployee(null); }}>

@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import VGGHeader from '@/components/VGGHeader';
-import { Button } from '@/components/ui/button';
+import PlatformSidebar from '@/components/PlatformSidebar';
 import {
   BarChart3, Users, Trophy, ClipboardList, Loader2, Star,
 } from 'lucide-react';
@@ -132,31 +131,28 @@ export default function EmployeeDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="app-page flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <VGGHeader
-        userName={profile?.name}
-        subtitle="My Dashboard"
+    <div className="app-page">
+      <div className="app-page-grid" />
+      <PlatformSidebar
+        title="Employee Portal"
+        subtitle={profile?.name}
         onLogout={handleLogout}
-        actions={
-          <>
-            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
-              <Link to="/wall-of-fame"><Trophy className="w-3.5 h-3.5" /> Rankings</Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
-              <Link to="/survey"><ClipboardList className="w-3.5 h-3.5" /> Survey</Link>
-            </Button>
-          </>
-        }
+        items={[
+          { key: 'dashboard', label: 'My Dashboard', icon: <BarChart3 className="w-4 h-4" />, active: true, onClick: () => {} },
+          { key: 'rankings', label: 'Rankings', icon: <Trophy className="w-4 h-4" />, to: '/wall-of-fame' },
+          { key: 'survey', label: 'Survey', icon: <ClipboardList className="w-4 h-4" />, to: '/survey' },
+        ]}
       />
 
-      <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      <div className="lg:pl-72">
+      <main className="platform-content section-stack">
         {/* Stats row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5">
@@ -236,6 +232,7 @@ export default function EmployeeDashboard() {
           </motion.div>
         )}
       </main>
+      </div>
     </div>
   );
 }

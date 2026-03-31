@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import VGGHeader from '@/components/VGGHeader';
+import PlatformSidebar from '@/components/PlatformSidebar';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
   Building2, User, ClipboardList, Send, Loader2, Shield, BarChart3, Trophy
@@ -144,7 +144,7 @@ export default function Survey() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="app-page flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
@@ -153,36 +153,24 @@ export default function Survey() {
   const stepNumber = step === 'subsidiary' ? 1 : step === 'employee' ? 2 : step === 'questions' ? 3 : 4;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <VGGHeader
+    <div className="app-page">
+      <div className="app-page-grid" />
+      <PlatformSidebar
+        title="Employee Portal"
         subtitle={profile?.name}
         onLogout={async () => { await logout(); navigate('/'); }}
-        maxWidth="max-w-3xl"
-        actions={
-           <>
-            {isAdmin && (
-              <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5 border-primary/30 text-primary">
-                <Link to="/appraisal"><ClipboardList className="w-3.5 h-3.5" /> Admin</Link>
-              </Button>
-            )}
-            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
-              <Link to="/my-dashboard"><BarChart3 className="w-3.5 h-3.5" /> Dashboard</Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
-              <Link to="/wall-of-fame"><Trophy className="w-3.5 h-3.5" /> Rankings</Link>
-            </Button>
-            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground px-2">
-              <Shield className="w-3 h-3" />
-              <span>Anonymous</span>
-            </div>
-          </>
-        }
+        items={[
+          { key: 'dashboard', label: 'My Dashboard', icon: <BarChart3 className="w-4 h-4" />, to: '/my-dashboard' },
+          { key: 'rankings', label: 'Rankings', icon: <Trophy className="w-4 h-4" />, to: '/wall-of-fame' },
+          { key: 'survey', label: 'Survey', icon: <ClipboardList className="w-4 h-4" />, active: true, onClick: () => {} },
+          ...(isAdmin ? [{ key: 'admin', label: 'Admin', icon: <Shield className="w-4 h-4" />, to: '/appraisal' }] : []),
+        ]}
       />
 
+      <div className="lg:pl-72">
       {/* Step Indicator */}
       {step !== 'submitted' && (
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6 pb-2">
+        <div className="platform-canvas pt-6 pb-2">
           <div className="flex items-center gap-1.5 sm:gap-2">
             {['Company', 'Person', 'Questions'].map((label, i) => (
               <div key={label} className="flex items-center gap-1.5 sm:gap-2 flex-1">
@@ -205,7 +193,7 @@ export default function Survey() {
 
       {/* Progress Bar (during questions) */}
       {step === 'questions' && (
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-4 pb-1">
+        <div className="platform-canvas pt-4 pb-1">
           <div className="flex justify-between text-[11px] text-muted-foreground mb-2 font-medium">
             <span>Section {currentCategoryIndex + 1} of {categories.length} — {currentCategory?.name}</span>
             <span className="text-primary font-bold">{Math.round(progress)}%</span>
@@ -221,7 +209,7 @@ export default function Survey() {
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+      <div className="platform-content">
         <AnimatePresence mode="wait">
           {/* Step 1: Subsidiary */}
           {step === 'subsidiary' && (
@@ -448,6 +436,7 @@ export default function Survey() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
       </div>
     </div>
   );

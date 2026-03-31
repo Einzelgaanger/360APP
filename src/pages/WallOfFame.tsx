@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import VGGHeader from '@/components/VGGHeader';
-import { Button } from '@/components/ui/button';
-import { Trophy, Medal, Award, ArrowLeft, Loader2, Star, Users } from 'lucide-react';
+import PlatformSidebar from '@/components/PlatformSidebar';
+import { Trophy, Medal, Award, Loader2, Star, Users } from 'lucide-react';
 
 interface RankedEmployee {
   employee_id: string;
@@ -102,26 +101,28 @@ export default function WallOfFame() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="app-page flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <VGGHeader
-        subtitle="Wall of Fame"
+    <div className="app-page">
+      <div className="app-page-grid" />
+      <PlatformSidebar
+        title="Employee Portal"
+        subtitle={profile?.name}
         onLogout={handleLogout}
-        maxWidth="max-w-3xl"
-        actions={
-          <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
-            <Link to="/my-dashboard"><ArrowLeft className="w-3.5 h-3.5" /> Dashboard</Link>
-          </Button>
-        }
+        items={[
+          { key: 'dashboard', label: 'My Dashboard', icon: <Star className="w-4 h-4" />, to: '/my-dashboard' },
+          { key: 'rankings', label: 'Rankings', icon: <Trophy className="w-4 h-4" />, active: true, onClick: () => {} },
+          { key: 'survey', label: 'Survey', icon: <Users className="w-4 h-4" />, to: '/survey' },
+        ]}
       />
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <div className="lg:pl-72">
+      <main className="platform-content section-stack">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="text-2xl font-bold font-serif mb-2">Performance Rankings</h1>
           <p className="text-muted-foreground text-sm">Top performers based on peer review scores across all competencies.</p>
@@ -203,6 +204,7 @@ export default function WallOfFame() {
           )}
         </div>
       </main>
+      </div>
     </div>
   );
 }
