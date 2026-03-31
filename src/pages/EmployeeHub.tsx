@@ -19,6 +19,14 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
+import QualitativeFeedback from '@/components/employee-dashboard/QualitativeFeedback';
+import AIInsightsCarousel from '@/components/employee-dashboard/AIInsightsCarousel';
+import DetailedCategoryBreakdown from '@/components/employee-dashboard/DetailedCategoryBreakdown';
+
+interface FeedbackItem {
+  text: string;
+  direction: string;
+}
 
 interface Subsidiary { id: string; name: string; }
 interface Employee { id: string; name: string; role: string | null; department: string | null; subsidiary_id: string; email: string | null; hierarchy_level: number | null; }
