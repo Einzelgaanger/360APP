@@ -275,7 +275,7 @@ export default function FindAccount() {
                 {results.map((emp) => (
                   <button
                     key={emp.id}
-                    onClick={() => handleSendReset(emp)}
+                    onClick={() => handleSelectEmployee(emp)}
                     disabled={sending}
                     className="w-full flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-muted/50 hover:border-primary/40 transition-all text-left group disabled:opacity-50"
                   >
