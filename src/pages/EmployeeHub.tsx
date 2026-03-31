@@ -170,6 +170,8 @@ export default function EmployeeHub() {
       setMyScores([]);
       setDirectionScores({ above: [], peer: [], below: [] });
       setDirectionCounts({ above: 0, peer: 0, below: 0 });
+      setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+      setAiDataContext('');
       setTotalReviews(0);
       setDashboardLoading(false);
       return;
