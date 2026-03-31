@@ -88,8 +88,13 @@ Return ONLY a JSON array of strings, no markdown, no explanation. Example: ["Ins
     }
   }, [dataContext]);
 
+  // Initial generation + periodic refresh every 2 hours
   useEffect(() => {
     generateInsights();
+    const interval = setInterval(() => {
+      generateInsights();
+    }, REFRESH_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, [generateInsights]);
 
   // Rotate insights
