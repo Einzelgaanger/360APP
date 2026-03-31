@@ -109,22 +109,31 @@ export default function FindAccount() {
     return () => clearTimeout(timeout);
   }, [searchQuery, fetchEmployeeIndex]);
 
-  const handleSendReset = async (employee: EmployeeResult) => {
+  const [confirmEmployee, setConfirmEmployee] = useState<EmployeeResult | null>(null);
+
+  const handleSelectEmployee = (employee: EmployeeResult) => {
     if (!employee.email) {
       setError('No email on file for this account. Please contact your administrator.');
       return;
     }
+    setError('');
+    setConfirmEmployee(employee);
+  };
+
+  const handleConfirmSendReset = async () => {
+    if (!confirmEmployee?.email) return;
     setSending(true);
     setError('');
     try {
-      const { error } = await resetPassword(employee.email);
+      const { error } = await resetPassword(confirmEmployee.email);
       if (error) throw new Error(error);
       setSent(true);
-      setSentTo(employee.email.replace(/(.{3})(.*)(@.*)/, '$1***$3'));
+      setSentTo(confirmEmployee.email.replace(/(.{3})(.*)(@.*)/, '$1***$3'));
     } catch {
       setError('Failed to send reset email. Please try again.');
     } finally {
       setSending(false);
+      setConfirmEmployee(null);
     }
   };
 
