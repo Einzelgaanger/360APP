@@ -310,6 +310,65 @@ export default function FindAccount() {
           )}
         </AnimatePresence>
 
+        {/* Confirmation Dialog */}
+        <AnimatePresence>
+          {confirmEmployee && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+              onClick={() => !sending && setConfirmEmployee(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-sm bg-card border border-border rounded-2xl p-6 shadow-xl"
+              >
+                <h2 className="text-lg font-semibold mb-1">Confirm Your Identity</h2>
+                <p className="text-sm text-muted-foreground mb-5">
+                  We'll send a password reset link to the email associated with this account. Please confirm this is you:
+                </p>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50 border border-border mb-5">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-primary">
+                      {confirmEmployee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{confirmEmployee.name}</p>
+                    {confirmEmployee.email && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Mail className="w-3 h-3" />
+                        {confirmEmployee.email.replace(/(.{3})(.*)(@.*)/, '$1***$3')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setConfirmEmployee(null)}
+                    disabled={sending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleConfirmSendReset}
+                    disabled={sending}
+                  >
+                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Reset Link'}
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="mt-8 text-center">
           <Link to="/login" className="text-sm text-primary hover:underline font-medium">
             Already have a password? Sign in
