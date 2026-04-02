@@ -14,12 +14,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hardcoded credentials
-const VALID_CREDENTIALS = {
-  email: 'admin@vgg.com',
-  password: 'VGG360Analytics!',
-  name: 'VGG Admin',
-};
+/** Legacy demo login: only when both env vars are set (no defaults). Values are still bundled with the client. */
+function getLegacyDemoConfig(): { email: string; password: string; name: string } | null {
+  const email = import.meta.env.VITE_LEGACY_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = import.meta.env.VITE_LEGACY_ADMIN_PASSWORD;
+  const name = import.meta.env.VITE_LEGACY_ADMIN_NAME?.trim() || 'Admin';
+  if (!email || !password) return null;
+  return { email, password, name };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -33,11 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 800));
-    
-    if (email === VALID_CREDENTIALS.email && password === VALID_CREDENTIALS.password) {
-      const userData = { email, name: VALID_CREDENTIALS.name };
+
+    const legacy = getLegacyDemoConfig();
+    if (!legacy) return false;
+
+    if (email.trim().toLowerCase() === legacy.email && password === legacy.password) {
+      const userData = { email: email.trim(), name: legacy.name };
       setUser(userData);
       localStorage.setItem('vgg_user', JSON.stringify(userData));
       return true;

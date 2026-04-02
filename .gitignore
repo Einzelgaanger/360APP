@@ -17,6 +17,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Local demo datasets (may contain PII) — keep out of the repo
+public/data/*.xlsx
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

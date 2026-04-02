@@ -14,9 +14,18 @@ export function useAppraisalData() {
 
   useEffect(() => {
     const loadData = async () => {
+      const path = import.meta.env.VITE_DEMO_APPRAISAL_XLSX_PATH?.trim();
+      if (!path) {
+        setLoading(false);
+        setResponses([]);
+        setError(
+          'Demo appraisal data is not configured. Set VITE_DEMO_APPRAISAL_XLSX_PATH in .env (e.g. a path under /public or a URL).'
+        );
+        return;
+      }
       try {
         setLoading(true);
-        const data = await processExcelData('/data/VGG_360_Reorganized.xlsx');
+        const data = await processExcelData(path);
         setResponses(data);
         setError(null);
       } catch (err) {
