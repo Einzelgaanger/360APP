@@ -51,8 +51,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={isEmployee ? <Navigate to="/hub" /> : <Onboarding />} />
-      <Route path="/login" element={isEmployee ? <Navigate to="/hub" /> : <EmployeeLogin />} />
+      <Route path="/" element={isEmployee ? <Navigate to="/hub?tab=dashboard" /> : <Onboarding />} />
+      <Route path="/login" element={isEmployee ? <Navigate to="/hub?tab=dashboard" /> : <EmployeeLogin />} />
       <Route path="/find-account" element={<FindAccount />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/hub" element={<ProtectedEmployeeRoute><EmployeeHub /></ProtectedEmployeeRoute>} />

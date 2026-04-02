@@ -25,7 +25,7 @@ export default function EmployeeLogin() {
     try {
       const { error } = await login(email, password);
       if (error) setError(error);
-      else navigate('/hub');
+      else navigate('/hub?tab=dashboard');
     } catch {
       setError('An error occurred. Please try again.');
     } finally {
