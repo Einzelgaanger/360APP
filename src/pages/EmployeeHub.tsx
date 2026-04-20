@@ -167,7 +167,7 @@ export default function EmployeeHub() {
 
   // Load dashboard data
   useEffect(() => {
-    if (activeTab !== 'dashboard') return;
+    if (activeTab !== 'dashboard' && activeTab !== 'growth') return;
 
     if (!user) {
       setDashboardLoading(false);
