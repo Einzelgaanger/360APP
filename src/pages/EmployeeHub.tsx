@@ -12,7 +12,7 @@ import PlatformSidebar from '@/components/PlatformSidebar';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
   Building2, User, ClipboardList, Send, Loader2, Shield,
-  BarChart3, Trophy, Star, Users, Search, X, ArrowUp, ArrowDown, ArrowLeftRight
+  BarChart3, Trophy, Star, Users, Search, X, ArrowUp, ArrowDown, ArrowLeftRight, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -22,6 +22,10 @@ import {
 import QualitativeFeedback from '@/components/employee-dashboard/QualitativeFeedback';
 import AIInsightsCarousel from '@/components/employee-dashboard/AIInsightsCarousel';
 import DetailedCategoryBreakdown from '@/components/employee-dashboard/DetailedCategoryBreakdown';
+import AnonymityBanner from '@/components/employee-dashboard/AnonymityBanner';
+import GrowthResources from '@/components/employee-dashboard/GrowthResources';
+import DevelopmentPlans from '@/components/employee-dashboard/DevelopmentPlans';
+import SelfDebrief from '@/components/employee-dashboard/SelfDebrief';
 
 interface FeedbackItem {
   text: string;
@@ -634,6 +638,7 @@ export default function EmployeeHub() {
         onLogout={handleLogout}
         items={[
           { key: 'dashboard', label: 'My Dashboard', icon: <BarChart3 className="w-4 h-4" />, active: activeTab === 'dashboard', onClick: () => setTab('dashboard') },
+          { key: 'growth', label: 'Growth Hub', icon: <Sparkles className="w-4 h-4" />, active: activeTab === 'growth', onClick: () => setTab('growth') },
           { key: 'rankings', label: 'Rankings', icon: <Trophy className="w-4 h-4" />, active: activeTab === 'rankings', onClick: () => setTab('rankings') },
           { key: 'survey', label: 'Survey', icon: <ClipboardList className="w-4 h-4" />, active: activeTab === 'survey', onClick: () => setTab('survey') },
         ]}
