@@ -264,12 +264,17 @@ export default function EmployeeHub() {
         }));
         setMyScores(scores);
 
-        const buildDirScores = (dir: string): CategoryScore[] =>
-          cats.map(cat => ({
+        // ANONYMITY HARDENING: hide a direction's scores entirely when fewer
+        // than 3 reviewers contributed — protects identity in small groups.
+        const MIN_RATERS = 3;
+        const buildDirScores = (dir: string): CategoryScore[] => {
+          if ((counts as any)[dir] < MIN_RATERS) return [];
+          return cats.map(cat => ({
             category: cat,
             myScore: dirCatScores[dir]?.[cat] ? avgArr(dirCatScores[dir][cat]) : 0,
             orgAvg: 0,
           })).filter(s => s.myScore > 0);
+        };
 
         setDirectionScores({
           above: buildDirScores('above'),
@@ -299,8 +304,11 @@ export default function EmployeeHub() {
         allTextAnswers.forEach(a => {
           if (!a.text_answer?.trim()) return;
           const dir = directionMap[a.response_id] || 'peer';
+          // ANONYMITY: drop direction label when <3 reviewers in that group so
+          // a single comment can't be tied back to one person.
+          const safeDir = (counts as any)[dir] >= 3 ? dir : 'peer';
           const qText = qTextMap[a.question_id] || '';
-          const item: FeedbackItem = { text: a.text_answer.trim(), direction: dir };
+          const item: FeedbackItem = { text: a.text_answer.trim(), direction: safeDir };
           if (qText.includes('stop')) fb.stopDoing.push(item);
           else if (qText.includes('start')) fb.startDoing.push(item);
           else if (qText.includes('continue')) fb.continueDoing.push(item);
