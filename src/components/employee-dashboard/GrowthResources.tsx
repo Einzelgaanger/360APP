@@ -54,7 +54,7 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
       .limit(1)
       .maybeSingle();
     if (data) {
-      setResources(data.resources as Resource[]);
+      setResources(data.resources as unknown as Resource[]);
       setGeneratedAt(new Date(data.generated_at));
       return true;
     }
