@@ -2,360 +2,196 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-import TypewriterText from '@/components/TypewriterText';
 import { Button } from '@/components/ui/button';
-import {
-  Search, Users, BarChart3, ChevronRight, ChevronLeft,
-  Shield, ArrowRight, Award, CheckCircle2, Lock, Eye,
-} from 'lucide-react';
+import { ChevronRight, ChevronLeft, ArrowRight, ArrowUpRight, Search } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
+import heroOnboarding from '@/assets/hero-onboarding.jpg';
+import heroHub from '@/assets/hero-hub.jpg';
+import heroAdmin from '@/assets/hero-admin.jpg';
 
-const TRANSITION_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const SLIDE = { duration: 0.55, ease: EASE };
 
-/** Shared headline typewriter — one rhythm across all 3 slides */
-const HEADLINE_TYPE = {
-  speed: 108,
-  deleteSpeed: 52,
-  pauseDuration: 4200,
-} as const;
-
-const SLIDE_ENTER = { duration: 0.65, ease: TRANSITION_EASE };
-const BADGE_REVEAL = { delay: 0.12, duration: 0.55, ease: TRANSITION_EASE };
-/** Subtitle appears after headline has room to start (no competing typewriter) */
-const SUBTITLE_REVEAL = { delay: 0.95, duration: 0.75, ease: TRANSITION_EASE };
-const CARDS_REVEAL = { delay: 1.15, duration: 0.65, ease: TRANSITION_EASE };
+const SLIDES = [
+  {
+    label: 'Manifesto',
+    no: '01',
+    eyebrow: 'A Field Manual',
+    headline: 'Performance, written in plain ink.',
+    body:
+      'A 360° appraisal platform built for honesty, anonymity and craft. Less ceremony, more signal. This is how Venture Garden Group measures growth.',
+    art: heroOnboarding,
+  },
+  {
+    label: 'How it works',
+    no: '02',
+    eyebrow: 'The Method',
+    headline: 'Three movements. One review cycle.',
+    body:
+      'Find your profile, review your colleagues across the leadership canon, then read the chorus back as a personal dashboard. No scoreboards. No spectacle.',
+    art: heroHub,
+  },
+  {
+    label: 'Get started',
+    no: '03',
+    eyebrow: 'Begin',
+    headline: 'Your voice, on the record. Anonymously.',
+    body:
+      'Sign in with your VGG credentials. Every response is encrypted and detached from your identity before analytics ever sees it.',
+    art: heroAdmin,
+  },
+] as const;
 
 export default function Onboarding() {
   const [slide, setSlide] = useState(0);
   const navigate = useNavigate();
 
-  const next = useCallback(() => setSlide((s) => Math.min(s + 1, 2)), []);
+  const next = useCallback(() => setSlide((s) => Math.min(s + 1, SLIDES.length - 1)), []);
   const prev = useCallback(() => setSlide((s) => Math.max(s - 1, 0)), []);
-
-  const handleAutoAdvance = useCallback(() => {
-    setSlide((s) => (s < 2 ? s + 1 : s));
-  }, []);
+  const current = SLIDES[slide];
+  const isLast = slide === SLIDES.length - 1;
 
   return (
-    <div className="app-page flex flex-col overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-primary/[0.04] blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-accent/[0.04] blur-3xl" />
-      </div>
-
-      {/* Top bar */}
-      <header className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-5">
-        <div className="flex items-center gap-3">
-          <img src={vggLogo} alt="Venture Garden Group" className="h-7 sm:h-8 w-auto" />
-          <div className="hidden sm:block h-5 w-px bg-border" />
-          <span className="hidden sm:block text-xs font-semibold text-muted-foreground tracking-widest uppercase">
-            360° Appraisal
+    <div className="app-page flex min-h-screen flex-col">
+      {/* Masthead */}
+      <header className="relative z-10 flex items-center justify-between border-b border-foreground/15 px-6 py-4 sm:px-10">
+        <div className="flex items-center gap-4">
+          <img src={vggLogo} alt="Venture Garden Group" className="h-7 w-auto" />
+          <span className="hidden h-5 w-px bg-foreground/25 sm:block" />
+          <span className="hidden font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/70 sm:block">
+            360° / Performance Edition
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          
-          <Button variant="outline" size="sm" onClick={() => navigate('/login')} className="text-xs">
+        <div className="flex items-center gap-3">
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/50 sm:block">
+            Est. 2024 · Lagos
+          </span>
+          <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
             Sign In
           </Button>
         </div>
       </header>
 
-      {/* Progress — segments are clickable to jump between steps */}
-      <div className="relative z-10 px-6 sm:px-10" role="navigation" aria-label="Onboarding progress">
-        <div className="mx-auto flex max-w-2xl gap-2">
-          {(['Welcome', 'How it works', 'Get started'] as const).map((label, i) => (
+      {/* Issue meta strip */}
+      <div className="relative z-10 flex items-stretch border-b border-foreground/15 bg-background">
+        {SLIDES.map((s, i) => {
+          const active = i === slide;
+          return (
             <button
-              key={label}
+              key={s.label}
               type="button"
               onClick={() => setSlide(i)}
-              className="h-1 min-h-[6px] flex-1 overflow-hidden rounded-full bg-muted text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              aria-label={`Go to ${label}`}
-              aria-current={i === slide ? 'step' : undefined}
+              className={`group flex flex-1 items-baseline gap-3 border-r border-foreground/15 px-6 py-3 text-left transition-colors last:border-r-0 ${
+                active ? 'bg-foreground text-background' : 'hover:bg-foreground/5'
+              }`}
+              aria-current={active ? 'step' : undefined}
             >
-              <motion.div
-                initial={false}
-                animate={{ width: i <= slide ? '100%' : '0%' }}
-                transition={{ duration: 1.05, ease: TRANSITION_EASE }}
-                className="h-full rounded-full bg-primary"
-              />
+              <span className={`font-mono text-[11px] font-bold ${active ? 'text-background' : 'text-foreground/50'}`}>
+                {s.no}
+              </span>
+              <span
+                className={`font-mono text-[10px] font-semibold uppercase tracking-[0.2em] ${
+                  active ? 'text-background' : 'text-foreground/70'
+                }`}
+              >
+                {s.label}
+              </span>
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Slides with prev/next on left & right of the screen */}
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={prev}
-          disabled={slide === 0}
-          className="absolute left-2 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full shadow-sm sm:left-4"
-          aria-label="Previous step"
-        >
-          <ChevronLeft className="h-4 w-4" aria-hidden />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={slide === 2 ? () => navigate('/login') : next}
-          className="absolute right-2 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full shadow-sm sm:right-4"
-          aria-label={slide === 2 ? 'Continue to sign in' : 'Next step'}
-        >
-          <ChevronRight className="h-4 w-4" aria-hidden />
-        </Button>
-
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-14 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6 sm:px-20">
+      {/* Editorial spread */}
+      <main className="relative z-10 flex flex-1 flex-col overflow-hidden lg:flex-row">
+        {/* Left: art */}
+        <div className="relative order-2 min-h-[280px] flex-1 overflow-hidden border-foreground/15 lg:order-1 lg:border-r">
           <AnimatePresence mode="wait">
-            {slide === 0 && <SlideWelcome key="welcome" onComplete={handleAutoAdvance} />}
-            {slide === 1 && <SlideHowItWorks key="how" onComplete={handleAutoAdvance} />}
-            {slide === 2 && <SlideGetStarted key="start" navigate={navigate} />}
+            <motion.img
+              key={current.art}
+              src={current.art}
+              alt="Editorial graphic for current onboarding step"
+              width={1536}
+              height={1536}
+              decoding="async"
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={SLIDE}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
           </AnimatePresence>
         </div>
-      </div>
+
+        {/* Right: copy */}
+        <div className="relative order-1 flex flex-1 flex-col justify-between px-6 py-10 sm:px-12 lg:order-2 lg:py-16">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={slide}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={SLIDE}
+              className="max-w-xl"
+            >
+              <div className="mb-8 flex items-center gap-3">
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/70">
+                  {current.eyebrow}
+                </span>
+                <div className="h-px flex-1 bg-foreground/25" />
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/50">
+                  № {current.no}
+                </span>
+              </div>
+
+              <h1 className="font-serif text-[clamp(2.25rem,5vw,4.25rem)] font-bold leading-[0.95] tracking-[-0.025em] text-foreground text-balance">
+                {current.headline}
+              </h1>
+
+              <p className="mt-6 max-w-md text-base leading-relaxed text-foreground/70">{current.body}</p>
+
+              {isLast && (
+                <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+                  <Button size="lg" onClick={() => navigate('/login')} className="gap-2">
+                    Sign In <ArrowRight className="h-4 w-4" />
+                  </Button>
+                  <Button size="lg" variant="outline" onClick={() => navigate('/find-account')} className="gap-2">
+                    <Search className="h-4 w-4" /> Find My Account
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Footer controls */}
+          <div className="mt-12 flex items-center justify-between border-t border-foreground/15 pt-6">
+            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/60">
+              <span>{String(slide + 1).padStart(2, '0')}</span>
+              <span>/</span>
+              <span>{String(SLIDES.length).padStart(2, '0')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={prev}
+                disabled={slide === 0}
+                aria-label="Previous"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {isLast ? (
+                <Button size="default" onClick={() => navigate('/login')} className="gap-2">
+                  Enter <ArrowUpRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button variant="default" size="icon" onClick={next} aria-label="Next">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
-  );
-}
-
-/* ─── Slide 1: Welcome ─── */
-function SlideWelcome({ onComplete }: { onComplete: () => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={SLIDE_ENTER}
-      className="max-w-3xl w-full text-center"
-    >
-      {/* Badge */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={BADGE_REVEAL}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 text-primary text-xs font-semibold mb-8"
-      >
-        <Shield className="w-3.5 h-3.5" />
-        VGG 360° Performance Platform
-      </motion.div>
-
-      {/* Main heading */}
-      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground leading-[1.1] mb-6 min-h-[2.6em] sm:min-h-[2.4em]">
-        <span className="block mb-2">Powering</span>
-        <TypewriterText
-          texts={['Performance.', 'Growth.', 'Excellence.']}
-          className="gradient-text"
-          speed={HEADLINE_TYPE.speed}
-          deleteSpeed={HEADLINE_TYPE.deleteSpeed}
-          pauseDuration={HEADLINE_TYPE.pauseDuration}
-          onCycleComplete={onComplete}
-        />
-      </h1>
-
-      {/* Subtitle — static copy so it stays in sync with the headline rhythm */}
-      <motion.p
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={SUBTITLE_REVEAL}
-        className="max-w-lg mx-auto mb-10 text-muted-foreground text-base sm:text-lg leading-relaxed"
-      >
-        A comprehensive peer review platform for structured, anonymous feedback—built to unlock your
-        team&apos;s potential.
-      </motion.p>
-
-      {/* Feature cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={CARDS_REVEAL}
-        className="flex flex-wrap gap-3 justify-center"
-      >
-        {[
-          { icon: Lock, label: 'Anonymous & Secure' },
-          { icon: Eye, label: 'Transparent Process' },
-          { icon: BarChart3, label: 'Data-Driven Insights' },
-        ].map(({ icon: Icon, label }, i) => (
-          <motion.div
-            key={label}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: CARDS_REVEAL.delay + 0.08 + i * 0.12, duration: 0.6, ease: TRANSITION_EASE }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card border border-border/60 shadow-sm text-sm text-muted-foreground"
-          >
-            <Icon className="w-4 h-4 text-primary" />
-            {label}
-          </motion.div>
-        ))}
-      </motion.div>
-    </motion.div>
-  );
-}
-
-/* ─── Slide 2: How It Works ─── */
-const STEPS = [
-  {
-    icon: Search,
-    title: 'Find Your Profile',
-    desc: 'Look up your name to locate your account and set up your credentials securely.',
-    bg: 'bg-primary/5',
-    iconBg: 'bg-primary/15',
-    iconColor: 'text-primary',
-  },
-  {
-    icon: Users,
-    title: 'Review Your Colleagues',
-    desc: 'Provide honest, anonymous feedback across key competencies for your peers.',
-    bg: 'bg-accent/5',
-    iconBg: 'bg-accent/15',
-    iconColor: 'text-accent',
-  },
-  {
-    icon: BarChart3,
-    title: 'View Your Insights',
-    desc: 'Access your personal dashboard, see benchmarks, and track your progress.',
-    bg: 'bg-warning/5',
-    iconBg: 'bg-warning/15',
-    iconColor: 'text-warning',
-  },
-];
-
-function SlideHowItWorks({ onComplete }: { onComplete: () => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={SLIDE_ENTER}
-      className="max-w-3xl w-full text-center"
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={BADGE_REVEAL}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/8 border border-accent/15 text-accent text-xs font-semibold mb-8"
-      >
-        <Award className="w-3.5 h-3.5" />
-        Simple 3-Step Process
-      </motion.div>
-
-      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] mb-4 min-h-[1.35em]">
-        <TypewriterText
-          texts={['How It Works', 'Your Journey Begins', 'Three Simple Steps']}
-          className="text-foreground"
-          speed={HEADLINE_TYPE.speed}
-          deleteSpeed={HEADLINE_TYPE.deleteSpeed}
-          pauseDuration={HEADLINE_TYPE.pauseDuration}
-          onCycleComplete={onComplete}
-        />
-      </h1>
-
-      <motion.p
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={SUBTITLE_REVEAL}
-        className="text-muted-foreground text-base sm:text-lg max-w-lg mx-auto mb-10 leading-relaxed"
-      >
-        From secure account setup to actionable insights—a streamlined flow for busy teams.
-      </motion.p>
-
-      {/* Step cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {STEPS.map((step, i) => (
-          <motion.div
-            key={step.title}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: CARDS_REVEAL.delay + i * 0.12, duration: 0.65, ease: TRANSITION_EASE }}
-            className={`relative p-6 rounded-2xl ${step.bg} border border-border/40 text-left group hover:shadow-lg hover:-translate-y-1 transition-all duration-300`}
-          >
-            <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground mb-4">
-              Step {i + 1}
-            </div>
-            <div className={`w-12 h-12 rounded-2xl ${step.iconBg} flex items-center justify-center mb-4`}>
-              <step.icon className={`w-6 h-6 ${step.iconColor}`} />
-            </div>
-            <h3 className="text-base font-bold text-foreground mb-2">{step.title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-/* ─── Slide 3: Get Started ─── */
-function SlideGetStarted({ navigate }: { navigate: (path: string) => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={SLIDE_ENTER}
-      className="max-w-2xl w-full text-center"
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={BADGE_REVEAL}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/8 border border-primary/15 text-primary text-xs font-semibold mb-8"
-      >
-        <CheckCircle2 className="w-3.5 h-3.5" />
-        Secure & Confidential
-      </motion.div>
-
-      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-[1.1] mb-4 min-h-[1.35em]">
-        <TypewriterText
-          texts={['Ready to Begin?', 'Let\'s Get Started.', 'Your Voice Matters.']}
-          className="text-foreground"
-          speed={HEADLINE_TYPE.speed}
-          deleteSpeed={HEADLINE_TYPE.deleteSpeed}
-          pauseDuration={HEADLINE_TYPE.pauseDuration}
-        />
-      </h1>
-
-      <motion.p
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={SUBTITLE_REVEAL}
-        className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-lg mx-auto mb-10"
-      >
-        Sign in with your credentials or find your account. Your feedback stays anonymous and confidential.
-      </motion.p>
-
-      {/* CTA buttons */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: CARDS_REVEAL.delay, duration: 0.65, ease: TRANSITION_EASE }}
-        className="flex flex-col sm:flex-row gap-3 justify-center mb-8"
-      >
-        <Button size="lg" onClick={() => navigate('/login')} className="gap-2 px-8">
-          Sign In <ArrowRight className="w-4 h-4" />
-        </Button>
-        <Button size="lg" variant="outline" onClick={() => navigate('/find-account')} className="gap-2 px-8">
-          <Search className="w-4 h-4" /> Find My Account
-        </Button>
-      </motion.div>
-
-      {/* Trust bar */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: CARDS_REVEAL.delay + 0.45, duration: 0.65, ease: TRANSITION_EASE }}
-        className="flex items-center justify-center gap-6 text-xs text-muted-foreground"
-      >
-        <span className="flex items-center gap-1.5">
-          <Lock className="w-3.5 h-3.5" />
-          Employees Only
-        </span>
-        <span className="w-1 h-1 rounded-full bg-border" />
-        <span className="flex items-center gap-1.5">
-          <Shield className="w-3.5 h-3.5" />
-          Encrypted & Anonymous
-        </span>
-      </motion.div>
-    </motion.div>
   );
 }

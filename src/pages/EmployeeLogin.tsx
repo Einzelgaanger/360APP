@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuthHeroPanel } from '@/components/auth/AuthHeroPanel';
-import { Lock, Mail, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Lock, Mail, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
 
 export default function EmployeeLogin() {
@@ -34,75 +34,76 @@ export default function EmployeeLogin() {
   };
 
   return (
-    <div className="app-page flex">
+    <div className="app-page flex min-h-screen">
       <AuthHeroPanel
-        eyebrow="Employee sign in"
-        title="Welcome back"
-        description="Provide anonymous peer feedback, view your personal dashboard, and track your development alongside colleagues."
-      >
-        <div className="mt-8 flex flex-wrap gap-2">
-          {['Anonymous', 'Confidential', 'Secure'].map((label) => (
-            <span
-              key={label}
-              className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-sm"
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-      </AuthHeroPanel>
+        variant="hub"
+        eyebrow="VGG / Employee"
+        title="Your voice, on the record. Anonymously."
+        description="Provide peer feedback, view your personal dashboard, and track your growth alongside colleagues."
+      />
 
-      {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center relative p-6">
-        <div className="absolute top-5 left-5">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5 text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="w-4 h-4" /> Back
+      <div className="relative flex flex-1 items-center justify-center px-6 py-10">
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-foreground/15 px-6 py-4">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5">
+            <ArrowLeft className="h-4 w-4" /> Back
           </Button>
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/50">
+            Authentication / 02
+          </span>
         </div>
-        
 
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="w-full max-w-sm"
+          className="w-full max-w-md"
         >
-          <div className="mb-8">
-            <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto mb-8" />
-            <h1 className="text-2xl font-bold font-serif mb-1">Sign In</h1>
-            <p className="text-muted-foreground text-sm">
-              VGG 360° Appraisal Platform
+          <img src={vggLogo} alt="Venture Garden Group" className="h-7 w-auto mb-10" />
+
+          <div className="mb-10">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/60">
+              Employee
+            </span>
+            <h1 className="mt-3 font-serif text-4xl font-bold leading-[0.95] tracking-[-0.02em] sm:text-5xl">
+              Welcome back.
+            </h1>
+            <p className="mt-3 text-sm text-foreground/60">
+              VGG 360° Appraisal — secure employee access.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email address</Label>
+              <Label htmlFor="email" className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/70">
+                Email
+              </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="you@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-11"
+                  className="h-12 pl-10 rounded-sm border-foreground/25 focus:border-foreground"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <Label htmlFor="password" className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/70">
+                Password
+              </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 h-11"
+                  className="h-12 pl-10 rounded-sm border-foreground/25 focus:border-foreground"
                   required
                 />
               </div>
@@ -110,40 +111,42 @@ export default function EmployeeLogin() {
 
             {error && (
               <motion.div
-                initial={{ opacity: 0, y: -8 }}
+                initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+                className="flex items-center gap-2 border border-destructive bg-destructive/5 p-3 text-sm text-destructive rounded-sm"
               >
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 {error}
               </motion.div>
             )}
 
-            <Button type="submit" disabled={loading} className="w-full h-11 font-semibold">
+            <Button type="submit" disabled={loading} className="h-12 w-full gap-2">
               {loading ? (
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
+                  className="h-4 w-4 rounded-full border-2 border-background/30 border-t-background"
                 />
               ) : (
-                'Sign In'
+                <>
+                  Sign In <ArrowRight className="h-4 w-4" />
+                </>
               )}
             </Button>
           </form>
 
-          <div className="mt-8 space-y-3 text-center">
+          <div className="mt-10 flex items-center justify-between border-t border-foreground/15 pt-6">
             <Link
               to="/find-account"
-              className="text-sm text-primary hover:underline font-medium block"
+              className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/70 hover:text-foreground"
             >
-              First time? Find your account
+              First time? → Find your account
             </Link>
             <Link
               to="/admin"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors block"
+              className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/50 hover:text-foreground"
             >
-              Administrator access →
+              Admin →
             </Link>
           </div>
         </motion.div>
