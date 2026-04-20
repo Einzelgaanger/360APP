@@ -218,6 +218,57 @@ export type Database = {
         }
         Relationships: []
       }
+      development_plans: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          employee_id: string | null
+          focus_area: string
+          goal: string
+          id: string
+          last_check_in_at: string | null
+          next_check_in_at: string | null
+          progress_notes: string | null
+          status: string
+          target_date: string | null
+          updated_at: string
+          user_id: string
+          why_it_matters: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          employee_id?: string | null
+          focus_area: string
+          goal: string
+          id?: string
+          last_check_in_at?: string | null
+          next_check_in_at?: string | null
+          progress_notes?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+          user_id: string
+          why_it_matters?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          employee_id?: string | null
+          focus_area?: string
+          goal?: string
+          id?: string
+          last_check_in_at?: string | null
+          next_check_in_at?: string | null
+          progress_notes?: string | null
+          status?: string
+          target_date?: string | null
+          updated_at?: string
+          user_id?: string
+          why_it_matters?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -358,6 +409,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feedback_reflections: {
+        Row: {
+          agreed_with: string | null
+          created_at: string
+          disagreed_with: string | null
+          id: string
+          one_change: string | null
+          surprised_by: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agreed_with?: string | null
+          created_at?: string
+          disagreed_with?: string | null
+          id?: string
+          one_change?: string | null
+          surprised_by?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agreed_with?: string | null
+          created_at?: string
+          disagreed_with?: string | null
+          id?: string
+          one_change?: string | null
+          surprised_by?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      growth_resources: {
+        Row: {
+          expires_at: string
+          feedback_snapshot: string | null
+          focus_area: string
+          generated_at: string
+          id: string
+          resources: Json
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string
+          feedback_snapshot?: string | null
+          focus_area: string
+          generated_at?: string
+          id?: string
+          resources: Json
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          feedback_snapshot?: string | null
+          focus_area?: string
+          generated_at?: string
+          id?: string
+          resources?: Json
+          user_id?: string
+        }
+        Relationships: []
       }
       manager_summaries: {
         Row: {
