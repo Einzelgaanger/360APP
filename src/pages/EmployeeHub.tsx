@@ -96,6 +96,10 @@ export default function EmployeeHub() {
   const [qualitativeFeedback, setQualitativeFeedback] = useState<{ startDoing: FeedbackItem[]; stopDoing: FeedbackItem[]; continueDoing: FeedbackItem[] }>({ startDoing: [], stopDoing: [], continueDoing: [] });
   const [aiDataContext, setAiDataContext] = useState('');
 
+  // Growth Hub state
+  const [selectedFocusArea, setSelectedFocusArea] = useState<string | null>(null);
+  const [idpPrefill, setIdpPrefill] = useState<{ focus?: string; goal?: string }>({});
+
   // Rankings state
   const [rankings, setRankings] = useState<RankedEmployee[]>([]);
   const [rankingsLoading, setRankingsLoading] = useState(true);
@@ -1009,6 +1013,7 @@ export default function EmployeeHub() {
                 </div>
               ) : (
                 <div className="space-y-6">
+                  <AnonymityBanner />
                   {/* Your Level & Pool Summary */}
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5">
                     <div className="flex items-center justify-between mb-3">
