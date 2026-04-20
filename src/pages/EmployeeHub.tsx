@@ -1191,6 +1191,86 @@ export default function EmployeeHub() {
             </motion.div>
           </TabsContent>
 
+          {/* ============ GROWTH HUB TAB ============ */}
+          <TabsContent value="growth" className="mt-4">
+            <motion.div {...pageTransition}>
+              {dashboardLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : !user ? null : myScores.length === 0 ? (
+                <div className="glass-panel p-12 text-center">
+                  <Sparkles className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+                  <h2 className="text-lg font-semibold mb-2">Growth Hub Unlocks With Feedback</h2>
+                  <p className="text-muted-foreground text-sm">Once you have reviews, we'll generate personalised resources and help you build a development plan.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5 bg-gradient-to-br from-primary/5 to-transparent">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-bold">Your Growth Hub</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5">Turn feedback into action. Pick a focus area below — we'll find real articles, books, and exercises for you, and help you commit to a small, specific goal.</p>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Focus area picker — sorted weakest-first */}
+                  <div className="glass-panel p-5">
+                    <h3 className="text-sm font-semibold mb-1">Pick a focus area</h3>
+                    <p className="text-[10px] text-muted-foreground mb-3">Sorted by your lowest scores — these are where growth will move the needle most.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[...myScores].sort((a, b) => a.myScore - b.myScore).map((s) => {
+                        const isWeak = s.myScore < 3.5;
+                        const active = selectedFocusArea === s.category;
+                        return (
+                          <button
+                            key={s.category}
+                            onClick={() => setSelectedFocusArea(s.category)}
+                            className={`px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
+                              active
+                                ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                                : isWeak
+                                ? 'border-destructive/30 bg-destructive/5 text-foreground hover:border-destructive/50'
+                                : 'border-border bg-card/50 text-foreground hover:border-primary/30'
+                            }`}
+                          >
+                            {s.category}
+                            <span className={`ml-2 text-[10px] ${active ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>{s.myScore}/5</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {selectedFocusArea && (
+                    <GrowthResources
+                      userId={user.id}
+                      focusArea={selectedFocusArea}
+                      currentScore={myScores.find(s => s.category === selectedFocusArea)?.myScore}
+                      feedbackContext={aiDataContext}
+                      onAddToGoal={(r) => setIdpPrefill({ focus: selectedFocusArea, goal: `Apply "${r.title}" — ${r.why_relevant.split('.')[0]}.` })}
+                    />
+                  )}
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <DevelopmentPlans
+                      userId={user.id}
+                      growthAreas={myScores.map(s => s.category)}
+                      prefilledFocus={idpPrefill.focus}
+                      prefilledGoal={idpPrefill.goal}
+                      onClearPrefill={() => setIdpPrefill({})}
+                    />
+                    <SelfDebrief userId={user.id} />
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </TabsContent>
+
           {/* ============ RANKINGS TAB ============ */}
           <TabsContent value="rankings" className="mt-4">
             <motion.div {...pageTransition}>
