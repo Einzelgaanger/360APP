@@ -4,6 +4,7 @@ import { Send, X, Loader2, Brain, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatMessage, InsightSuggestion } from '@/types/appraisal';
+import { getFunctionUrl, supabasePublishableKey } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 
 const INSIGHT_SUGGESTIONS_ROW1: InsightSuggestion[] = [
@@ -107,11 +108,11 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+      const response = await fetch(getFunctionUrl('chat'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'Authorization': `Bearer ${supabasePublishableKey}`,
         },
         body: JSON.stringify({
           messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
