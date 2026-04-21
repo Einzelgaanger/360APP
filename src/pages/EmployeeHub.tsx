@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import PlatformSidebar from '@/components/PlatformSidebar';
+import MobileTabBar, { type MobileTab } from '@/components/MobileTabBar';
+import vggLogo from '@/assets/vgg-logo.webp';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
   Building2, User, ClipboardList, Send, Loader2, Shield,
@@ -641,6 +643,8 @@ export default function EmployeeHub() {
   return (
     <div className="app-page">
       <div className="app-page-grid" />
+
+      {/* Desktop sidebar (hidden on mobile via component) */}
       <PlatformSidebar
         title="360° Appraisal"
         subtitle={profile?.name}
@@ -671,9 +675,30 @@ export default function EmployeeHub() {
         }
       />
 
+      {/* Mobile top bar — logo + active section label, no hamburger */}
+      <header className="lg:hidden sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
+        <div className="px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img src={vggLogo} alt="VGG" className="h-6 w-auto flex-shrink-0" />
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground truncate">
+              ◉ {activeTab === 'dashboard' ? 'My Dashboard'
+                  : activeTab === 'growth' ? 'Growth Hub'
+                  : activeTab === 'rankings' ? 'Rankings'
+                  : activeTab === 'profile' ? 'Profile'
+                  : 'Survey'}
+            </span>
+          </div>
+          {isAdmin && (
+            <Link to="/admin" aria-label="Admin" className="text-muted-foreground hover:text-primary">
+              <Shield className="w-4 h-4" />
+            </Link>
+          )}
+        </div>
+      </header>
+
       {/* Tabs */}
       <div className="lg:pl-72">
-      <div className="platform-content section-stack px-4 sm:px-6 lg:px-8">
+      <div className="platform-content section-stack px-4 sm:px-6 lg:px-8 has-mobile-tabbar">
         <Tabs value={activeTab} onValueChange={setTab}>
           {/* ============ SURVEY TAB ============ */}
           <TabsContent value="survey" className="mt-4">
