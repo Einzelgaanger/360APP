@@ -386,6 +386,7 @@ export default function FindAccount() {
           </Link>
         </div>
       </motion.div>
+      </div>
     </div>
   );
 }
