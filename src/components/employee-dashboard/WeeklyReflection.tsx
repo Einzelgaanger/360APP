@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Mascot } from '@/components/mascots/Mascot';
-
 interface Props { userId: string; }
 
 function startOfWeek(d = new Date()) {
@@ -78,14 +76,11 @@ export default function WeeklyReflection({ userId }: Props) {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="brutal p-5">
       <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="flex items-start gap-3">
-          <Mascot mascot="owl" size={48} />
-          <div>
-            <div className="eyebrow mb-1">Weekly Reflection · Week of {weekLabel}</div>
-            <h3 className="font-serif text-lg font-bold leading-tight">
-              {hasEntry ? 'Edit this week\'s notes' : 'Three quick prompts. Two minutes.'}
-            </h3>
-          </div>
+        <div>
+          <div className="eyebrow mb-1">◉ Weekly Reflection · Week of {weekLabel}</div>
+          <h3 className="font-display text-lg font-medium leading-tight">
+            {hasEntry ? 'Edit this week\'s notes' : 'Three quick prompts. Two minutes.'}
+          </h3>
         </div>
         {hasEntry && <span className="tag-green">Saved</span>}
       </div>

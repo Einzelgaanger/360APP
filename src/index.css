@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,400&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,70 +6,70 @@
 
 @layer base {
   :root {
-    /* VGG 360 — BRUTALIST + VGG GREEN */
-    /* Pure paper, hard ink. Green is the only loud accent. */
-    --background: 0 0% 98%;
-    --foreground: 0 0% 7%;
+    /* SNG / VGG — Neo-Organic Tech Editorial */
+    /* Bone paper, forest ink, deep VGG green, ocean blue accent. STRICT FLAT. */
+    --background: 40 33% 96%;        /* bone / cream paper */
+    --foreground: 160 28% 9%;        /* near-black forest ink */
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
+    --card: 0 0% 100%;               /* pure white cards on cream */
+    --card-foreground: 160 28% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 7%;
+    --popover-foreground: 160 28% 9%;
 
-    /* VGG green — the only loud accent */
-    --primary: 152 64% 28%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 110 55% 28%;          /* deep VGG green */
+    --primary-glow: 117 60% 45%;
+    --primary-foreground: 40 33% 97%;
 
-    --secondary: 0 0% 94%;
-    --secondary-foreground: 0 0% 7%;
+    --secondary: 40 22% 90%;
+    --secondary-foreground: 160 28% 9%;
 
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 32%;
+    --muted: 40 20% 93%;
+    --muted-foreground: 160 12% 38%;
 
-    /* Accent collapses to ink — brutalist discipline */
-    --accent: 0 0% 7%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 205 70% 38%;           /* sharpened ocean blue */
+    --accent-foreground: 40 33% 97%;
 
-    --success: 152 64% 28%;
-    --success-foreground: 0 0% 98%;
+    --success: 110 55% 28%;
+    --success-foreground: 40 33% 97%;
 
-    /* Yellow strictly for warnings */
-    --warning: 48 100% 50%;
-    --warning-foreground: 0 0% 7%;
+    --warning: 35 85% 50%;
+    --warning-foreground: 160 28% 9%;
 
-    /* Red strictly for errors */
-    --destructive: 358 78% 48%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 8 72% 48%;
+    --destructive-foreground: 40 33% 97%;
 
-    /* Hard 2px borders */
-    --border: 0 0% 7%;
-    --input: 0 0% 7%;
-    --ring: 0 0% 7%;
+    --border: 160 10% 84%;           /* tinted ink, never neutral gray */
+    --input: 160 10% 84%;
+    --ring: 110 55% 28%;
 
-    /* Brutalist: minimal radius */
-    --radius: 0.125rem;
+    /* Editorial extensions */
+    --ink: 160 28% 9%;
+    --paper: 40 33% 96%;
+    --paper-deep: 40 22% 90%;        /* slightly darker cream */
 
-    --chart-1: 152 64% 28%;
-    --chart-2: 0 0% 7%;
-    --chart-3: 0 0% 50%;
-    --chart-4: 48 100% 50%;
-    --chart-5: 358 78% 48%;
+    --radius: 0.25rem;               /* SHARP — 4px everywhere */
 
-    --score-excellent: 152 64% 28%;
-    --score-good: 0 0% 7%;
-    --score-average: 48 100% 50%;
-    --score-poor: 358 78% 48%;
+    --chart-1: 110 55% 28%;
+    --chart-2: 205 70% 38%;
+    --chart-3: 160 28% 9%;
+    --chart-4: 35 85% 50%;
+    --chart-5: 8 72% 48%;
 
-    /* Sidebar — full black brutalist slab */
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 152 64% 38%;
-    --sidebar-primary-foreground: 0 0% 7%;
-    --sidebar-accent: 0 0% 14%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 0% 100%;
-    --sidebar-ring: 152 64% 38%;
+    --score-excellent: 110 55% 28%;
+    --score-good: 205 70% 38%;
+    --score-average: 35 85% 50%;
+    --score-poor: 8 72% 48%;
+
+    /* Sidebar — paper with ink, NOT brutal black slab */
+    --sidebar-background: 40 33% 96%;
+    --sidebar-foreground: 160 28% 9%;
+    --sidebar-primary: 110 55% 28%;
+    --sidebar-primary-foreground: 40 33% 97%;
+    --sidebar-accent: 40 22% 90%;
+    --sidebar-accent-foreground: 160 28% 9%;
+    --sidebar-border: 160 10% 84%;
+    --sidebar-ring: 110 55% 28%;
   }
 }
 
@@ -86,57 +86,63 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
-    font-feature-settings: 'ss01', 'cv11';
+    font-family: 'DM Sans', system-ui, sans-serif;
     letter-spacing: -0.005em;
     min-height: 100vh;
     overflow-x: hidden;
     background-color: hsl(var(--background));
-    background-image:
-      linear-gradient(hsl(var(--foreground) / 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
-    background-size: 32px 32px;
+    /* NO grid overlay — strict flat paper */
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Fraunces', 'Times New Roman', serif;
     font-optical-sizing: auto;
-    @apply font-bold tracking-[-0.02em];
+    font-variation-settings: "SOFT" 30, "WONK" 0;
+    @apply tracking-[-0.025em];
   }
 
-  h1 { @apply text-4xl sm:text-6xl lg:text-7xl leading-[0.95]; font-weight: 800; }
-  h2 { @apply text-3xl sm:text-5xl leading-[1.0]; font-weight: 700; }
-  h3 { @apply text-2xl sm:text-3xl leading-[1.1]; font-weight: 600; }
-  h4 { @apply text-xl sm:text-2xl leading-tight; font-weight: 600; }
+  h1 { @apply text-4xl sm:text-5xl lg:text-6xl leading-[0.95]; font-weight: 500; }
+  h2 { @apply text-3xl sm:text-4xl leading-[1.0]; font-weight: 500; }
+  h3 { @apply text-2xl sm:text-3xl leading-[1.1]; font-weight: 500; }
+  h4 { @apply text-xl sm:text-2xl leading-tight; font-weight: 500; }
 
   p { @apply leading-relaxed; }
 
   ::selection {
-    background: hsl(var(--foreground));
-    color: hsl(var(--background));
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
   }
 }
 
 @layer components {
-  /* BRUTALIST page chrome */
+  /* ---------- Editorial page chrome ---------- */
   .app-page {
-    @apply min-h-screen relative;
+    @apply min-h-screen;
     background-color: hsl(var(--background));
-    background-image:
-      linear-gradient(hsl(var(--foreground) / 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
-    background-size: 32px 32px;
   }
 
   .app-page-grid { display: none; }
 
-  .page-shell {
-    @apply rounded-sm border-2 border-foreground bg-card;
-    box-shadow: 6px 6px 0 0 hsl(var(--foreground));
+  .app-container {
+    @apply mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-8 sm:py-10;
+  }
+
+  .app-header {
+    @apply flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between;
+  }
+
+  .app-header-title {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "SOFT" 30, "WONK" 0;
+    @apply text-[clamp(1.75rem,6vw,2.5rem)] font-medium leading-[1.05] tracking-tight;
+  }
+
+  .app-header-description {
+    @apply text-sm text-muted-foreground max-w-xl;
   }
 
   .platform-canvas {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-10;
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
   .platform-content {
@@ -144,144 +150,200 @@
   }
 
   .section-stack {
-    @apply space-y-8 sm:space-y-12;
+    @apply space-y-6 sm:space-y-8;
   }
 
-  /* Brutalist slab — thick border + hard offset shadow */
+  /* ---------- Surface cards (hairline, hairline shadow) ---------- */
+  .surface-card {
+    @apply rounded-sm border border-border bg-card p-5;
+    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
+  }
+
+  .auth-form-shell {
+    @apply rounded-sm border border-border bg-card p-5 sm:p-7 lg:p-9;
+    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
+  }
+
+  .ink-frame {
+    @apply rounded-sm border border-foreground/85 bg-card;
+    box-shadow: 6px 6px 0 0 hsl(var(--primary) / 0.85);
+  }
+
+  .page-shell {
+    @apply rounded-sm border border-border bg-card;
+    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
+  }
+
+  /* ---------- LEGACY ALIASES — flatten brutalist classes to editorial ---------- */
   .brutal {
-    @apply bg-card border-2 border-foreground rounded-sm;
-    box-shadow: 4px 4px 0 0 hsl(var(--foreground));
+    @apply rounded-sm border border-border bg-card;
+    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
   }
   .brutal-lg {
-    @apply bg-card border-2 border-foreground rounded-sm;
-    box-shadow: 8px 8px 0 0 hsl(var(--foreground));
+    @apply rounded-sm border border-border bg-card;
+    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
   }
   .brutal-green {
-    @apply bg-primary text-primary-foreground border-2 border-foreground rounded-sm;
-    box-shadow: 4px 4px 0 0 hsl(var(--foreground));
+    @apply rounded-sm border border-primary bg-primary text-primary-foreground;
   }
   .brutal-press {
-    @apply transition-all duration-100;
+    @apply transition-all duration-200;
   }
   .brutal-press:hover {
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0 0 hsl(var(--foreground));
+    box-shadow: 4px 4px 0 0 hsl(var(--primary) / 0.85);
   }
   .brutal-press:active {
-    transform: translate(4px, 4px);
-    box-shadow: 0 0 0 0 hsl(var(--foreground));
+    box-shadow: 2px 2px 0 0 hsl(var(--primary) / 0.85);
   }
 
-  /* Legacy aliases — map to brutalist */
-  .glass-panel { @apply brutal; }
-  .glass-panel-hover { @apply brutal brutal-press; }
+  .glass-panel { @apply surface-card; }
+  .glass-panel-hover { @apply surface-card transition-all hover:shadow-[4px_4px_0_0_hsl(var(--primary)/0.85)]; }
   .gradient-text { @apply text-foreground; }
-  .stat-card { @apply brutal p-6 brutal-press; }
+  .stat-card { @apply surface-card; }
 
+  /* ---------- Typographic primitives ---------- */
   .eyebrow {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
-    @apply text-[10px] font-bold uppercase tracking-[0.24em] text-foreground;
+    @apply inline-flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.22em] text-muted-foreground;
+  }
+
+  .eyebrow-primary {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    @apply inline-flex items-center gap-2 border-l-2 border-primary px-2.5 text-[10.5px] uppercase tracking-[0.24em] text-primary;
   }
 
   .display-serif {
     font-family: 'Fraunces', serif;
     font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 30, "WONK" 0;
+  }
+
+  .font-display {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "SOFT" 30, "WONK" 0;
+  }
+
+  .font-mono-display {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 
   .mono {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 
-  .rule { @apply border-t-2 border-foreground; }
-  .rule-thick { @apply border-t-[3px] border-foreground; }
-
-  .score-badge {
-    @apply inline-flex items-center justify-center w-11 h-11 rounded-sm text-sm font-bold mono border-2 border-foreground;
-    box-shadow: 2px 2px 0 0 hsl(var(--foreground));
+  .numeral {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "WONK" 1;
+    font-feature-settings: 'tnum';
+    font-weight: 500;
+    letter-spacing: -0.04em;
+    line-height: 0.92;
   }
-  .score-excellent { @apply bg-primary text-primary-foreground; }
-  .score-good { @apply bg-foreground text-background; }
-  .score-average { @apply bg-warning text-warning-foreground; }
-  .score-poor { @apply bg-destructive text-destructive-foreground; }
-
-  .chat-bubble {
-    @apply p-4 rounded-sm max-w-[85%] border-2 border-foreground;
-  }
-  .chat-bubble-user { @apply bg-primary text-primary-foreground ml-auto; }
-  .chat-bubble-ai { @apply bg-card text-foreground mr-auto; }
-
-  .input-field {
-    @apply rounded-sm border-2 border-foreground bg-background px-4 py-3 text-sm transition-colors focus:ring-0 focus:outline-none placeholder:text-foreground/40;
-  }
-
-  .section-shell { @apply brutal p-6 sm:p-8; }
-  .section-title { @apply font-serif text-xl font-bold tracking-tight text-foreground; }
-  .section-subtitle { @apply text-xs mono uppercase tracking-[0.22em] text-foreground; }
 
   .display-number {
     font-family: 'Fraunces', serif;
-    font-weight: 900;
-    letter-spacing: -0.05em;
-    line-height: 0.82;
+    font-variation-settings: "WONK" 1;
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: 0.9;
     font-variant-numeric: tabular-nums;
   }
 
-  /* Brutalist ink button */
+  .rule { @apply border-t border-border; }
+  .rule-thick { @apply border-t border-foreground/30; }
+
+  /* ---------- Score badges (editorial) ---------- */
+  .score-badge {
+    @apply inline-flex items-center justify-center w-11 h-11 rounded-sm text-sm font-medium border border-border bg-card;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "WONK" 1;
+    font-feature-settings: 'tnum';
+  }
+  .score-excellent { @apply bg-primary text-primary-foreground border-primary; }
+  .score-good { @apply bg-accent text-accent-foreground border-accent; }
+  .score-average { @apply bg-warning text-warning-foreground border-warning; }
+  .score-poor { @apply bg-destructive text-destructive-foreground border-destructive; }
+
+  /* ---------- Chat bubbles ---------- */
+  .chat-bubble {
+    @apply p-4 rounded-sm max-w-[85%] border border-border;
+  }
+  .chat-bubble-user { @apply bg-primary text-primary-foreground ml-auto border-primary; }
+  .chat-bubble-ai { @apply bg-card text-foreground mr-auto; }
+
+  .input-field {
+    @apply rounded-sm border border-border bg-card px-4 py-2.5 text-sm transition-colors focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-muted-foreground;
+  }
+
+  .section-shell {
+    @apply surface-card sm:p-7;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    @apply text-xl font-medium tracking-tight text-foreground;
+  }
+  .section-subtitle {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    @apply text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground;
+  }
+
+  /* ---------- Buttons (legacy aliases) ---------- */
   .btn-ink {
-    @apply inline-flex items-center justify-center gap-2 bg-foreground text-background px-6 py-3 rounded-sm text-sm font-bold uppercase tracking-[0.14em] mono border-2 border-foreground brutal-press;
-    box-shadow: 4px 4px 0 0 hsl(var(--foreground));
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-sm bg-foreground px-5 text-xs font-medium uppercase tracking-[0.18em] text-background transition-colors hover:bg-foreground/90;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
-  .btn-ink:hover { box-shadow: 2px 2px 0 0 hsl(var(--foreground)); }
-
   .btn-green {
-    @apply inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-sm text-sm font-bold uppercase tracking-[0.14em] mono border-2 border-foreground brutal-press;
-    box-shadow: 4px 4px 0 0 hsl(var(--foreground));
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-sm bg-primary px-5 text-xs font-medium uppercase tracking-[0.18em] text-primary-foreground transition-colors hover:bg-primary/90;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
-  .btn-green:hover { box-shadow: 2px 2px 0 0 hsl(var(--foreground)); }
 
+  /* ---------- Tags (hairline editorial chips) ---------- */
   .tag {
-    @apply inline-flex items-center gap-1.5 mono text-[10px] font-bold uppercase tracking-[0.2em] text-foreground border-2 border-foreground px-2 py-1 rounded-sm bg-card;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    @apply inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground border border-border px-2 py-1 rounded-sm bg-card;
   }
   .tag-solid {
-    @apply inline-flex items-center gap-1.5 mono text-[10px] font-bold uppercase tracking-[0.2em] bg-foreground text-background border-2 border-foreground px-2 py-1 rounded-sm;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    @apply inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.2em] bg-foreground text-background border border-foreground px-2 py-1 rounded-sm;
   }
   .tag-green {
-    @apply inline-flex items-center gap-1.5 mono text-[10px] font-bold uppercase tracking-[0.2em] bg-primary text-primary-foreground border-2 border-foreground px-2 py-1 rounded-sm;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    @apply inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.2em] bg-primary text-primary-foreground border border-primary px-2 py-1 rounded-sm;
   }
 
-  /* Editorial collage headline — mix sizes/weights inside one h1 */
+  /* Editorial collage headline — italicize <em>, accent <u> */
   .headline-collage em {
-    font-style: normal;
+    font-style: italic;
+    font-weight: 300;
     @apply text-primary;
   }
   .headline-collage u {
     text-decoration: none;
-    background: hsl(var(--foreground));
-    color: hsl(var(--background));
-    padding: 0 0.15em;
+    font-style: italic;
+    font-weight: 300;
+    @apply text-accent;
   }
 
-  /* Mascot bounce wave */
-  @keyframes mascot-wave {
-    0%, 100% { transform: rotate(-4deg); }
-    50% { transform: rotate(6deg); }
-  }
-  .mascot-wave { animation: mascot-wave 2.4s ease-in-out infinite; transform-origin: bottom center; }
+  /* Mascot wave kept as no-op for any stragglers */
+  .mascot-wave { display: none !important; }
 }
 
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--foreground) / 0.3) transparent;
+    scrollbar-color: hsl(var(--foreground) / 0.25) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--foreground) / 0.3);
+    background: hsl(var(--foreground) / 0.25);
     border-radius: 0;
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: hsl(var(--foreground) / 0.6); }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: hsl(var(--foreground) / 0.5); }
 
   .text-balance { text-wrap: balance; }
   .text-pretty { text-wrap: pretty; }
+
+  .bg-paper { background-color: hsl(var(--paper)); }
+  .bg-paper-deep { background-color: hsl(var(--paper-deep)); }
 }

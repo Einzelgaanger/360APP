@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ResourceFeedback from './ResourceFeedback';
-import { Mascot, mascotForCompetency } from '@/components/mascots/Mascot';
 
 interface Resource {
   title: string;
@@ -43,8 +42,6 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
   const [generatedAt, setGeneratedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [feedbackMap, setFeedbackMap] = useState<Record<string, number>>({});
-
-  const archetype = mascotForCompetency(focusArea);
 
   // Load any existing feedback for this user so thumbs persist.
   const loadFeedback = useCallback(async () => {
@@ -142,16 +139,13 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
   return (
     <div className="brutal p-5">
       <div className="flex items-start justify-between mb-4 gap-3">
-        <div className="min-w-0 flex items-start gap-3">
-          <Mascot mascot={archetype} size={48} />
-          <div className="min-w-0">
-            <div className="eyebrow mb-1 flex items-center gap-2"><Sparkles className="w-3 h-3" /> Adaptive picks</div>
-            <h3 className="font-serif text-lg font-bold leading-tight truncate">For: {focusArea}</h3>
-            <p className="text-[11px] text-foreground/70 mt-1">
-              Personalised from your past interactions, ratings and reflections.
-              {generatedAt && <> · Refreshed {generatedAt.toLocaleDateString()}</>}
-            </p>
-          </div>
+        <div className="min-w-0">
+          <div className="eyebrow mb-1 flex items-center gap-2"><Sparkles className="w-3 h-3" /> Adaptive picks</div>
+          <h3 className="font-display text-lg font-medium leading-tight truncate">For: {focusArea}</h3>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Personalised from your past interactions, ratings and reflections.
+            {generatedAt && <> · Refreshed {generatedAt.toLocaleDateString()}</>}
+          </p>
         </div>
         <Button variant="outline" size="sm" onClick={generate} disabled={loading} className="shrink-0 h-8">
           {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}

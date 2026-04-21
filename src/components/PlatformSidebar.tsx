@@ -40,16 +40,21 @@ export default function PlatformSidebar({
 
   return (
     <>
-      <aside className="hidden lg:flex fixed left-0 top-0 z-30 h-screen w-72 flex-col border-r border-border/60 bg-card/82 backdrop-blur-xl">
-        <div className="px-5 pt-5 pb-4 border-b border-border/50">
+      <aside className="hidden lg:flex fixed left-0 top-0 z-30 h-screen w-72 flex-col border-r border-border bg-background">
+        <div className="px-6 pt-6 pb-5 border-b border-border">
           <img src={vggLogo} alt="Venture Garden Group" className="h-8 w-auto" />
-          <h2 className="mt-4 text-base font-semibold text-foreground">{title}</h2>
-          {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+          <div className="mt-5">
+            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+              ◉ Workspace
+            </p>
+            <h2 className="font-display mt-1.5 text-base font-medium text-foreground">{title}</h2>
+            {subtitle && <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}
+          </div>
           {visibleMeta.length > 0 && (
-            <div className="mt-3 space-y-1.5 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5">
+            <div className="mt-4 space-y-2 border-t border-border pt-4">
               {visibleMeta.map((entry) => (
                 <div key={entry.label} className="flex items-start justify-between gap-2 text-[11px] leading-tight">
-                  <span className="text-muted-foreground">{entry.label}</span>
+                  <span className="font-mono uppercase tracking-[0.16em] text-muted-foreground">{entry.label}</span>
                   <span className="font-medium text-foreground text-right">{entry.value}</span>
                 </div>
               ))}
@@ -57,18 +62,20 @@ export default function PlatformSidebar({
           )}
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto" aria-label="Sidebar Navigation">
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto" aria-label="Sidebar Navigation">
           {items.map((item) => {
-            const className = `w-full justify-start gap-2.5 rounded-xl text-sm ${
+            const className = `relative w-full justify-start gap-2.5 rounded-sm font-mono text-[11px] uppercase tracking-[0.16em] ${
               item.active
-                ? 'bg-primary/12 text-primary border border-primary/20'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
+                ? 'bg-foreground text-background hover:bg-foreground hover:text-background'
+                : 'text-muted-foreground hover:text-foreground hover:bg-paper-deep/60'
             }`;
+            const activeBar = item.active ? <span className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 bg-primary" /> : null;
 
             if (item.to) {
               return (
                 <Button key={item.key} variant="ghost" size="sm" asChild className={className}>
                   <Link to={item.to}>
+                    {activeBar}
                     {item.icon}
                     {item.label}
                   </Link>
@@ -84,6 +91,7 @@ export default function PlatformSidebar({
                 className={className}
                 onClick={item.onClick}
               >
+                {activeBar}
                 {item.icon}
                 {item.label}
               </Button>
@@ -91,7 +99,7 @@ export default function PlatformSidebar({
           })}
         </nav>
 
-        <div className="px-4 py-4 border-t border-border/50 space-y-2">
+        <div className="px-4 py-4 border-t border-border space-y-2">
           {actions}
           {onLogout && (
             <Button variant="outline" size="sm" onClick={onLogout} className="w-full gap-2">
@@ -101,21 +109,21 @@ export default function PlatformSidebar({
         </div>
       </aside>
 
-      <header className="lg:hidden sticky top-0 z-30 border-b border-border/60 bg-card/85 backdrop-blur-xl">
+      <header className="lg:hidden sticky top-0 z-30 border-b border-border bg-background">
         <div className="px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto" />
-            <span className="text-sm font-semibold">{title}</span>
+            <span className="font-display text-sm font-medium">{title}</span>
           </div>
-          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileOpen((v) => !v)}>
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setMobileOpen((v) => !v)}>
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>
         </div>
         {mobileOpen && (
-          <div className="border-t border-border/40 px-3 py-3 space-y-2 bg-card/95">
+          <div className="border-t border-border px-3 py-3 space-y-2 bg-card">
             {items.map((item) => {
               const className = `w-full justify-start gap-2.5 ${
-                item.active ? 'bg-primary text-primary-foreground' : ''
+                item.active ? 'bg-foreground text-background' : ''
               }`;
 
               if (item.to) {
@@ -157,4 +165,3 @@ export default function PlatformSidebar({
     </>
   );
 }
-
