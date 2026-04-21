@@ -66,16 +66,16 @@ export default function Onboarding() {
   return (
     <div className="app-page flex min-h-screen flex-col">
       {/* Editorial masthead */}
-      <header className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-10">
-        <div className="flex items-center gap-3">
-          <img src={vggLogo} alt="VGG" className="h-7 w-auto" />
+      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-10 sm:py-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <img src={vggLogo} alt="VGG" className="h-6 w-auto sm:h-7" />
           <div className="hidden h-5 w-px bg-border sm:block" />
           <span className="font-mono hidden sm:inline text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground">
             VGG / 360° / Performance Edition
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="font-mono hidden sm:inline text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="font-mono hidden lg:inline text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground">
             Vol. 01 · Issue 03
           </span>
           <Button variant="green" size="sm" onClick={() => navigate('/login')}>
@@ -93,19 +93,19 @@ export default function Onboarding() {
               key={s.label}
               type="button"
               onClick={() => setSlide(i)}
-              className={`group flex items-center gap-3 border-r border-border px-5 py-4 text-left transition-colors last:border-r-0 ${
+              className={`group flex items-center gap-2 sm:gap-3 border-r border-border px-3 py-3 sm:px-5 sm:py-4 text-left transition-colors last:border-r-0 ${
                 active ? 'bg-paper-deep/40' : 'bg-card hover:bg-paper-deep/30'
               }`}
               aria-current={active ? 'step' : undefined}
             >
               <span
-                className={`numeral text-2xl ${
+                className={`numeral text-lg sm:text-2xl ${
                   active ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
                 {s.no}
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 hidden sm:block">
                 <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
                   Step {i + 1} / 03
                 </div>
@@ -113,6 +113,9 @@ export default function Onboarding() {
                   {s.label}
                 </div>
               </div>
+              <span className="font-mono sm:hidden text-[10px] uppercase tracking-[0.16em] text-foreground truncate">
+                {s.label}
+              </span>
             </button>
           );
         })}
@@ -161,7 +164,7 @@ export default function Onboarding() {
         </div>
 
         {/* Right: copy */}
-        <div className="relative order-1 flex flex-1 flex-col justify-between px-6 py-10 sm:px-12 lg:order-2 lg:py-16 xl:px-20">
+        <div className="relative order-1 flex flex-1 flex-col justify-between px-5 py-8 sm:px-12 sm:py-10 lg:order-2 lg:py-16 xl:px-20">
           <AnimatePresence mode="wait">
             <motion.div
               key={slide}

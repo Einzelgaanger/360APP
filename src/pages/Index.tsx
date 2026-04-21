@@ -6,21 +6,21 @@ import vggLogo from '@/assets/vgg-logo.webp';
 const Index = () => {
   return (
     <div className="app-page flex min-h-screen flex-col">
-      <header className="flex items-center justify-between border-b border-border px-6 py-4 sm:px-10">
-        <div className="flex items-center gap-3">
-          <img src={vggLogo} alt="VGG" className="h-7 w-auto" />
+      <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-10 sm:py-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <img src={vggLogo} alt="VGG" className="h-6 w-auto sm:h-7" />
           <div className="hidden h-5 w-px bg-border sm:block" />
           <span className="font-mono hidden sm:inline text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground">
             ◉ VGG / 360° / Performance Edition
           </span>
         </div>
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground">
+        <span className="font-mono text-[10px] sm:text-[10.5px] uppercase tracking-[0.2em] sm:tracking-[0.22em] text-muted-foreground whitespace-nowrap">
           Vol. 01
         </span>
       </header>
 
       <main className="grid flex-1 grid-cols-1 lg:grid-cols-2">
-        <section className="flex flex-col justify-center px-6 py-16 sm:px-12 lg:px-20">
+        <section className="flex flex-col justify-center px-5 py-12 sm:px-12 sm:py-16 lg:px-20">
           <span className="eyebrow-primary">◉ № 360 — Performance Intelligence</span>
 
           <h1 className="headline-collage display-serif mt-6 text-[clamp(2.75rem,7vw,5.5rem)] font-medium leading-[0.92] tracking-[-0.045em] text-foreground">
@@ -41,7 +41,7 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="relative min-h-[360px] border-border p-6 lg:border-l lg:p-12">
+        <section className="relative min-h-[280px] sm:min-h-[360px] border-border p-5 sm:p-6 lg:border-l lg:p-12">
           <div className="ink-frame relative h-full w-full overflow-hidden">
             <img
               src={heroGlobe}
@@ -52,11 +52,11 @@ const Index = () => {
         </section>
       </main>
 
-      <footer className="flex items-center justify-between border-t border-border px-6 py-4 sm:px-10">
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground">
+      <footer className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 sm:px-10 sm:py-4">
+        <span className="font-mono text-[10px] sm:text-[10.5px] uppercase tracking-[0.2em] sm:tracking-[0.22em] text-muted-foreground truncate">
           © Venture Garden Group
         </span>
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground">
+        <span className="font-mono text-[10px] sm:text-[10.5px] uppercase tracking-[0.2em] sm:tracking-[0.22em] text-muted-foreground whitespace-nowrap">
           appraisal.vgg.app
         </span>
       </footer>
