@@ -26,6 +26,8 @@ import AnonymityBanner from '@/components/employee-dashboard/AnonymityBanner';
 import GrowthResources from '@/components/employee-dashboard/GrowthResources';
 import DevelopmentPlans from '@/components/employee-dashboard/DevelopmentPlans';
 import SelfDebrief from '@/components/employee-dashboard/SelfDebrief';
+import WeeklyReflection from '@/components/employee-dashboard/WeeklyReflection';
+import LearningProfilePanel from '@/components/employee-dashboard/LearningProfilePanel';
 
 interface FeedbackItem {
   text: string;
@@ -1253,6 +1255,10 @@ export default function EmployeeHub() {
                       })}
                     </div>
                   </div>
+
+                  <LearningProfilePanel userId={user.id} />
+
+                  <WeeklyReflection userId={user.id} />
 
                   {selectedFocusArea && (
                     <GrowthResources
