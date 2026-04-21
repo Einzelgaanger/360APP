@@ -3,44 +3,56 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronLeft, ArrowRight, ArrowUpRight, Search } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ArrowRight, Search } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
-import heroOnboarding from '@/assets/hero-onboarding.jpg';
-import heroHub from '@/assets/hero-hub.jpg';
-import heroAdmin from '@/assets/hero-admin.jpg';
+import { Mascot } from '@/components/mascots/Mascot';
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const SLIDE = { duration: 0.55, ease: EASE };
+const SLIDE = { duration: 0.45, ease: EASE };
 
-const SLIDES = [
+type SlideDef = {
+  no: string;
+  label: string;
+  kicker: string;
+  // headline parts mix sizes/weights; <em> = green, <u> = ink-block
+  headlineHTML: string;
+  body: string;
+  mascot: 'lion' | 'owl' | 'eagle';
+  mascotLine: string;
+};
+
+const SLIDES: SlideDef[] = [
   {
-    label: 'Manifesto',
     no: '01',
-    eyebrow: 'A Field Manual',
-    headline: 'Performance, written in plain ink.',
+    label: 'Manifesto',
+    kicker: 'A Field Manual',
+    headlineHTML: 'Performance,<br/><em>written</em> in <u>plain ink</u>.',
     body:
       'A 360° appraisal platform built for honesty, anonymity and craft. Less ceremony, more signal. This is how Venture Garden Group measures growth.',
-    art: heroOnboarding,
+    mascot: 'lion',
+    mascotLine: 'Lion says: stand up straight, speak the truth.',
   },
   {
-    label: 'How it works',
     no: '02',
-    eyebrow: 'The Method',
-    headline: 'Three movements. One review cycle.',
+    label: 'The Method',
+    kicker: 'Three Movements',
+    headlineHTML: 'Find. <em>Review.</em><br/><u>Read</u> the chorus back.',
     body:
       'Find your profile, review your colleagues across the leadership canon, then read the chorus back as a personal dashboard. No scoreboards. No spectacle.',
-    art: heroHub,
+    mascot: 'owl',
+    mascotLine: 'Owl says: feedback is information, not opinion.',
   },
   {
-    label: 'Get started',
     no: '03',
-    eyebrow: 'Begin',
-    headline: 'Your voice, on the record. Anonymously.',
+    label: 'Begin',
+    kicker: 'Get Started',
+    headlineHTML: 'Your <em>voice</em>,<br/>on the record. <u>Anonymously.</u>',
     body:
       'Sign in with your VGG credentials. Every response is encrypted and detached from your identity before analytics ever sees it.',
-    art: heroAdmin,
+    mascot: 'eagle',
+    mascotLine: 'Eagle says: see the whole field before you swoop.',
   },
-] as const;
+];
 
 export default function Onboarding() {
   const [slide, setSlide] = useState(0);
@@ -53,27 +65,28 @@ export default function Onboarding() {
 
   return (
     <div className="app-page flex min-h-screen flex-col">
-      {/* Masthead */}
-      <header className="relative z-10 flex items-center justify-between border-b border-foreground/15 px-6 py-4 sm:px-10">
-        <div className="flex items-center gap-4">
-          <img src={vggLogo} alt="Venture Garden Group" className="h-7 w-auto" />
-          <span className="hidden h-5 w-px bg-foreground/25 sm:block" />
-          <span className="hidden font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/70 sm:block">
-            360° / Performance Edition
+      {/* Brutalist masthead — solid ink slab */}
+      <header className="relative z-10 flex items-center justify-between border-b-[3px] border-foreground bg-foreground px-5 py-3 sm:px-8">
+        <div className="flex items-center gap-3">
+          <div className="brutal flex h-10 w-10 items-center justify-center bg-background p-1">
+            <img src={vggLogo} alt="VGG" className="h-full w-full object-contain" />
+          </div>
+          <span className="mono text-[10px] font-bold uppercase tracking-[0.22em] text-background">
+            VGG / 360° / Performance
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/50 sm:block">
-            Est. 2024 · Lagos
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline-flex tag-solid !bg-background !text-foreground">
+            EST · 2024
           </span>
-          <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
+          <Button variant="green" size="sm" onClick={() => navigate('/login')}>
             Sign In
           </Button>
         </div>
       </header>
 
-      {/* Issue meta strip */}
-      <div className="relative z-10 flex items-stretch border-b border-foreground/15 bg-background">
+      {/* Step strip — chunky brutalist tabs */}
+      <div className="relative z-10 flex items-stretch border-b-[3px] border-foreground bg-background">
         {SLIDES.map((s, i) => {
           const active = i === slide;
           return (
@@ -81,19 +94,21 @@ export default function Onboarding() {
               key={s.label}
               type="button"
               onClick={() => setSlide(i)}
-              className={`group flex flex-1 items-baseline gap-3 border-r border-foreground/15 px-6 py-3 text-left transition-colors last:border-r-0 ${
-                active ? 'bg-foreground text-background' : 'hover:bg-foreground/5'
+              className={`group flex flex-1 items-center gap-3 border-r-2 border-foreground px-5 py-4 text-left transition-all last:border-r-0 ${
+                active
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-card hover:bg-foreground hover:text-background'
               }`}
               aria-current={active ? 'step' : undefined}
             >
-              <span className={`font-mono text-[11px] font-bold ${active ? 'text-background' : 'text-foreground/50'}`}>
-                {s.no}
-              </span>
               <span
-                className={`font-mono text-[10px] font-semibold uppercase tracking-[0.2em] ${
-                  active ? 'text-background' : 'text-foreground/70'
+                className={`brutal flex h-9 w-9 items-center justify-center mono text-sm font-black ${
+                  active ? 'bg-foreground text-background' : 'bg-background text-foreground'
                 }`}
               >
+                {s.no}
+              </span>
+              <span className="mono text-[10px] font-bold uppercase tracking-[0.22em]">
                 {s.label}
               </span>
             </button>
@@ -101,29 +116,45 @@ export default function Onboarding() {
         })}
       </div>
 
-      {/* Editorial spread */}
+      {/* Spread */}
       <main className="relative z-10 flex flex-1 flex-col overflow-hidden lg:flex-row">
-        {/* Left: art */}
-        <div className="relative order-2 min-h-[280px] flex-1 overflow-hidden border-foreground/15 lg:order-1 lg:border-r">
+        {/* Left: huge mascot slab on flat color */}
+        <div className="relative order-2 flex min-h-[320px] flex-1 items-center justify-center overflow-hidden border-foreground bg-primary lg:order-1 lg:border-r-[3px]">
+          {/* corner ticks */}
+          <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-b-[3px] border-r-[3px] border-foreground" />
+          <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-b-[3px] border-l-[3px] border-foreground" />
+          <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-r-[3px] border-t-[3px] border-foreground" />
+          <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-l-[3px] border-t-[3px] border-foreground" />
+
+          {/* big issue number */}
+          <div className="pointer-events-none absolute left-6 top-6 mono text-[10px] font-bold uppercase tracking-[0.22em] text-primary-foreground">
+            № {current.no} / 03
+          </div>
+          <div className="pointer-events-none absolute right-6 top-6 mono text-[10px] font-bold uppercase tracking-[0.22em] text-primary-foreground">
+            {current.kicker}
+          </div>
+
           <AnimatePresence mode="wait">
-            <motion.img
-              key={current.art}
-              src={current.art}
-              alt="Editorial graphic for current onboarding step"
-              width={1536}
-              height={1536}
-              decoding="async"
-              initial={{ opacity: 0, scale: 1.04 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
+            <motion.div
+              key={current.mascot}
+              initial={{ opacity: 0, scale: 0.85, rotate: -6 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               transition={SLIDE}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+              className="flex flex-col items-center gap-5 px-6"
+            >
+              <div className="brutal-lg bg-background p-6 sm:p-8">
+                <Mascot mascot={current.mascot} size={220} wave />
+              </div>
+              <div className="brutal max-w-[280px] bg-foreground px-4 py-2 text-center mono text-[10px] font-bold uppercase tracking-[0.18em] text-background">
+                {current.mascotLine}
+              </div>
+            </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Right: copy */}
-        <div className="relative order-1 flex flex-1 flex-col justify-between px-6 py-10 sm:px-12 lg:order-2 lg:py-16">
+        {/* Right: copy slab */}
+        <div className="relative order-1 flex flex-1 flex-col justify-between bg-background px-6 py-10 sm:px-12 lg:order-2 lg:py-14">
           <AnimatePresence mode="wait">
             <motion.div
               key={slide}
@@ -131,27 +162,29 @@ export default function Onboarding() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={SLIDE}
-              className="max-w-xl"
+              className="max-w-2xl"
             >
-              <div className="mb-8 flex items-center gap-3">
-                <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/70">
-                  {current.eyebrow}
-                </span>
-                <div className="h-px flex-1 bg-foreground/25" />
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground/50">
-                  № {current.no}
+              <div className="mb-6 flex items-center gap-3">
+                <span className="tag-green">{current.kicker}</span>
+                <div className="h-[3px] flex-1 bg-foreground" />
+                <span className="mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground">
+                  STEP {current.no}
                 </span>
               </div>
 
-              <h1 className="font-serif text-[clamp(2.25rem,5vw,4.25rem)] font-bold leading-[0.95] tracking-[-0.025em] text-foreground text-balance">
-                {current.headline}
-              </h1>
+              <h1
+                className="headline-collage display-serif text-[clamp(2.5rem,6vw,5rem)] font-black leading-[0.92] tracking-[-0.035em] text-foreground"
+                dangerouslySetInnerHTML={{ __html: current.headlineHTML }}
+              />
 
-              <p className="mt-6 max-w-md text-base leading-relaxed text-foreground/70">{current.body}</p>
+              <div className="mt-6 flex items-start gap-4">
+                <div className="mt-2 h-[3px] w-12 shrink-0 bg-foreground" />
+                <p className="max-w-md text-base leading-relaxed text-foreground">{current.body}</p>
+              </div>
 
               {isLast && (
                 <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-                  <Button size="lg" onClick={() => navigate('/login')} className="gap-2">
+                  <Button size="lg" variant="green" onClick={() => navigate('/login')} className="gap-2">
                     Sign In <ArrowRight className="h-4 w-4" />
                   </Button>
                   <Button size="lg" variant="outline" onClick={() => navigate('/find-account')} className="gap-2">
@@ -162,12 +195,15 @@ export default function Onboarding() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Footer controls */}
-          <div className="mt-12 flex items-center justify-between border-t border-foreground/15 pt-6">
-            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/60">
-              <span>{String(slide + 1).padStart(2, '0')}</span>
-              <span>/</span>
-              <span>{String(SLIDES.length).padStart(2, '0')}</span>
+          {/* Footer controls — chunky brutalist */}
+          <div className="mt-12 flex items-center justify-between border-t-[3px] border-foreground pt-5">
+            <div className="flex items-center gap-2">
+              <span className="brutal flex h-10 w-10 items-center justify-center bg-foreground mono text-sm font-black text-background">
+                {String(slide + 1).padStart(2, '0')}
+              </span>
+              <span className="mono text-[10px] font-bold uppercase tracking-[0.22em] text-foreground">
+                / {String(SLIDES.length).padStart(2, '0')}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -180,8 +216,8 @@ export default function Onboarding() {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               {isLast ? (
-                <Button size="default" onClick={() => navigate('/login')} className="gap-2">
-                  Enter <ArrowUpRight className="h-4 w-4" />
+                <Button size="default" variant="green" onClick={() => navigate('/login')} className="gap-2">
+                  Enter <ArrowRight className="h-4 w-4" />
                 </Button>
               ) : (
                 <Button variant="default" size="icon" onClick={next} aria-label="Next">
