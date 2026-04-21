@@ -1402,9 +1402,37 @@ export default function EmployeeHub() {
               )}
             </motion.div>
           </TabsContent>
+
+          {/* ============ PROFILE TAB (mobile-only entry from bottom bar) ============ */}
+          <TabsContent value="profile" className="mt-4 lg:hidden">
+            <div className="surface-card p-5 space-y-5">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-2">◉ Account</p>
+                <h2 className="font-display text-2xl font-medium">{profile?.name ?? 'Employee'}</h2>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.email}</p>
+              </div>
+              <div className="grid grid-cols-1 gap-2 text-sm border-t border-border pt-4">
+                <div className="flex justify-between"><span className="text-muted-foreground">Subsidiary</span><span className="font-medium">{currentEmployeeSubsidiary ?? 'Unlisted'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Department</span><span className="font-medium">{currentEmployee?.department ?? profile?.department ?? 'Unassigned'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Role</span><span className="font-medium">{currentEmployee?.role ?? 'Employee'}</span></div>
+              </div>
+              {isAdmin && (
+                <Button variant="outline" asChild className="w-full gap-2 border-primary/30 text-primary">
+                  <Link to="/admin"><Shield className="w-4 h-4" /> Admin Console</Link>
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleLogout} className="w-full">Sign Out</Button>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
       </div>
+
+      {/* Mobile bottom tab bar — WhatsApp-style */}
+      <MobileTabBar
+        active={(activeTab as MobileTab) || 'survey'}
+        onChange={(t) => setTab(t)}
+      />
     </div>
   );
 }
