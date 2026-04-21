@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { AuthHeroPanel } from '@/components/auth/AuthHeroPanel';
 import { Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
+import heroPeopleData from '@/assets/hero-people-data.jpg';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -34,7 +35,7 @@ export default function Login() {
   };
 
   return (
-    <div className="app-page flex min-h-screen">
+    <div className="app-page flex min-h-screen flex-col lg:flex-row">
       <AuthHeroPanel
         variant="login"
         eyebrow="VGG / Administrator"
@@ -42,9 +43,18 @@ export default function Login() {
         description="Analytics, leaderboards, exports and AI co‑analysis — for the few who steward the system."
       />
 
+      {/* Mobile-only hero strip */}
+      <div className="mobile-hero">
+        <img src={heroPeopleData} alt="Colleagues in conversation" fetchPriority="high" />
+        <div className="mobile-hero-caption">
+          <span>◉ VGG / Administrator</span>
+          <span>Auth / 01</span>
+        </div>
+      </div>
+
       {/* Right form panel */}
-      <div className="relative flex flex-1 items-center justify-center px-6 py-10">
-        <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-foreground/15 px-6 py-4">
+      <div className="relative flex flex-1 items-center justify-center px-5 sm:px-6 py-8 sm:py-10">
+        <div className="hidden sm:flex absolute inset-x-0 top-0 items-center justify-between border-b border-foreground/15 px-6 py-4">
           <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/70">
             Restricted Access
           </span>
@@ -65,7 +75,7 @@ export default function Login() {
             <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/60">
               Administrator
             </span>
-            <h1 className="mt-3 font-serif text-4xl font-bold leading-[0.95] tracking-[-0.02em] sm:text-5xl">
+            <h1 className="mt-3 font-serif text-3xl font-bold leading-[0.95] tracking-[-0.02em] sm:text-5xl">
               Sign in.
             </h1>
             <p className="mt-3 text-sm text-foreground/60">

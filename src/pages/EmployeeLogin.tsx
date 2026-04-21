@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { AuthHeroPanel } from '@/components/auth/AuthHeroPanel';
 import { Lock, Mail, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
+import authPersonData from '@/assets/auth-person-data.jpg';
 
 export default function EmployeeLogin() {
   const [email, setEmail] = useState('');
@@ -34,7 +35,7 @@ export default function EmployeeLogin() {
   };
 
   return (
-    <div className="app-page flex min-h-screen">
+    <div className="app-page flex min-h-screen flex-col lg:flex-row">
       <AuthHeroPanel
         variant="hub"
         eyebrow="VGG / Employee"
@@ -42,8 +43,17 @@ export default function EmployeeLogin() {
         description="Provide peer feedback, view your personal dashboard, and track your growth alongside colleagues."
       />
 
-      <div className="relative flex flex-1 items-center justify-center px-5 sm:px-6 pt-20 pb-10 sm:py-10">
-        <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-foreground/15 px-4 sm:px-6 py-3 sm:py-4 bg-background">
+      {/* Mobile-only hero strip */}
+      <div className="mobile-hero">
+        <img src={authPersonData} alt="A colleague in a moment of reflection" fetchPriority="high" />
+        <div className="mobile-hero-caption">
+          <span>◉ VGG / Employee</span>
+          <span>Auth / 02</span>
+        </div>
+      </div>
+
+      <div className="relative flex flex-1 items-center justify-center px-5 sm:px-6 py-8 sm:py-10">
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-foreground/15 px-4 sm:px-6 py-3 sm:py-4 bg-background lg:bg-transparent">
           <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
@@ -64,9 +74,9 @@ export default function EmployeeLogin() {
             <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/60">
               Employee
             </span>
-            <h1 className="mt-3 font-serif text-3xl font-bold leading-[0.95] tracking-[-0.02em] sm:text-5xl">
-              Welcome back.
-            </h1>
+          <h1 className="mt-3 font-serif text-[1.75rem] font-bold leading-[1.0] tracking-[-0.02em] sm:text-5xl sm:leading-[0.95]">
+            Welcome back.
+          </h1>
             <p className="mt-3 text-sm text-foreground/60">
               VGG 360° Appraisal — secure employee access.
             </p>
