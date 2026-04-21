@@ -673,7 +673,7 @@ export default function EmployeeHub() {
 
       {/* Tabs */}
       <div className="lg:pl-72">
-      <div className="platform-content section-stack">
+      <div className="platform-content section-stack px-4 sm:px-6 lg:px-8">
         <Tabs value={activeTab} onValueChange={setTab}>
           {/* ============ SURVEY TAB ============ */}
           <TabsContent value="survey" className="mt-4">
@@ -917,12 +917,12 @@ export default function EmployeeHub() {
                             {q.question_text}
                           </p>
                           {q.question_type === 'scored' ? (
-                            <div className="flex gap-2">
+                            <div className="flex gap-1.5 sm:gap-2">
                               {SCALE_OPTIONS.map(s => (
                                 <button
                                   key={s.value}
                                   onClick={() => setAnswers(prev => ({ ...prev, [q.id]: s.value }))}
-                                  className={`flex-1 py-3 rounded-xl border-2 text-center transition-all duration-200 ${
+                                  className={`flex-1 min-w-0 py-2.5 sm:py-3 px-1 rounded-xl border-2 text-center transition-all duration-200 ${
                                     answers[q.id] === s.value
                                       ? 'bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20 -translate-y-0.5'
                                       : 'border-border bg-background text-muted-foreground hover:bg-muted/50 hover:border-primary/30'
