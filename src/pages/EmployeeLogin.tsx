@@ -42,8 +42,8 @@ export default function EmployeeLogin() {
         description="Provide peer feedback, view your personal dashboard, and track your growth alongside colleagues."
       />
 
-      <div className="relative flex flex-1 items-center justify-center px-6 py-10">
-        <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-foreground/15 px-6 py-4">
+      <div className="relative flex flex-1 items-center justify-center px-5 sm:px-6 pt-20 pb-10 sm:py-10">
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between border-b border-foreground/15 px-4 sm:px-6 py-3 sm:py-4 bg-background">
           <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
@@ -58,13 +58,13 @@ export default function EmployeeLogin() {
           transition={{ duration: 0.4 }}
           className="w-full max-w-md"
         >
-          <img src={vggLogo} alt="Venture Garden Group" className="h-7 w-auto mb-10" />
+          <img src={vggLogo} alt="Venture Garden Group" className="h-7 w-auto mb-8 sm:mb-10" />
 
-          <div className="mb-10">
+          <div className="mb-8 sm:mb-10">
             <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/60">
               Employee
             </span>
-            <h1 className="mt-3 font-serif text-4xl font-bold leading-[0.95] tracking-[-0.02em] sm:text-5xl">
+            <h1 className="mt-3 font-serif text-3xl font-bold leading-[0.95] tracking-[-0.02em] sm:text-5xl">
               Welcome back.
             </h1>
             <p className="mt-3 text-sm text-foreground/60">
@@ -135,7 +135,7 @@ export default function EmployeeLogin() {
             </Button>
           </form>
 
-          <div className="mt-10 flex items-center justify-between border-t border-foreground/15 pt-6">
+          <div className="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 border-t border-foreground/15 pt-6">
             <Link
               to="/find-account"
               className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/70 hover:text-foreground"

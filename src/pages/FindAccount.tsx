@@ -191,8 +191,8 @@ export default function FindAccount() {
   }
 
   return (
-    <div className="app-page flex items-center justify-center relative p-6">
-      <div className="absolute top-5 left-5">
+    <div className="app-page flex items-start sm:items-center justify-center relative px-5 sm:px-6 pt-16 sm:pt-6 pb-10 sm:pb-6">
+      <div className="absolute top-3 left-3 sm:top-5 sm:left-5">
         <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
