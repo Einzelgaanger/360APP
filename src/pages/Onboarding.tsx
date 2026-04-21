@@ -5,8 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronLeft, ArrowRight, Search } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
-import heroGlobe from '@/assets/hero-globe.jpg';
-import riverDelta from '@/assets/auth-river-delta.jpg';
+import heroPeopleData from '@/assets/hero-people-data.jpg';
+import authPersonData from '@/assets/auth-person-data.jpg';
+import heroTeam from '@/assets/hero-team-mobile.jpg';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const SLIDE = { duration: 0.5, ease: EASE };
@@ -29,8 +30,8 @@ const SLIDES: SlideDef[] = [
     headlineHTML: 'Performance, written in <em>plain ink.</em>',
     body:
       'A 360° appraisal platform built for honesty, anonymity and craft. Less ceremony, more signal. This is how Venture Garden Group measures growth.',
-    image: heroGlobe,
-    caption: 'Fig. 01 — Atlas of what\'s possible',
+    image: heroPeopleData,
+    caption: 'Fig. 01 — Feedback in conversation',
   },
   {
     no: '02',
@@ -39,8 +40,8 @@ const SLIDES: SlideDef[] = [
     headlineHTML: 'Find. Review. <em>Read the chorus back.</em>',
     body:
       'Find your profile, review your colleagues across the leadership canon, then read the chorus back as a personal dashboard. No scoreboards. No spectacle.',
-    image: riverDelta,
-    caption: 'Fig. 02 — River delta, dawn',
+    image: heroTeam,
+    caption: 'Fig. 02 — A team in the room',
   },
   {
     no: '03',
@@ -49,8 +50,8 @@ const SLIDES: SlideDef[] = [
     headlineHTML: 'Your voice, on the record. <em>Anonymously.</em>',
     body:
       'Sign in with your VGG credentials. Every response is encrypted and detached from your identity before analytics ever sees it.',
-    image: heroGlobe,
-    caption: 'Fig. 03 — Begin the conversation',
+    image: authPersonData,
+    caption: 'Fig. 03 — A moment of reflection',
   },
 ];
 

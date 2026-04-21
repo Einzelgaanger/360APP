@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import riverDelta from '@/assets/auth-river-delta.jpg';
-import heroGlobe from '@/assets/hero-globe.jpg';
+import authPersonData from '@/assets/auth-person-data.jpg';
+import heroPeopleData from '@/assets/hero-people-data.jpg';
 
 type AuthHeroPanelProps = {
   eyebrow?: string;
@@ -21,8 +21,8 @@ export function AuthHeroPanel({
   variant = 'login',
   children,
 }: AuthHeroPanelProps) {
-  const art = variant === 'hub' ? riverDelta : heroGlobe;
-  const caption = variant === 'hub' ? 'Fig. 02 — River delta, dawn' : 'Fig. 01 — Atlas of what\'s possible';
+  const art = variant === 'hub' ? authPersonData : heroPeopleData;
+  const caption = variant === 'hub' ? 'Fig. 02 — A moment of reflection' : 'Fig. 01 — Feedback in conversation';
 
   return (
     <aside className="relative hidden min-h-0 w-[48%] flex-col bg-paper-deep/40 lg:flex">

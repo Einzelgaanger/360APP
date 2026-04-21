@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import PlatformSidebar from '@/components/PlatformSidebar';
+import MobileTabBar, { type MobileTab } from '@/components/MobileTabBar';
+import vggLogo from '@/assets/vgg-logo.webp';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
   Building2, User, ClipboardList, Send, Loader2, Shield,
@@ -641,6 +643,8 @@ export default function EmployeeHub() {
   return (
     <div className="app-page">
       <div className="app-page-grid" />
+
+      {/* Desktop sidebar (hidden on mobile via component) */}
       <PlatformSidebar
         title="360° Appraisal"
         subtitle={profile?.name}
@@ -671,9 +675,30 @@ export default function EmployeeHub() {
         }
       />
 
+      {/* Mobile top bar — logo + active section label, no hamburger */}
+      <header className="lg:hidden sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
+        <div className="px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img src={vggLogo} alt="VGG" className="h-6 w-auto flex-shrink-0" />
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground truncate">
+              ◉ {activeTab === 'dashboard' ? 'My Dashboard'
+                  : activeTab === 'growth' ? 'Growth Hub'
+                  : activeTab === 'rankings' ? 'Rankings'
+                  : activeTab === 'profile' ? 'Profile'
+                  : 'Survey'}
+            </span>
+          </div>
+          {isAdmin && (
+            <Link to="/admin" aria-label="Admin" className="text-muted-foreground hover:text-primary">
+              <Shield className="w-4 h-4" />
+            </Link>
+          )}
+        </div>
+      </header>
+
       {/* Tabs */}
       <div className="lg:pl-72">
-      <div className="platform-content section-stack px-4 sm:px-6 lg:px-8">
+      <div className="platform-content section-stack px-4 sm:px-6 lg:px-8 has-mobile-tabbar">
         <Tabs value={activeTab} onValueChange={setTab}>
           {/* ============ SURVEY TAB ============ */}
           <TabsContent value="survey" className="mt-4">
@@ -1377,9 +1402,37 @@ export default function EmployeeHub() {
               )}
             </motion.div>
           </TabsContent>
+
+          {/* ============ PROFILE TAB (mobile-only entry from bottom bar) ============ */}
+          <TabsContent value="profile" className="mt-4 lg:hidden">
+            <div className="surface-card p-5 space-y-5">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-2">◉ Account</p>
+                <h2 className="font-display text-2xl font-medium">{profile?.name ?? 'Employee'}</h2>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.email}</p>
+              </div>
+              <div className="grid grid-cols-1 gap-2 text-sm border-t border-border pt-4">
+                <div className="flex justify-between"><span className="text-muted-foreground">Subsidiary</span><span className="font-medium">{currentEmployeeSubsidiary ?? 'Unlisted'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Department</span><span className="font-medium">{currentEmployee?.department ?? profile?.department ?? 'Unassigned'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Role</span><span className="font-medium">{currentEmployee?.role ?? 'Employee'}</span></div>
+              </div>
+              {isAdmin && (
+                <Button variant="outline" asChild className="w-full gap-2 border-primary/30 text-primary">
+                  <Link to="/admin"><Shield className="w-4 h-4" /> Admin Console</Link>
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleLogout} className="w-full">Sign Out</Button>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
       </div>
+
+      {/* Mobile bottom tab bar — WhatsApp-style */}
+      <MobileTabBar
+        active={(activeTab as MobileTab) || 'survey'}
+        onChange={(t) => setTab(t)}
+      />
     </div>
   );
 }

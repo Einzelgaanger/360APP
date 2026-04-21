@@ -11,6 +11,7 @@ import {
   Search, ArrowLeft, CheckCircle2, AlertCircle, Loader2, Building2, Mail,
 } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
+import heroTeam from '@/assets/hero-team-mobile.jpg';
 
 interface EmployeeResult {
   id: string;
@@ -191,12 +192,22 @@ export default function FindAccount() {
   }
 
   return (
-    <div className="app-page flex items-start sm:items-center justify-center relative px-5 sm:px-6 pt-16 sm:pt-6 pb-10 sm:pb-6">
-      <div className="absolute top-3 left-3 sm:top-5 sm:left-5">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5 text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" /> Back
-        </Button>
+    <div className="app-page min-h-screen flex flex-col">
+      {/* Mobile-only hero strip */}
+      <div className="mobile-hero">
+        <img src={heroTeam} alt="A team in collaboration" fetchPriority="high" />
+        <div className="mobile-hero-caption">
+          <span>◉ VGG / Find Account</span>
+          <span>Auth / 03</span>
+        </div>
       </div>
+
+      <div className="flex-1 flex items-start sm:items-center justify-center relative px-5 sm:px-6 pt-6 pb-10 sm:pb-6">
+        <div className="absolute top-3 left-3 sm:top-5 sm:left-5">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4" /> Back
+          </Button>
+        </div>
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -375,6 +386,7 @@ export default function FindAccount() {
           </Link>
         </div>
       </motion.div>
+      </div>
     </div>
   );
 }

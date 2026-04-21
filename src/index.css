@@ -101,12 +101,19 @@
     @apply tracking-[-0.025em];
   }
 
-  h1 { @apply text-4xl sm:text-5xl lg:text-6xl leading-[0.95]; font-weight: 500; }
-  h2 { @apply text-3xl sm:text-4xl leading-[1.0]; font-weight: 500; }
-  h3 { @apply text-2xl sm:text-3xl leading-[1.1]; font-weight: 500; }
-  h4 { @apply text-xl sm:text-2xl leading-tight; font-weight: 500; }
+  /* MOBILE-FIRST type scale — aggressive scale-down on phones, editorial on desktop */
+  h1 { @apply text-[1.75rem] sm:text-4xl lg:text-6xl leading-[1.0] sm:leading-[0.95]; font-weight: 500; }
+  h2 { @apply text-[1.5rem] sm:text-3xl lg:text-4xl leading-[1.05]; font-weight: 500; }
+  h3 { @apply text-lg sm:text-2xl lg:text-3xl leading-[1.15]; font-weight: 500; }
+  h4 { @apply text-base sm:text-xl lg:text-2xl leading-snug; font-weight: 500; }
 
-  p { @apply leading-relaxed; }
+  p { @apply leading-relaxed text-[15px] sm:text-base; }
+
+  /* Mobile body comfort */
+  @media (max-width: 640px) {
+    body { font-size: 15px; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+  }
 
   ::selection {
     background: hsl(var(--primary));
@@ -346,4 +353,30 @@
 
   .bg-paper { background-color: hsl(var(--paper)); }
   .bg-paper-deep { background-color: hsl(var(--paper-deep)); }
+
+  /* ---------- Mobile-only hero band (editorial photo strip) ---------- */
+  .mobile-hero {
+    @apply lg:hidden relative w-full overflow-hidden border-b border-border;
+    aspect-ratio: 16 / 10;
+  }
+  .mobile-hero img {
+    @apply absolute inset-0 h-full w-full object-cover;
+  }
+  .mobile-hero::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background: linear-gradient(180deg, transparent 55%, hsl(var(--background) / 0.85) 100%);
+  }
+  .mobile-hero-caption {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    @apply absolute bottom-2 left-3 right-3 z-10 flex items-center justify-between text-[9px] uppercase tracking-[0.22em] text-foreground/75;
+  }
+
+  /* Reserve room for the mobile bottom tab bar so content never hides under it */
+  .has-mobile-tabbar {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 1024px) {
+    .has-mobile-tabbar { padding-bottom: 0; }
+  }
 }
