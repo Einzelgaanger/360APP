@@ -473,6 +473,78 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_interactions: {
+        Row: {
+          action: string
+          created_at: string
+          duration_seconds: number | null
+          focus_area: string
+          id: string
+          metadata: Json | null
+          resource_format: string | null
+          resource_id: string
+          resource_title: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          duration_seconds?: number | null
+          focus_area: string
+          id?: string
+          metadata?: Json | null
+          resource_format?: string | null
+          resource_id: string
+          resource_title?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          duration_seconds?: number | null
+          focus_area?: string
+          id?: string
+          metadata?: Json | null
+          resource_format?: string | null
+          resource_id?: string
+          resource_title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      learning_reflections: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          week_starting: string
+          what_changed: string | null
+          what_i_learned: string | null
+          what_next: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          week_starting: string
+          what_changed?: string | null
+          what_i_learned?: string | null
+          what_next?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          week_starting?: string
+          what_changed?: string | null
+          what_i_learned?: string | null
+          what_next?: string | null
+        }
+        Relationships: []
+      }
       manager_summaries: {
         Row: {
           avg_cultural_fit: number | null
@@ -543,6 +615,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      resource_feedback: {
+        Row: {
+          created_at: string
+          focus_area: string | null
+          id: string
+          note: string | null
+          reason_tag: string | null
+          relevance_score: number
+          resource_id: string
+          resource_title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          focus_area?: string | null
+          id?: string
+          note?: string | null
+          reason_tag?: string | null
+          relevance_score: number
+          resource_id: string
+          resource_title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          focus_area?: string | null
+          id?: string
+          note?: string | null
+          reason_tag?: string | null
+          relevance_score?: number
+          resource_id?: string
+          resource_title?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       review_completions: {
         Row: {

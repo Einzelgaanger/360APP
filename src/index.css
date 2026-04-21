@@ -6,67 +6,70 @@
 
 @layer base {
   :root {
-    /* VGG 360 — Editorial / Bold Graphic Art reset */
-    /* Paper & ink */
-    --background: 40 24% 96%;        /* warm cream paper */
-    --foreground: 220 22% 9%;        /* near-black ink */
+    /* VGG 360 — BRUTALIST + VGG GREEN */
+    /* Pure paper, hard ink. Green is the only loud accent. */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 7%;
 
-    --card: 40 28% 98%;
-    --card-foreground: 220 22% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
 
-    --popover: 40 28% 98%;
-    --popover-foreground: 220 22% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
 
-    /* Brand: VGG green stays as primary */
-    --primary: 152 58% 30%;          /* deeper editorial emerald */
-    --primary-foreground: 40 28% 98%;
+    /* VGG green — the only loud accent */
+    --primary: 152 64% 28%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 40 14% 90%;
-    --secondary-foreground: 220 22% 14%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 7%;
 
-    --muted: 40 12% 92%;
-    --muted-foreground: 220 10% 38%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 32%;
 
-    /* Accent: ember orange (replaces blue as the editorial accent) */
-    --accent: 14 78% 48%;
-    --accent-foreground: 40 28% 98%;
+    /* Accent collapses to ink — brutalist discipline */
+    --accent: 0 0% 7%;
+    --accent-foreground: 0 0% 98%;
 
-    --success: 152 58% 30%;
-    --success-foreground: 40 28% 98%;
+    --success: 152 64% 28%;
+    --success-foreground: 0 0% 98%;
 
-    --warning: 35 90% 50%;
-    --warning-foreground: 220 22% 9%;
+    /* Yellow strictly for warnings */
+    --warning: 48 100% 50%;
+    --warning-foreground: 0 0% 7%;
 
-    --destructive: 358 70% 46%;
-    --destructive-foreground: 40 28% 98%;
+    /* Red strictly for errors */
+    --destructive: 358 78% 48%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 14% 86%;
-    --input: 220 14% 84%;
-    --ring: 220 22% 9%;
+    /* Hard 2px borders */
+    --border: 0 0% 7%;
+    --input: 0 0% 7%;
+    --ring: 0 0% 7%;
 
-    /* Sharp editorial edges */
-    --radius: 0.25rem;
+    /* Brutalist: minimal radius */
+    --radius: 0.125rem;
 
-    --chart-1: 152 58% 30%;
-    --chart-2: 14 78% 48%;
-    --chart-3: 220 22% 14%;
-    --chart-4: 40 14% 70%;
-    --chart-5: 35 90% 50%;
+    --chart-1: 152 64% 28%;
+    --chart-2: 0 0% 7%;
+    --chart-3: 0 0% 50%;
+    --chart-4: 48 100% 50%;
+    --chart-5: 358 78% 48%;
 
-    --score-excellent: 152 58% 30%;
-    --score-good: 220 22% 14%;
-    --score-average: 35 90% 50%;
-    --score-poor: 358 70% 46%;
+    --score-excellent: 152 64% 28%;
+    --score-good: 0 0% 7%;
+    --score-average: 48 100% 50%;
+    --score-poor: 358 78% 48%;
 
-    /* Sidebar — deep ink */
-    --sidebar-background: 220 22% 9%;
-    --sidebar-foreground: 40 18% 88%;
-    --sidebar-primary: 14 78% 52%;
-    --sidebar-primary-foreground: 40 28% 98%;
-    --sidebar-accent: 220 18% 14%;
-    --sidebar-accent-foreground: 40 18% 92%;
-    --sidebar-border: 220 16% 18%;
-    --sidebar-ring: 14 78% 52%;
+    /* Sidebar — full black brutalist slab */
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 92%;
+    --sidebar-primary: 152 64% 38%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: 152 64% 38%;
   }
 }
 
@@ -90,8 +93,9 @@
     overflow-x: hidden;
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.045) 1px, transparent 0);
-    background-size: 22px 22px;
+      linear-gradient(hsl(var(--foreground) / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -114,29 +118,21 @@
 }
 
 @layer components {
-  /* Editorial page chrome */
+  /* BRUTALIST page chrome */
   .app-page {
     @apply min-h-screen relative;
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.045) 1px, transparent 0);
-    background-size: 22px 22px;
+      linear-gradient(hsl(var(--foreground) / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 
-  .app-page-grid {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-      linear-gradient(to right, hsl(var(--foreground) / 0.05) 1px, transparent 1px);
-    background-size: 8.333% 100%;
-    mask-image: linear-gradient(to bottom, black, transparent 90%);
-    opacity: 0.5;
-  }
+  .app-page-grid { display: none; }
 
   .page-shell {
-    @apply rounded-sm border border-foreground/15 bg-card;
+    @apply rounded-sm border-2 border-foreground bg-card;
+    box-shadow: 6px 6px 0 0 hsl(var(--foreground));
   }
 
   .platform-canvas {
@@ -151,25 +147,40 @@
     @apply space-y-8 sm:space-y-12;
   }
 
-  /* Editorial panels — flat, hairline borders, no glass */
-  .glass-panel {
-    @apply bg-card border border-foreground/15 rounded-sm;
+  /* Brutalist slab — thick border + hard offset shadow */
+  .brutal {
+    @apply bg-card border-2 border-foreground rounded-sm;
+    box-shadow: 4px 4px 0 0 hsl(var(--foreground));
+  }
+  .brutal-lg {
+    @apply bg-card border-2 border-foreground rounded-sm;
+    box-shadow: 8px 8px 0 0 hsl(var(--foreground));
+  }
+  .brutal-green {
+    @apply bg-primary text-primary-foreground border-2 border-foreground rounded-sm;
+    box-shadow: 4px 4px 0 0 hsl(var(--foreground));
+  }
+  .brutal-press {
+    @apply transition-all duration-100;
+  }
+  .brutal-press:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 0 hsl(var(--foreground));
+  }
+  .brutal-press:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 0 hsl(var(--foreground));
   }
 
-  .glass-panel-hover {
-    @apply glass-panel transition-colors duration-200 hover:border-foreground/40;
-  }
-
+  /* Legacy aliases — map to brutalist */
+  .glass-panel { @apply brutal; }
+  .glass-panel-hover { @apply brutal brutal-press; }
   .gradient-text { @apply text-foreground; }
+  .stat-card { @apply brutal p-6 brutal-press; }
 
-  .stat-card {
-    @apply glass-panel p-6 transition-colors duration-200 hover:border-foreground/40;
-  }
-
-  /* Editorial tags & labels */
   .eyebrow {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
-    @apply text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/70;
+    @apply text-[10px] font-bold uppercase tracking-[0.24em] text-foreground;
   }
 
   .display-serif {
@@ -181,58 +192,81 @@
     font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 
-  .rule {
-    @apply border-t border-foreground/15;
-  }
-
-  .rule-thick {
-    @apply border-t-2 border-foreground;
-  }
+  .rule { @apply border-t-2 border-foreground; }
+  .rule-thick { @apply border-t-[3px] border-foreground; }
 
   .score-badge {
-    @apply inline-flex items-center justify-center w-11 h-11 rounded-sm text-sm font-bold mono border border-foreground/20;
+    @apply inline-flex items-center justify-center w-11 h-11 rounded-sm text-sm font-bold mono border-2 border-foreground;
+    box-shadow: 2px 2px 0 0 hsl(var(--foreground));
   }
-
-  .score-excellent { @apply bg-primary text-primary-foreground border-primary; }
-  .score-good { @apply bg-foreground text-background border-foreground; }
-  .score-average { @apply bg-warning text-warning-foreground border-warning; }
-  .score-poor { @apply bg-destructive text-destructive-foreground border-destructive; }
+  .score-excellent { @apply bg-primary text-primary-foreground; }
+  .score-good { @apply bg-foreground text-background; }
+  .score-average { @apply bg-warning text-warning-foreground; }
+  .score-poor { @apply bg-destructive text-destructive-foreground; }
 
   .chat-bubble {
-    @apply p-4 rounded-sm max-w-[85%] border border-foreground/15;
+    @apply p-4 rounded-sm max-w-[85%] border-2 border-foreground;
   }
-  .chat-bubble-user { @apply bg-foreground text-background ml-auto border-foreground; }
+  .chat-bubble-user { @apply bg-primary text-primary-foreground ml-auto; }
   .chat-bubble-ai { @apply bg-card text-foreground mr-auto; }
 
   .input-field {
-    @apply rounded-sm border border-foreground/25 bg-background px-4 py-3 text-sm transition-colors focus:border-foreground focus:ring-0 focus:outline-none placeholder:text-foreground/40;
+    @apply rounded-sm border-2 border-foreground bg-background px-4 py-3 text-sm transition-colors focus:ring-0 focus:outline-none placeholder:text-foreground/40;
   }
 
-  .section-shell { @apply glass-panel p-6 sm:p-8; }
-  .section-title { @apply font-serif text-xl font-semibold tracking-tight text-foreground; }
-  .section-subtitle { @apply text-xs mono uppercase tracking-[0.18em] text-foreground/60; }
+  .section-shell { @apply brutal p-6 sm:p-8; }
+  .section-title { @apply font-serif text-xl font-bold tracking-tight text-foreground; }
+  .section-subtitle { @apply text-xs mono uppercase tracking-[0.22em] text-foreground; }
 
-  /* Big editorial number — for hero stats */
   .display-number {
     font-family: 'Fraunces', serif;
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 0.85;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    line-height: 0.82;
     font-variant-numeric: tabular-nums;
   }
 
-  /* Ink button utility */
+  /* Brutalist ink button */
   .btn-ink {
-    @apply inline-flex items-center justify-center gap-2 bg-foreground text-background px-6 py-3 rounded-sm text-sm font-semibold uppercase tracking-[0.12em] mono transition-transform hover:-translate-y-0.5;
+    @apply inline-flex items-center justify-center gap-2 bg-foreground text-background px-6 py-3 rounded-sm text-sm font-bold uppercase tracking-[0.14em] mono border-2 border-foreground brutal-press;
+    box-shadow: 4px 4px 0 0 hsl(var(--foreground));
   }
+  .btn-ink:hover { box-shadow: 2px 2px 0 0 hsl(var(--foreground)); }
+
+  .btn-green {
+    @apply inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-sm text-sm font-bold uppercase tracking-[0.14em] mono border-2 border-foreground brutal-press;
+    box-shadow: 4px 4px 0 0 hsl(var(--foreground));
+  }
+  .btn-green:hover { box-shadow: 2px 2px 0 0 hsl(var(--foreground)); }
 
   .tag {
-    @apply inline-flex items-center gap-1.5 mono text-[10px] uppercase tracking-[0.18em] text-foreground/70 border border-foreground/25 px-2 py-1 rounded-sm;
+    @apply inline-flex items-center gap-1.5 mono text-[10px] font-bold uppercase tracking-[0.2em] text-foreground border-2 border-foreground px-2 py-1 rounded-sm bg-card;
+  }
+  .tag-solid {
+    @apply inline-flex items-center gap-1.5 mono text-[10px] font-bold uppercase tracking-[0.2em] bg-foreground text-background border-2 border-foreground px-2 py-1 rounded-sm;
+  }
+  .tag-green {
+    @apply inline-flex items-center gap-1.5 mono text-[10px] font-bold uppercase tracking-[0.2em] bg-primary text-primary-foreground border-2 border-foreground px-2 py-1 rounded-sm;
   }
 
-  .tag-solid {
-    @apply inline-flex items-center gap-1.5 mono text-[10px] uppercase tracking-[0.18em] bg-foreground text-background px-2 py-1 rounded-sm;
+  /* Editorial collage headline — mix sizes/weights inside one h1 */
+  .headline-collage em {
+    font-style: normal;
+    @apply text-primary;
   }
+  .headline-collage u {
+    text-decoration: none;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    padding: 0 0.15em;
+  }
+
+  /* Mascot bounce wave */
+  @keyframes mascot-wave {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(6deg); }
+  }
+  .mascot-wave { animation: mascot-wave 2.4s ease-in-out infinite; transform-origin: bottom center; }
 }
 
 @layer utilities {
