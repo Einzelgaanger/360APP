@@ -144,7 +144,7 @@ export default function Onboarding() {
               className="flex flex-col items-center gap-5 px-6"
             >
               <div className="brutal-lg bg-background p-6 sm:p-8">
-                <Mascot type={current.mascot} size={220} className="mascot-wave" />
+                <Mascot mascot={current.mascot} size={220} wave />
               </div>
               <div className="brutal max-w-[280px] bg-foreground px-4 py-2 text-center mono text-[10px] font-bold uppercase tracking-[0.18em] text-background">
                 {current.mascotLine}
