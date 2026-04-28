@@ -17,6 +17,7 @@ import EmployeeHub from "./pages/EmployeeHub";
 import AppraisalAdmin from "./pages/AppraisalAdmin";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
+import ProfileCompletionGate from "@/components/ProfileCompletionGate";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +32,7 @@ function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
 function ProtectedEmployeeRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useEmployeeAuth();
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  return isAuthenticated ? <ProfileCompletionGate>{children}</ProfileCompletionGate> : <Navigate to="/login" replace />;
 }
 
 function AdminGate() {
