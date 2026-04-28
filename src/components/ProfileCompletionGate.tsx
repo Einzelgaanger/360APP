@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, ShieldCheck, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -43,7 +44,7 @@ const uniqueSorted = (values: Array<string | null | undefined>) =>
   Array.from(new Set(values.map((value) => value?.trim()).filter(Boolean) as string[]))
     .sort((a, b) => a.localeCompare(b));
 
-export default function ProfileCompletionGate({ children }: { children: React.ReactNode }) {
+export default function ProfileCompletionGate({ children }: { children: ReactNode }) {
   const { user, profile, refreshProfile, logout } = useEmployeeAuth();
   const [subsidiaries, setSubsidiaries] = useState<Subsidiary[]>([]);
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
@@ -104,7 +105,7 @@ export default function ProfileCompletionGate({ children }: { children: React.Re
 
   const canSave = name.trim() && role && department && subsidiaryId && hierarchyLevel;
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSave) {
       toast.error('Please complete every profile field.');
