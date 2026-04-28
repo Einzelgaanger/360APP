@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronLeft, ArrowRight, Search } from 'lucide-react';
+import { ChevronRight, ChevronLeft, ArrowRight, Search, KeyRound } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
 import heroFeedbackSession from '@/assets/hero-feedback-session.jpg';
 import heroReflectionData from '@/assets/hero-reflection-data.jpg';
@@ -30,7 +30,7 @@ const SLIDES: SlideDef[] = [
     headlineHTML: 'Performance, written in <em>plain ink.</em>',
     body:
       'A 360° appraisal platform built for honesty, anonymity and craft. Less ceremony, more signal. This is how Venture Garden Group measures growth.',
-    image: heroFeedbackSession,
+    image: heroTeam,
     caption: 'Fig. 01 — Feedback with data',
   },
   {
@@ -40,7 +40,7 @@ const SLIDES: SlideDef[] = [
     headlineHTML: 'Find. Review. <em>Read the chorus back.</em>',
     body:
       'Find your profile, review your colleagues across the leadership canon, then read the chorus back as a personal dashboard. No scoreboards. No spectacle.',
-    image: heroTeam,
+    image: heroFeedbackSession,
     caption: 'Fig. 02 — A team in the room',
   },
   {
@@ -90,37 +90,39 @@ export default function Onboarding() {
       </header>
 
       {/* Step strip */}
-      <div className="grid grid-cols-3 border-b border-border bg-card/45">
-        {SLIDES.map((s, i) => {
-          const active = i === slide;
-          return (
-            <button
-              key={s.label}
-              type="button"
-              onClick={() => setSlide(i)}
-              className={`group flex min-h-[56px] items-center gap-2 border-r border-border px-3 py-3 text-left transition-colors last:border-r-0 sm:min-h-[64px] sm:px-4 sm:py-3.5 ${
-                active ? 'bg-secondary/70' : 'bg-card hover:bg-secondary/35'
-              }`}
-              aria-current={active ? 'step' : undefined}
-            >
-              <span
-                className={`numeral text-sm sm:text-base ${
-                  active ? 'text-primary' : 'text-muted-foreground'
+      <div className="border-b border-border bg-card/45 px-3 py-2.5 sm:px-0 sm:py-0">
+        <div className="grid grid-cols-3 gap-2 pb-1.5 sm:gap-0 sm:pb-0">
+          {SLIDES.map((s, i) => {
+            const active = i === slide;
+            return (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => setSlide(i)}
+                className={`group flex min-h-[52px] min-w-0 items-center gap-2 rounded-md border border-border px-2.5 py-2.5 text-left transition-colors sm:min-h-[64px] sm:rounded-none sm:border-y-0 sm:border-l-0 sm:border-r sm:px-4 sm:py-3.5 sm:last:border-r-0 ${
+                  active ? 'bg-secondary/75' : 'bg-card hover:bg-secondary/35'
                 }`}
+                aria-current={active ? 'step' : undefined}
               >
-                {s.no}
-              </span>
-              <div className="min-w-0">
-                <div className="hidden text-[10px] font-semibold text-muted-foreground sm:block">
-                  Step {i + 1} / {SLIDES.length}
+                <span
+                  className={`numeral text-sm sm:text-base ${
+                    active ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                >
+                  {s.no}
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[9px] font-medium text-muted-foreground sm:text-[10px]">
+                    {i + 1} / {SLIDES.length}
+                  </div>
+                  <div className="truncate text-[12px] font-semibold text-foreground sm:mt-0.5 sm:text-[13px]">
+                    {s.label}
+                  </div>
                 </div>
-                <div className="truncate text-[12px] font-semibold text-foreground sm:mt-0.5 sm:text-[13px]">
-                  {s.label}
-                </div>
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="h-1 w-full bg-border/60">
@@ -141,15 +143,15 @@ export default function Onboarding() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={SLIDE}
-            className="relative aspect-[16/10] max-h-[42vh] w-full overflow-hidden"
+            className="relative aspect-[16/10] max-h-[34vh] w-full overflow-hidden"
           >
             <img
               src={current.image}
               alt={current.caption}
               className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-x-0 bottom-0 bg-background/80 px-4 py-3">
-              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+            <div className="absolute inset-x-0 bottom-0 bg-background/85 px-4 py-2">
+              <p className="text-[10px] font-medium text-muted-foreground">
                 {current.caption}
               </p>
             </div>
@@ -200,7 +202,7 @@ export default function Onboarding() {
         </div>
 
         {/* Right: copy */}
-        <div className="relative order-1 flex min-h-0 flex-1 flex-col justify-between overflow-y-auto px-5 py-4 sm:px-10 sm:py-8 lg:order-2 lg:overflow-visible lg:py-14 xl:px-16">
+        <div className="relative order-1 flex min-h-0 flex-1 flex-col justify-between overflow-hidden px-4 py-4 sm:px-8 sm:py-7 lg:order-2 lg:overflow-visible lg:py-14 xl:px-16">
           <AnimatePresence mode="wait">
             <motion.div
               key={slide}
@@ -213,16 +215,16 @@ export default function Onboarding() {
               <span className="eyebrow-primary">◉ {current.kicker}</span>
 
               <h1
-                className="headline-collage display-serif mt-3 text-[clamp(1.55rem,6.3vw,3.9rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground sm:mt-5"
+                className="headline-collage display-serif mt-2.5 text-[clamp(1.35rem,5.8vw,3.8rem)] font-semibold leading-[1] tracking-[-0.02em] text-foreground sm:mt-4"
                 dangerouslySetInnerHTML={{ __html: current.headlineHTML }}
               />
 
-              <p className="mt-4 max-w-md text-[14px] leading-relaxed text-muted-foreground sm:text-[15px]">
+              <p className="mt-3.5 max-w-md text-[13px] leading-relaxed text-muted-foreground sm:text-[14px]">
                 {current.body}
               </p>
 
               {!isLast && (
-                <div className="mt-6 rounded-lg border border-border bg-card/70 p-3 sm:rounded-sm sm:p-3.5">
+                <div className="mt-5 rounded-md border border-border bg-card/80 p-3 sm:p-3.5">
                   <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                     Coming next
                   </p>
@@ -233,12 +235,12 @@ export default function Onboarding() {
               )}
 
               {isLast && (
-                <div className="mt-7 grid grid-cols-1 gap-2.5 sm:mt-9 sm:grid-cols-2">
-                  <Button size="lg" variant="green" onClick={() => navigate('/login')} className="h-9 w-full justify-center rounded-md px-3.5 text-xs font-medium normal-case">
-                    Sign in
+                <div className="mt-6 grid grid-cols-1 gap-2 sm:mt-8 sm:grid-cols-2">
+                  <Button size="lg" variant="green" onClick={() => navigate('/login')} className="h-9 w-full justify-center gap-1.5 rounded-md px-3.5 text-xs font-medium normal-case">
+                    <KeyRound className="h-3.5 w-3.5" /> Sign in
                   </Button>
-                  <Button size="lg" variant="outline" onClick={() => navigate('/find-account')} className="h-9 w-full justify-center rounded-md px-3.5 text-xs font-medium normal-case">
-                    Find my account
+                  <Button size="lg" variant="outline" onClick={() => navigate('/find-account')} className="h-9 w-full justify-center gap-1.5 rounded-md px-3.5 text-xs font-medium normal-case">
+                    <Search className="h-3.5 w-3.5" /> Find my account
                   </Button>
                 </div>
               )}
@@ -246,7 +248,7 @@ export default function Onboarding() {
           </AnimatePresence>
 
           {/* Footer controls — sticky on small screens for thumb reach */}
-          <div className="sticky bottom-0 z-10 -mx-5 mt-7 flex items-center justify-between border-t border-border bg-background/95 px-5 pt-3.5 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 pb-safe sm:static sm:mx-0 sm:mt-10 sm:bg-transparent sm:px-0 sm:pt-5 sm:pb-0 sm:backdrop-blur-none lg:mt-10">
+          <div className="z-10 -mx-4 mt-6 flex items-center justify-between border-t border-border bg-background/95 px-4 pt-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/85 pb-safe sm:mx-0 sm:mt-9 sm:bg-transparent sm:px-0 sm:pt-5 sm:pb-0 sm:backdrop-blur-none lg:mt-10">
             <span className="rounded-md border border-border bg-card px-2 py-0.5 text-[9px] font-medium tracking-normal text-muted-foreground sm:text-[10px]">
               {String(slide + 1).padStart(2, '0')} / {String(SLIDES.length).padStart(2, '0')}
             </span>
@@ -257,9 +259,9 @@ export default function Onboarding() {
                 onClick={prev}
                 disabled={slide === 0}
                 aria-label="Previous"
-                className="h-9 w-9 shrink-0 rounded-md"
+                className="h-8 w-8 shrink-0 rounded-md"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
               {isLast ? (
                 <Button size="default" variant="green" onClick={() => navigate('/login')} className="h-8 min-w-[90px] rounded-md px-3 text-xs font-medium normal-case">

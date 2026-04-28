@@ -194,7 +194,7 @@ export default function FindAccount() {
 
   return (
     <div className="mobile-flow-shell app-page flex min-h-dvh-screen flex-col">
-      <div className="mobile-hero shrink-0">
+      <div className="mobile-hero shrink-0 max-h-[24vh]">
         <img src={heroTeam} alt="A team in collaboration" />
         <div className="mobile-hero-caption">
           <span>◉ VGG / Find Account</span>
@@ -203,56 +203,61 @@ export default function FindAccount() {
       </div>
 
       <div className="mobile-flow-header mobile-top-safe">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5 -ml-2 h-10">
-          <ArrowLeft className="w-4 h-4" /> Home
-        </Button>
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1.5 -ml-2 h-10">
+            <ArrowLeft className="w-4 h-4" /> Home
+          </Button>
+          <span className="text-[10px] font-medium text-muted-foreground">Account recovery</span>
+        </div>
       </div>
 
       <div className="mobile-flow-content flex flex-1 flex-col items-stretch justify-start sm:items-center sm:justify-center">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md mobile-flow-card"
-      >
-        <div className="mb-6">
-          <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto mb-6" />
-          <h1 className="text-xl font-semibold font-serif mb-1">Find Your Account</h1>
-          <p className="text-muted-foreground text-[13px]">
-            Search by your name or work email to locate your profile.
-          </p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md mobile-flow-card"
+        >
+          <div className="mb-4">
+            <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto mb-5" />
+            <h1 className="text-xl font-semibold mb-1">Find your account</h1>
+            <p className="text-muted-foreground text-[13px]">
+              Search by your full name or work email, then select your profile.
+            </p>
+          </div>
 
-        {/* Search */}
-        <div className="space-y-2.5 mb-4">
-          <Label htmlFor="search" className="font-mono text-[9px] uppercase tracking-[0.16em] text-foreground/70">Name or Email</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              id="search"
-              placeholder="e.g. John Doe or john@company.com"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-10 rounded-lg border-foreground/20 text-sm sm:rounded-sm"
-              autoFocus
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-8 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
-                aria-label="Clear search"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-            {searching && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+          {/* Search */}
+          <div className="sticky top-0 z-10 -mx-1 mb-4 border-b border-border/70 bg-card px-1 pb-3 pt-1">
+            <Label htmlFor="search" className="mb-2 block text-[10px] font-semibold text-foreground/70">Name or Email</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                id="search"
+                placeholder="e.g. John Doe or john@company.com"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-10 rounded-md border-foreground/20 pl-10 pr-16 text-sm"
+                autoFocus
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-8 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              {searching && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            {query.length === 0 ? (
+              <p className="mt-2 text-[11px] text-muted-foreground">Showing all accounts. Type to narrow the list.</p>
+            ) : (
+              <p className="mt-2 text-[11px] text-muted-foreground">Tap your profile to send a reset link.</p>
             )}
           </div>
-          {query.length === 0 && (
-            <p className="text-[11px] text-muted-foreground">Showing all accounts — type to narrow the list.</p>
-          )}
-        </div>
 
         {error && (
           <motion.div
@@ -297,13 +302,13 @@ export default function FindAccount() {
                   Searching for <span className="font-semibold text-foreground">{query}</span>
                 </p>
               )}
-              <div className="max-h-[340px] overflow-y-auto space-y-2 pr-1">
+              <div className="max-h-[44vh] overflow-y-auto space-y-2 pr-1 sm:max-h-[340px]">
                 {results.map((emp) => (
                   <button
                     key={emp.id}
                     onClick={() => handleSelectEmployee(emp)}
                     disabled={sending}
-                    className="w-full flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-muted/50 hover:border-primary/40 transition-all text-left group disabled:opacity-50 sm:rounded-sm"
+                    className="w-full flex items-center justify-between p-3.5 rounded-md border border-border bg-card hover:bg-muted/50 hover:border-primary/40 transition-all text-left group disabled:opacity-50"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -343,7 +348,7 @@ export default function FindAccount() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+              className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm px-3 pb-3 sm:items-center sm:px-4 sm:pb-0"
               onClick={() => !sending && setConfirmEmployee(null)}
             >
               <motion.div
@@ -373,17 +378,17 @@ export default function FindAccount() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2.5">
                   <Button
                     variant="outline"
-                    className="flex-1 h-9 text-xs"
+                    className="flex-1 h-10 text-xs"
                     onClick={() => setConfirmEmployee(null)}
                     disabled={sending}
                   >
                     Cancel
                   </Button>
                   <Button
-                    className="flex-1 h-9 text-xs"
+                    className="flex-1 h-10 text-xs"
                     onClick={handleConfirmSendReset}
                     disabled={sending}
                   >
@@ -395,12 +400,12 @@ export default function FindAccount() {
           )}
         </AnimatePresence>
 
-        <div className="mt-6 text-center">
-          <Link to="/login" className="text-[13px] text-primary hover:underline font-medium">
-            Already have a password? Sign in
-          </Link>
-        </div>
-      </motion.div>
+          <div className="mt-5 text-center">
+            <Link to="/login" className="text-[13px] text-primary hover:underline font-medium">
+              Already have a password? Sign in
+            </Link>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
