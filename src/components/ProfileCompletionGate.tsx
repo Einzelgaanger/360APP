@@ -40,6 +40,9 @@ const HIERARCHY_LABELS: Record<number, string> = {
   8: 'Partner',
 };
 
+const FALLBACK_DEPARTMENTS = ['Executive', 'Finance', 'HR', 'Investment', 'Legal', 'Operations', 'Portfolio', 'Sales', 'Technology'];
+const FALLBACK_ROLES = ['Analyst', 'Associate', 'Senior Associate', 'Manager', 'Principal', 'Head of Department', 'Director', 'Partner'];
+
 const uniqueSorted = (values: Array<string | null | undefined>) =>
   Array.from(new Set(values.map((value) => value?.trim()).filter(Boolean) as string[]))
     .sort((a, b) => a.localeCompare(b));
@@ -94,12 +97,12 @@ export default function ProfileCompletionGate({ children }: { children: ReactNod
   }, [email, employees]);
 
   const departmentOptions = useMemo(
-    () => uniqueSorted(employees.map((employee) => employee.department)),
+    () => uniqueSorted([...employees.map((employee) => employee.department), ...FALLBACK_DEPARTMENTS]),
     [employees],
   );
 
   const roleOptions = useMemo(
-    () => uniqueSorted(employees.map((employee) => employee.role)),
+    () => uniqueSorted([...employees.map((employee) => employee.role), ...FALLBACK_ROLES]),
     [employees],
   );
 
