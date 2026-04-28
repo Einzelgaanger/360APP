@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +14,7 @@ import vggLogo from '@/assets/vgg-logo.webp';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
   Building2, User, ClipboardList, Send, Loader2, Shield,
-  BarChart3, Trophy, Star, Users, Search, X, ArrowUp, ArrowDown, ArrowLeftRight, Sparkles
+  BarChart3, Trophy, Star, Users, Search, X, ArrowUp, ArrowDown, ArrowLeftRight, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -30,6 +30,11 @@ import DevelopmentPlans from '@/components/employee-dashboard/DevelopmentPlans';
 import SelfDebrief from '@/components/employee-dashboard/SelfDebrief';
 import WeeklyReflection from '@/components/employee-dashboard/WeeklyReflection';
 import LearningProfilePanel from '@/components/employee-dashboard/LearningProfilePanel';
+import {
+  PlatformHubSkeleton,
+  EmployeeDashboardTabSkeleton,
+  RankingsTabSkeleton,
+} from '@/components/shell/LoadingShells';
 
 interface FeedbackItem {
   text: string;
@@ -86,8 +91,9 @@ export default function EmployeeHub() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const submitInFlight = useRef(false);
   const [completedEmployees, setCompletedEmployees] = useState<Set<string>>(new Set());
   const [employeeSearch, setEmployeeSearch] = useState('');
 
@@ -136,20 +142,6 @@ export default function EmployeeHub() {
         });
     }
   }, [user]);
-
-  const markEmployeeCompleted = async (employeeId: string) => {
-    if (user) {
-      await supabase.from('review_completions').insert({
-        reviewer_id: user.id,
-        employee_id: employeeId,
-      });
-    }
-    setCompletedEmployees(prev => {
-      const next = new Set(prev);
-      next.add(employeeId);
-      return next;
-    });
-  };
 
   useEffect(() => { loadData(); }, []);
 
@@ -470,15 +462,21 @@ export default function EmployeeHub() {
   }, [activeTab, currentEmployee?.id]);
 
   const loadEmployees = async (subsidiaryId: string) => {
-    const { data } = await supabase.from('employees').select('*').eq('subsidiary_id', subsidiaryId).order('name');
-    if (data) setEmployees(data);
+    setEmployeesLoading(true);
+    try {
+      const { data } = await supabase.from('employees').select('*').eq('subsidiary_id', subsidiaryId).order('name');
+      if (data) setEmployees(data);
+    } finally {
+      setEmployeesLoading(false);
+    }
   };
 
   const handleSelectSubsidiary = (sub: Subsidiary) => {
     setSelectedSubsidiary(sub);
-    loadEmployees(sub.id);
+    setEmployees([]);
     setStep('employee');
     setEmployeeSearch('');
+    void loadEmployees(sub.id);
   };
 
   const handleSelectEmployee = (emp: Employee) => {
@@ -500,20 +498,31 @@ export default function EmployeeHub() {
   const progress = totalScoredQuestions > 0 ? (answeredScoredQuestions / totalScoredQuestions) * 100 : 0;
 
   const handleSubmit = async () => {
-    if (!selectedEmployee || !selectedSubsidiary || !user) return;
-    setSubmitting(true);
-    try {
-      // Get reviewer's hierarchy level from their profile's employee record
-      const reviewerEmp = currentEmployee;
-      const reviewerLevel = reviewerEmp?.hierarchy_level ?? 3;
-      const revieweeLevel = selectedEmployee.hierarchy_level ?? 3;
-      const direction = getFeedbackDirection(reviewerLevel, revieweeLevel);
+    if (!selectedEmployee || !selectedSubsidiary || !user || submitInFlight.current) return;
+    submitInFlight.current = true;
 
+    const emp = selectedEmployee;
+    const sub = selectedSubsidiary;
+    const reviewerEmp = currentEmployee;
+    const reviewerLevel = reviewerEmp?.hierarchy_level ?? 3;
+    const revieweeLevel = emp.hierarchy_level ?? 3;
+    const direction = getFeedbackDirection(reviewerLevel, revieweeLevel);
+
+    setCompletedEmployees(prev => {
+      const next = new Set(prev);
+      next.add(emp.id);
+      return next;
+    });
+    setStep('submitted');
+    toast.success('Response submitted successfully.');
+
+    let responseId: string | null = null;
+    try {
       const { data: responseData, error: responseError } = await supabase
         .from('survey_responses')
         .insert({
-          employee_id: selectedEmployee.id,
-          subsidiary_id: selectedSubsidiary.id,
+          employee_id: emp.id,
+          subsidiary_id: sub.id,
           reviewer_hierarchy_level: reviewerLevel,
           reviewee_hierarchy_level: revieweeLevel,
           feedback_direction: direction,
@@ -521,6 +530,7 @@ export default function EmployeeHub() {
         .select('id')
         .single();
       if (responseError) throw responseError;
+      responseId = responseData.id;
 
       const answerRows = Object.entries(answers).map(([questionId, value]) => ({
         response_id: responseData.id,
@@ -531,13 +541,26 @@ export default function EmployeeHub() {
       const { error: answersError } = await supabase.from('survey_answers').insert(answerRows);
       if (answersError) throw answersError;
 
-      markEmployeeCompleted(selectedEmployee.id);
-      setStep('submitted');
-      toast.success('Response submitted successfully.');
+      const { error: completionError } = await supabase.from('review_completions').insert({
+        reviewer_id: user.id,
+        employee_id: emp.id,
+      });
+      if (completionError) throw completionError;
     } catch (err) {
       console.error(err);
+      if (responseId) {
+        await supabase.from('survey_responses').delete().eq('id', responseId);
+      }
+      setCompletedEmployees(prev => {
+        const next = new Set(prev);
+        next.delete(emp.id);
+        return next;
+      });
+      setStep('questions');
       toast.error('Failed to submit. Please try again.');
-    } finally { setSubmitting(false); }
+    } finally {
+      submitInFlight.current = false;
+    }
   };
 
   // Department counts for the selected subsidiary
@@ -621,11 +644,7 @@ export default function EmployeeHub() {
   const handleLogout = async () => { await logout(); navigate('/'); };
 
   if (loading) {
-    return (
-      <div className="app-page flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
+    return <PlatformHubSkeleton />;
   }
 
   const getRankIcon = (rank: number) => {
@@ -646,6 +665,7 @@ export default function EmployeeHub() {
 
       {/* Desktop sidebar (hidden on mobile via component) */}
       <PlatformSidebar
+        suppressMobileHeader
         title="360° Appraisal"
         subtitle={profile?.name}
         meta={[
@@ -676,8 +696,11 @@ export default function EmployeeHub() {
       />
 
       {/* Mobile top bar — logo + active section label, no hamburger */}
-      <header className="lg:hidden sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
-        <div className="px-4 h-14 flex items-center justify-between">
+      <header
+        className="lg:hidden sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        <div className="px-4 h-14 flex items-center justify-between min-h-[3.5rem]">
           <div className="flex items-center gap-2.5 min-w-0">
             <img src={vggLogo} alt="VGG" className="h-6 w-auto flex-shrink-0" />
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground truncate">
@@ -821,6 +844,19 @@ export default function EmployeeHub() {
                     </div>
 
                     <div className="max-h-[55vh] overflow-y-auto scrollbar-thin pr-1 space-y-5">
+                      {employeesLoading ? (
+                        <div className="space-y-4 py-2">
+                          <p className="text-xs font-medium text-muted-foreground">Loading people…</p>
+                          {[0, 1, 2].map((i) => (
+                            <div key={i} className="space-y-2 skeleton-pulse-fast">
+                              <div className="h-4 w-40 rounded-md bg-muted" />
+                              <div className="h-14 w-full rounded-xl bg-muted" />
+                              <div className="h-14 w-full rounded-xl bg-muted" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <>
                       {([
                         { key: 'above' as const, label: 'Above You', sublabel: 'Leadership & Senior Colleagues', icon: <ArrowUp className="w-3.5 h-3.5" />, color: 'text-blue-600', bg: 'bg-blue-500/10', border: 'border-l-blue-500' },
                         { key: 'peers' as const, label: 'Your Peers', sublabel: 'Same hierarchy level as you', icon: <ArrowLeftRight className="w-3.5 h-3.5" />, color: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-l-emerald-500' },
@@ -886,10 +922,12 @@ export default function EmployeeHub() {
                           </div>
                         );
                       })}
-                      {filteredEmployees.length === 0 && (
+                      {!employeesLoading && filteredEmployees.length === 0 && (
                         <div className="text-center py-8 text-muted-foreground text-sm">
                           No employees match your search.
                         </div>
+                      )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -991,11 +1029,11 @@ export default function EmployeeHub() {
                         </Button>
                       ) : (
                         <Button
-                          onClick={handleSubmit}
-                          disabled={submitting || answeredScoredQuestions < totalScoredQuestions}
+                          onClick={() => void handleSubmit()}
+                          disabled={answeredScoredQuestions < totalScoredQuestions}
                           className="gap-1.5"
                         >
-                          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                          <Send className="w-4 h-4" />
                           Submit Response
                         </Button>
                       )}
@@ -1043,11 +1081,14 @@ export default function EmployeeHub() {
           <TabsContent value="dashboard" className="mt-4">
             <motion.div {...pageTransition}>
               {dashboardLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
+                <EmployeeDashboardTabSkeleton />
               ) : (
-                <div className="space-y-6">
+                <motion.div
+                  className="space-y-6"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                >
                   <AnonymityBanner />
                   {/* Your Level & Pool Summary */}
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5">
@@ -1221,7 +1262,7 @@ export default function EmployeeHub() {
                       <p className="text-muted-foreground text-sm">Your colleagues haven't submitted reviews for you yet. Check back later.</p>
                     </motion.div>
                   )}
-                </div>
+                </motion.div>
               )}
             </motion.div>
           </TabsContent>
@@ -1241,7 +1282,7 @@ export default function EmployeeHub() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5 bg-gradient-to-br from-primary/5 to-transparent">
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5 bg-secondary/35">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
                         <Sparkles className="w-5 h-5 text-primary" />
@@ -1314,11 +1355,13 @@ export default function EmployeeHub() {
           <TabsContent value="rankings" className="mt-4">
             <motion.div {...pageTransition}>
               {rankingsLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
+                <RankingsTabSkeleton />
               ) : (
-                <div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                >
                   <div className="text-center mb-6">
                     <h1 className="text-xl font-bold mb-1">Performance Rankings</h1>
                     <p className="text-muted-foreground text-sm">Top performers based on peer review scores.</p>
@@ -1398,7 +1441,7 @@ export default function EmployeeHub() {
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               )}
             </motion.div>
           </TabsContent>

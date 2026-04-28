@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,70 +6,69 @@
 
 @layer base {
   :root {
-    /* SNG / VGG — Neo-Organic Tech Editorial */
-    /* Bone paper, forest ink, deep VGG green, ocean blue accent. STRICT FLAT. */
-    --background: 40 33% 96%;        /* bone / cream paper */
-    --foreground: 160 28% 9%;        /* near-black forest ink */
+    --ui-font: 'Manrope', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    --ui-heading-font: 'Plus Jakarta Sans', 'Manrope', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    /* Formal VGG palette: clearly light blue + light green */
+    --background: 195 78% 96%;
+    --foreground: 204 38% 15%;
 
-    --card: 0 0% 100%;               /* pure white cards on cream */
-    --card-foreground: 160 28% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 204 32% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 160 28% 9%;
+    --popover-foreground: 204 32% 16%;
 
-    --primary: 110 55% 28%;          /* deep VGG green */
-    --primary-glow: 117 60% 45%;
-    --primary-foreground: 40 33% 97%;
+    --primary: 202 65% 46%;          /* Logo blue #298BC4 */
+    --primary-glow: 202 72% 52%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 40 22% 90%;
-    --secondary-foreground: 160 28% 9%;
+    --secondary: 107 52% 91%;
+    --secondary-foreground: 204 32% 16%;
 
-    --muted: 40 20% 93%;
-    --muted-foreground: 160 12% 38%;
+    --muted: 196 52% 93%;
+    --muted-foreground: 203 18% 37%;
 
-    --accent: 205 70% 38%;           /* sharpened ocean blue */
-    --accent-foreground: 40 33% 97%;
+    --accent: 107 54% 86%;           /* Brighter green accent */
+    --accent-foreground: 204 32% 16%;
 
-    --success: 110 55% 28%;
-    --success-foreground: 40 33% 97%;
+    --success: 142 71% 35%;
+    --success-foreground: 0 0% 100%;
 
-    --warning: 35 85% 50%;
-    --warning-foreground: 160 28% 9%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 204 32% 16%;
 
-    --destructive: 8 72% 48%;
-    --destructive-foreground: 40 33% 97%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 160 10% 84%;           /* tinted ink, never neutral gray */
-    --input: 160 10% 84%;
-    --ring: 110 55% 28%;
+    --border: 191 38% 81%;
+    --input: 191 38% 81%;
+    --ring: 202 65% 46%;
 
-    /* Editorial extensions */
-    --ink: 160 28% 9%;
-    --paper: 40 33% 96%;
-    --paper-deep: 40 22% 90%;        /* slightly darker cream */
+    --ink: 204 32% 16%;
+    --paper: 195 78% 96%;
+    --paper-deep: 154 48% 90%;
 
-    --radius: 0.25rem;               /* SHARP — 4px everywhere */
+    --radius: 0.5rem;
 
-    --chart-1: 110 55% 28%;
-    --chart-2: 205 70% 38%;
-    --chart-3: 160 28% 9%;
-    --chart-4: 35 85% 50%;
-    --chart-5: 8 72% 48%;
+    --chart-1: 202 65% 46%;
+    --chart-2: 107 52% 49%;
+    --chart-3: 204 32% 22%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 72% 51%;
 
-    --score-excellent: 110 55% 28%;
-    --score-good: 205 70% 38%;
-    --score-average: 35 85% 50%;
-    --score-poor: 8 72% 48%;
+    --score-excellent: 107 46% 49%;  /* Logo green #5DB644 */
+    --score-good: 202 65% 46%;       /* Logo blue #298BC4 */
+    --score-average: 38 92% 50%;
+    --score-poor: 0 72% 51%;
 
-    /* Sidebar — paper with ink, NOT brutal black slab */
-    --sidebar-background: 40 33% 96%;
-    --sidebar-foreground: 160 28% 9%;
-    --sidebar-primary: 110 55% 28%;
-    --sidebar-primary-foreground: 40 33% 97%;
-    --sidebar-accent: 40 22% 90%;
-    --sidebar-accent-foreground: 160 28% 9%;
-    --sidebar-border: 160 10% 84%;
-    --sidebar-ring: 110 55% 28%;
+    --sidebar-background: 195 78% 96%;
+    --sidebar-foreground: 204 32% 16%;
+    --sidebar-primary: 202 65% 46%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 107 52% 91%;
+    --sidebar-accent-foreground: 204 32% 16%;
+    --sidebar-border: 191 38% 81%;
+    --sidebar-ring: 202 65% 46%;
   }
 }
 
@@ -86,28 +85,39 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'DM Sans', system-ui, sans-serif;
-    letter-spacing: -0.005em;
+    font-family: var(--ui-font);
+    letter-spacing: normal;
     min-height: 100vh;
     overflow-x: hidden;
     background-color: hsl(var(--background));
-    /* NO grid overlay — strict flat paper */
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Fraunces', 'Times New Roman', serif;
-    font-optical-sizing: auto;
-    font-variation-settings: "SOFT" 30, "WONK" 0;
-    @apply tracking-[-0.025em];
+    font-family: var(--ui-heading-font);
+    letter-spacing: -0.012em;
+    @apply tracking-normal;
   }
 
-  /* MOBILE-FIRST type scale — aggressive scale-down on phones, editorial on desktop */
-  h1 { @apply text-[1.75rem] sm:text-4xl lg:text-6xl leading-[1.0] sm:leading-[0.95]; font-weight: 500; }
-  h2 { @apply text-[1.5rem] sm:text-3xl lg:text-4xl leading-[1.05]; font-weight: 500; }
-  h3 { @apply text-lg sm:text-2xl lg:text-3xl leading-[1.15]; font-weight: 500; }
-  h4 { @apply text-base sm:text-xl lg:text-2xl leading-snug; font-weight: 500; }
+  button, input, textarea, select, option, label, a, span, div, p, li, td, th, small, strong {
+    font-family: var(--ui-font);
+  }
 
-  p { @apply leading-relaxed text-[15px] sm:text-base; }
+  button {
+    font-weight: 600;
+    letter-spacing: -0.004em;
+  }
+
+  label {
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  h1 { @apply text-[1.45rem] sm:text-3xl lg:text-4xl leading-tight; font-weight: 700; }
+  h2 { @apply text-[1.25rem] sm:text-2xl lg:text-3xl leading-tight; font-weight: 700; }
+  h3 { @apply text-[1.05rem] sm:text-xl lg:text-2xl leading-snug; font-weight: 700; }
+  h4 { @apply text-[0.98rem] sm:text-lg lg:text-xl leading-snug; font-weight: 600; }
+
+  p { @apply leading-relaxed text-[14px] sm:text-[15px]; }
 
   /* Mobile body comfort */
   @media (max-width: 640px) {
@@ -139,8 +149,7 @@
   }
 
   .app-header-title {
-    font-family: 'Fraunces', serif;
-    font-variation-settings: "SOFT" 30, "WONK" 0;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     @apply text-[clamp(1.75rem,6vw,2.5rem)] font-medium leading-[1.05] tracking-tight;
   }
 
@@ -162,33 +171,33 @@
 
   /* ---------- Surface cards (hairline, hairline shadow) ---------- */
   .surface-card {
-    @apply rounded-sm border border-border bg-card p-5;
-    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
+    @apply rounded-md border border-border bg-card p-5;
+    box-shadow: 0 2px 10px hsl(var(--primary) / 0.08);
   }
 
   .auth-form-shell {
-    @apply rounded-sm border border-border bg-card p-5 sm:p-7 lg:p-9;
-    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
+    @apply rounded-md border border-border bg-card p-5 sm:p-7 lg:p-9;
+    box-shadow: 0 2px 10px hsl(var(--primary) / 0.08);
   }
 
   .ink-frame {
-    @apply rounded-sm border border-foreground/85 bg-card;
-    box-shadow: 6px 6px 0 0 hsl(var(--primary) / 0.85);
+    @apply rounded-md border border-border bg-card;
+    box-shadow: 0 2px 10px hsl(var(--primary) / 0.1);
   }
 
   .page-shell {
-    @apply rounded-sm border border-border bg-card;
-    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
+    @apply rounded-md border border-border bg-card;
+    box-shadow: 0 2px 10px hsl(var(--primary) / 0.08);
   }
 
   /* ---------- LEGACY ALIASES — flatten brutalist classes to editorial ---------- */
   .brutal {
-    @apply rounded-sm border border-border bg-card;
-    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
+    @apply rounded-md border border-border bg-card;
+    box-shadow: 0 2px 10px hsl(var(--primary) / 0.08);
   }
   .brutal-lg {
-    @apply rounded-sm border border-border bg-card;
-    box-shadow: 0 1px 0 hsl(var(--ink) / 0.04);
+    @apply rounded-md border border-border bg-card;
+    box-shadow: 0 2px 10px hsl(var(--primary) / 0.08);
   }
   .brutal-green {
     @apply rounded-sm border border-primary bg-primary text-primary-foreground;
@@ -197,62 +206,55 @@
     @apply transition-all duration-200;
   }
   .brutal-press:hover {
-    box-shadow: 4px 4px 0 0 hsl(var(--primary) / 0.85);
+    box-shadow: 0 4px 14px hsl(var(--primary) / 0.18);
   }
   .brutal-press:active {
-    box-shadow: 2px 2px 0 0 hsl(var(--primary) / 0.85);
+    box-shadow: 0 2px 8px hsl(var(--primary) / 0.14);
   }
 
   .glass-panel { @apply surface-card; }
-  .glass-panel-hover { @apply surface-card transition-all hover:shadow-[4px_4px_0_0_hsl(var(--primary)/0.85)]; }
-  .gradient-text { @apply text-foreground; }
+  .glass-panel-hover { @apply surface-card transition-all hover:shadow-md; }
   .stat-card { @apply surface-card; }
 
   /* ---------- Typographic primitives ---------- */
   .eyebrow {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    @apply inline-flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.22em] text-muted-foreground;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    @apply inline-flex items-center gap-1.5 text-[11px] font-medium tracking-normal text-muted-foreground;
   }
 
   .eyebrow-primary {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    @apply inline-flex items-center gap-2 border-l-2 border-primary px-2.5 text-[10.5px] uppercase tracking-[0.24em] text-primary;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    @apply inline-flex items-center gap-1.5 border-l-2 border-primary px-2 text-[11px] font-medium tracking-normal text-primary;
   }
 
   .display-serif {
-    font-family: 'Fraunces', serif;
-    font-optical-sizing: auto;
-    font-variation-settings: "SOFT" 30, "WONK" 0;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   }
 
   .font-display {
-    font-family: 'Fraunces', serif;
-    font-variation-settings: "SOFT" 30, "WONK" 0;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   }
 
   .font-mono-display {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   }
 
   .mono {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   }
 
   .numeral {
-    font-family: 'Fraunces', serif;
-    font-variation-settings: "WONK" 1;
-    font-feature-settings: 'tnum';
-    font-weight: 500;
-    letter-spacing: -0.04em;
-    line-height: 0.92;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-weight: 600;
+    letter-spacing: normal;
+    line-height: 1;
   }
 
   .display-number {
-    font-family: 'Fraunces', serif;
-    font-variation-settings: "WONK" 1;
-    font-weight: 500;
-    letter-spacing: -0.045em;
-    line-height: 0.9;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-weight: 600;
+    letter-spacing: normal;
+    line-height: 1;
     font-variant-numeric: tabular-nums;
   }
 
@@ -261,10 +263,9 @@
 
   /* ---------- Score badges (editorial) ---------- */
   .score-badge {
-    @apply inline-flex items-center justify-center w-11 h-11 rounded-sm text-sm font-medium border border-border bg-card;
-    font-family: 'Fraunces', serif;
-    font-variation-settings: "WONK" 1;
-    font-feature-settings: 'tnum';
+    @apply inline-flex items-center justify-center w-10 h-10 rounded-md text-sm font-semibold border border-border bg-card;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-variant-numeric: tabular-nums;
   }
   .score-excellent { @apply bg-primary text-primary-foreground border-primary; }
   .score-good { @apply bg-accent text-accent-foreground border-accent; }
@@ -273,62 +274,63 @@
 
   /* ---------- Chat bubbles ---------- */
   .chat-bubble {
-    @apply p-4 rounded-sm max-w-[85%] border border-border;
+    @apply p-4 rounded-md max-w-[85%] border border-border;
   }
   .chat-bubble-user { @apply bg-primary text-primary-foreground ml-auto border-primary; }
   .chat-bubble-ai { @apply bg-card text-foreground mr-auto; }
 
   .input-field {
-    @apply rounded-sm border border-border bg-card px-4 py-2.5 text-sm transition-colors focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-muted-foreground;
+    @apply rounded-md border border-border bg-card px-4 py-2.5 text-sm transition-colors focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-muted-foreground;
   }
 
   .section-shell {
     @apply surface-card sm:p-7;
   }
   .section-title {
-    font-family: 'Fraunces', serif;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     @apply text-xl font-medium tracking-tight text-foreground;
   }
   .section-subtitle {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    @apply text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    @apply text-[11px] tracking-normal text-muted-foreground;
   }
 
   /* ---------- Buttons (legacy aliases) ---------- */
   .btn-ink {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-sm bg-foreground px-5 text-xs font-medium uppercase tracking-[0.18em] text-background transition-colors hover:bg-foreground/90;
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-md bg-foreground px-4 text-sm font-medium text-background transition-colors hover:bg-foreground/90;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   }
   .btn-green {
-    @apply inline-flex h-11 items-center justify-center gap-2 rounded-sm bg-primary px-5 text-xs font-medium uppercase tracking-[0.18em] text-primary-foreground transition-colors hover:bg-primary/90;
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90;
+    box-shadow: 0 2px 12px hsl(var(--primary) / 0.28);
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   }
 
   /* ---------- Tags (hairline editorial chips) ---------- */
   .tag {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    @apply inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground border border-border px-2 py-1 rounded-sm bg-card;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    @apply inline-flex items-center gap-1.5 text-[11px] font-medium tracking-normal text-muted-foreground border border-border px-2 py-1 rounded-md bg-card;
   }
   .tag-solid {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    @apply inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.2em] bg-foreground text-background border border-foreground px-2 py-1 rounded-sm;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    @apply inline-flex items-center gap-1.5 text-[11px] font-medium tracking-normal bg-foreground text-background border border-foreground px-2 py-1 rounded-md;
   }
   .tag-green {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    @apply inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.2em] bg-primary text-primary-foreground border border-primary px-2 py-1 rounded-sm;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    @apply inline-flex items-center gap-1.5 text-[11px] font-medium tracking-normal bg-primary text-primary-foreground border border-primary px-2 py-1 rounded-md;
   }
 
   /* Editorial collage headline — italicize <em>, accent <u> */
   .headline-collage em {
-    font-style: italic;
-    font-weight: 300;
-    @apply text-primary;
+    font-style: normal;
+    font-weight: inherit;
+    color: inherit;
   }
   .headline-collage u {
     text-decoration: none;
-    font-style: italic;
-    font-weight: 300;
-    @apply text-accent;
+    font-style: normal;
+    font-weight: inherit;
+    color: inherit;
   }
 
   /* Mascot wave kept as no-op for any stragglers */
@@ -336,6 +338,39 @@
 }
 
 @layer utilities {
+  /* Force formal font even when legacy utility classes remain in markup */
+  .font-serif,
+  .font-display,
+  .display-serif,
+  .numeral,
+  .display-number {
+    font-family: var(--ui-heading-font) !important;
+    letter-spacing: -0.01em !important;
+    font-variation-settings: normal !important;
+  }
+
+  .font-mono,
+  .font-mono-display,
+  .mono {
+    font-family: var(--ui-font) !important;
+    letter-spacing: normal !important;
+    font-variation-settings: normal !important;
+  }
+
+  /* Hide visible scrollbars on mobile + laptop while keeping scroll behavior */
+  @media (max-width: 1440px) {
+    * {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    *::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+  }
+
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--foreground) / 0.25) transparent;
@@ -356,8 +391,9 @@
 
   /* ---------- Mobile-only hero band (editorial photo strip) ---------- */
   .mobile-hero {
-    @apply lg:hidden relative w-full overflow-hidden border-b border-border;
-    aspect-ratio: 16 / 10;
+    @apply lg:hidden relative w-full shrink-0 overflow-hidden border-b border-border;
+    aspect-ratio: 16 / 11;
+    max-height: min(38vh, 280px);
   }
   .mobile-hero img {
     @apply absolute inset-0 h-full w-full object-cover;
@@ -365,11 +401,43 @@
   .mobile-hero::after {
     content: '';
     @apply absolute inset-0 pointer-events-none;
-    background: linear-gradient(180deg, transparent 55%, hsl(var(--background) / 0.85) 100%);
+    background-color: hsl(var(--background) / 0.22);
   }
   .mobile-hero-caption {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    @apply absolute bottom-2 left-3 right-3 z-10 flex items-center justify-between text-[9px] uppercase tracking-[0.22em] text-foreground/75;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    @apply absolute bottom-2 left-3 right-3 z-10 flex items-center justify-between text-[11px] text-foreground/75;
+  }
+
+  /* Cohesive mobile auth/onboarding flow containers */
+  .mobile-flow-shell {
+    @apply min-h-dvh-screen bg-background;
+  }
+
+  .mobile-top-safe {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  .mobile-flow-header {
+    @apply shrink-0 border-b border-border/80 bg-background/95 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:px-6 sm:py-3;
+  }
+
+  .mobile-flow-content {
+    @apply flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-6 sm:py-5;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mobile-flow-content::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-flow-card {
+    @apply rounded-md border border-border/80 bg-card p-3.5 shadow-sm sm:rounded-md sm:p-4;
+  }
+
+  .mobile-flow-sticky-cta {
+    @apply shrink-0 border-t border-border/80 bg-background/95 p-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/85 sm:p-4;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 
   /* Reserve room for the mobile bottom tab bar so content never hides under it */
@@ -379,4 +447,48 @@
   @media (min-width: 1024px) {
     .has-mobile-tabbar { padding-bottom: 0; }
   }
+
+  /* Admin dashboard / appraisal monitor — same bottom inset as employee hub */
+  .has-admin-mobile-nav {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 1024px) {
+    .has-admin-mobile-nav { padding-bottom: 0; }
+  }
+
+  /* Auth & marketing: full dynamic viewport + safe areas */
+  .min-h-dvh-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Progressive loading: fast shimmer first, slower pulse if wait continues */
+@keyframes skeleton-pulse-fast {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.52;
+  }
+}
+
+@keyframes skeleton-pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.38;
+  }
+}
+
+.skeleton-pulse-fast {
+  animation: skeleton-pulse-fast 0.65s ease-in-out infinite;
+}
+
+.skeleton-pulse-slow {
+  animation: skeleton-pulse-slow 1.35s ease-in-out infinite;
 }

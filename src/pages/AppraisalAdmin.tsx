@@ -12,9 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
 import {
   BarChart3, Users, Building2, ClipboardCheck, ArrowLeft, RefreshCw,
-  TrendingUp, Clock, ChevronDown, ChevronUp, Loader2, Zap, Search,
+  TrendingUp, Clock, ChevronDown, ChevronUp, Zap, Search,
   Star, Target, Trophy, Activity, Brain
 } from 'lucide-react';
+import { AppraisalAdminSkeleton } from '@/components/shell/LoadingShells';
+import AdminMobileTabBar from '@/components/AdminMobileTabBar';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -254,50 +256,52 @@ ${feedbackSample || '• No text feedback yet'}`;
 
   const getResponseAnswers = (responseId: string) => answers.filter(a => a.response_id === responseId);
 
+  const handleLogout = async () => {
+    legacyLogout();
+    await employeeLogout();
+    navigate('/');
+  };
+
   if (loading) {
-    return (
-      <div className="app-page flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppraisalAdminSkeleton />;
   }
 
   return (
     <div className="app-page">
       <div className="app-page-grid" />
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur-xl">
-        <div className="platform-canvas py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="gap-1 flex-shrink-0">
-              <ArrowLeft className="w-4 h-4" /> Dashboard
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/85">
+        <div className="platform-canvas py-3 sm:py-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 min-w-0">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="gap-1 flex-shrink-0 self-start sm:self-auto">
+              <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Dashboard</span><span className="sm:hidden">Back</span>
             </Button>
-            <div>
-              <h1 className="text-base sm:text-lg font-bold text-primary flex items-center gap-2">
-                360° Appraisal Monitor
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-bold text-primary flex flex-wrap items-center gap-2">
+                <span className="truncate">360° Appraisal Monitor</span>
                 {totalResponses > 0 && (
-                  <Badge variant="secondary" className="text-[10px] gap-1">
+                  <Badge variant="secondary" className="text-[10px] gap-1 shrink-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> Live
                   </Badge>
                 )}
               </h1>
-              <p className="text-xs text-muted-foreground">Real-time response tracking & analytics</p>
+              <p className="text-xs text-muted-foreground hidden sm:block">Real-time response tracking & analytics</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
             <Button variant="ghost" size="sm" onClick={loadAllData} className="gap-1">
               <RefreshCw className="w-3 h-3" /> Refresh
             </Button>
             <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2 h-8 text-xs">
               <Brain className="w-3.5 h-3.5" /> AI Copilot
             </Button>
-            <Button variant="ghost" size="sm" onClick={async () => { legacyLogout(); await employeeLogout(); navigate('/'); }}>
+            <Button variant="ghost" size="sm" onClick={() => void handleLogout()}>
               <span className="text-xs">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="platform-content section-stack">
+      <main className="platform-content section-stack has-admin-mobile-nav">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center">
           <Select value={selectedSubsidiary} onValueChange={v => { setSelectedSubsidiary(v); setSelectedEmployee(null); }}>
@@ -626,6 +630,12 @@ ${feedbackSample || '• No text feedback yet'}`;
       </main>
 
       <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+
+      <AdminMobileTabBar
+        onOpenCopilot={() => setChatOpen(true)}
+        onSignOut={handleLogout}
+        onRefresh={loadAllData}
+      />
     </div>
   );
 }

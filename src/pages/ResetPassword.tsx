@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import vggLogo from '@/assets/vgg-logo.webp';
+import heroTeam from '@/assets/hero-team-mobile.jpg';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -15,6 +17,8 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [ready, setReady] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,11 +64,11 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div className="app-page flex items-center justify-center px-6">
+      <div className="mobile-flow-shell app-page flex items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-sm w-full glass-panel p-8 text-center"
+          className="mobile-flow-card max-w-sm w-full text-center"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -74,11 +78,11 @@ export default function ResetPassword() {
           >
             <CheckCircle2 className="w-7 h-7 text-primary" />
           </motion.div>
-          <h1 className="text-xl font-semibold mb-2">Password Set Successfully</h1>
-          <p className="text-muted-foreground text-sm mb-6">
+          <h1 className="text-xl font-semibold mb-1.5">Password Updated</h1>
+          <p className="text-muted-foreground text-[13px] mb-5">
             Your password has been updated. You can now sign in.
           </p>
-          <Button onClick={() => navigate('/login')} className="w-full">
+          <Button onClick={() => navigate('/login')} className="w-full h-10 rounded-lg text-sm sm:rounded-sm">
             Go to Sign In
           </Button>
         </motion.div>
@@ -88,15 +92,15 @@ export default function ResetPassword() {
 
   if (!ready) {
     return (
-      <div className="app-page flex items-center justify-center px-6">
+      <div className="mobile-flow-shell app-page flex items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="max-w-sm w-full glass-panel p-8 text-center"
+          className="mobile-flow-card max-w-sm w-full text-center"
         >
           <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-4" />
-          <h1 className="text-lg font-semibold mb-2">Verifying Link</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-base font-semibold mb-1.5">Verifying Link</h1>
+          <p className="text-muted-foreground text-[13px]">
             Please wait while we verify your reset link...
           </p>
         </motion.div>
@@ -105,76 +109,113 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="app-page flex items-center justify-center relative">
-      
+    <div className="mobile-flow-shell app-page flex min-h-dvh-screen flex-col">
+      <div className="mobile-hero shrink-0">
+        <img src={heroTeam} alt="Team collaboration at VGG" />
+        <div className="mobile-hero-caption">
+          <span>◉ VGG / Password Reset</span>
+          <span>Auth / Recovery</span>
+        </div>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm px-6"
-      >
-        <div className="glass-panel p-8">
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
+      <div className="mobile-flow-header mobile-top-safe">
+        <Button variant="ghost" size="sm" asChild className="gap-1.5 -ml-2 h-9">
+          <Link to="/login">
+            <ArrowLeft className="h-4 w-4" /> Back to sign in
+          </Link>
+        </Button>
+      </div>
+
+      <div className="mobile-flow-content flex flex-1 flex-col items-stretch justify-start sm:items-center sm:justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md mobile-flow-card"
+        >
+          <div className="mb-6">
+            <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto mb-5" />
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center mb-3">
               <Lock className="w-5 h-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-semibold">Set Your Password</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <h1 className="text-xl font-semibold">Set a new password</h1>
+            <p className="text-muted-foreground mt-1 text-[13px]">
               Choose a secure password for your account.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm">New Password</Label>
+              <Label htmlFor="password" className="font-mono text-[9px] uppercase tracking-[0.16em] text-foreground/70">New Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Minimum 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
+                  className="h-10 rounded-lg border-foreground/20 pl-10 pr-11 text-sm sm:rounded-sm"
                   required
                   minLength={8}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground/50 hover:text-foreground"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirm" className="text-sm">Confirm Password</Label>
+              <Label htmlFor="confirm" className="font-mono text-[9px] uppercase tracking-[0.16em] text-foreground/70">Confirm Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="confirm"
-                  type="password"
+                  type={showConfirm ? 'text' : 'password'}
                   placeholder="Re-enter password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  className="pl-10"
+                  className="h-10 rounded-lg border-foreground/20 pl-10 pr-11 text-sm sm:rounded-sm"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((prev) => !prev)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground/50 hover:text-foreground"
+                  aria-label={showConfirm ? 'Hide confirmation password' : 'Show confirmation password'}
+                >
+                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
+
+            <p className="text-[11px] text-muted-foreground">Use at least 8 characters with a mix of letters and numbers.</p>
 
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+                className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-[13px] sm:rounded-sm"
               >
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {error}
               </motion.div>
             )}
 
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button type="submit" disabled={loading} className="w-full h-10 rounded-lg text-sm sm:rounded-sm">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Set Password'}
             </Button>
           </form>
-        </div>
-      </motion.div>
+
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            If this link has expired, return to <Link to="/find-account" className="font-medium text-primary hover:underline">Find Account</Link> and request a new reset email.
+          </p>
+        </motion.div>
+      </div>
     </div>
   );
 }

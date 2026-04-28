@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Loader2, RefreshCw } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 60 * 1000; // Re-generate every 2 hours
@@ -116,12 +116,16 @@ Return ONLY a JSON array of strings, no markdown, no explanation. Example: ["Ins
       className="glass-panel p-4 relative overflow-hidden"
     >
       {/* Subtle shimmer background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.03] via-transparent to-primary/[0.03] pointer-events-none" />
+      <div className="absolute inset-0 bg-primary/[0.04] pointer-events-none" />
       
       <div className="flex items-start gap-3 relative z-10">
         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
           {loading ? (
-            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+            <div className="flex gap-0.5">
+              <span className="h-3 w-1 rounded-full bg-primary/50 skeleton-pulse-fast" />
+              <span className="h-3 w-1 rounded-full bg-primary/40 skeleton-pulse-slow" />
+              <span className="h-3 w-1 rounded-full bg-primary/35 skeleton-pulse-slow" />
+            </div>
           ) : (
             <Sparkles className="w-4 h-4 text-primary" />
           )}
@@ -137,9 +141,13 @@ Return ONLY a JSON array of strings, no markdown, no explanation. Example: ["Ins
               </div>
             )}
           </div>
-          <div className="h-[40px] flex items-center">
+          <div className="h-[40px] flex items-center w-full">
             {loading ? (
-              <p className="text-xs text-muted-foreground animate-pulse">Analyzing your performance data...</p>
+              <div className="space-y-2 w-full pr-4">
+                <div className="h-2 rounded-full bg-muted skeleton-pulse-fast w-full max-w-[min(100%,22rem)]" />
+                <div className="h-2 rounded-full bg-muted skeleton-pulse-slow w-[88%] max-w-[min(100%,20rem)]" />
+                <p className="text-[11px] text-muted-foreground pt-0.5">Analyzing your performance data…</p>
+              </div>
             ) : (
               <AnimatePresence mode="wait">
                 <motion.p

@@ -14,7 +14,8 @@ import AIChatPanel from '@/components/dashboard/AIChatPanel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ManagerSummary } from '@/types/appraisal';
-import { BarChart3, Users, Trophy, Target, Zap, Loader2 } from 'lucide-react';
+import { BarChart3, Users, Trophy, Target, Zap } from 'lucide-react';
+import { DemoDashboardSkeleton } from '@/components/shell/LoadingShells';
 import { Link } from 'react-router-dom';
 
 export default function DemoDashboard() {
@@ -79,11 +80,7 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
   }, [managerSummaries, overallStats, competencyScores, relationshipDistribution, scoreDistribution, feedbackThemes]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <DemoDashboardSkeleton />;
   }
 
   return (

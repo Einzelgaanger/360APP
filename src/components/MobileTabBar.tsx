@@ -23,7 +23,7 @@ export default function MobileTabBar({ active, onChange }: MobileTabBarProps) {
   return (
     <nav
       aria-label="Primary"
-      className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-border bg-background/95 backdrop-blur-md"
+      className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-border bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/85"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="grid grid-cols-5">
@@ -35,7 +35,7 @@ export default function MobileTabBar({ active, onChange }: MobileTabBarProps) {
                 type="button"
                 onClick={() => onChange(key)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`relative w-full flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
+                className={`relative w-full flex min-h-[52px] flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
                   isActive ? 'text-primary' : 'text-muted-foreground active:text-foreground'
                 }`}
               >

@@ -15,9 +15,11 @@ import FilterPanel from '@/components/dashboard/FilterPanel';
 import ExportButton from '@/components/dashboard/ExportButton';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
 import PlatformSidebar from '@/components/PlatformSidebar';
+import AdminMobileTabBar from '@/components/AdminMobileTabBar';
 import { Button } from '@/components/ui/button';
 import { ManagerSummary } from '@/types/appraisal';
-import { BarChart3, Users, Trophy, Target, Zap, Loader2, ClipboardList } from 'lucide-react';
+import { BarChart3, Users, Trophy, Target, Zap, ClipboardList } from 'lucide-react';
+import { AdminDashboardSkeleton } from '@/components/shell/LoadingShells';
 
 export default function Dashboard() {
   const { logout: legacyLogout } = useAuth();
@@ -87,11 +89,7 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
   const handleLogout = async () => { legacyLogout(); await employeeLogout(); navigate('/'); };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AdminDashboardSkeleton />;
   }
 
   return (
@@ -113,7 +111,7 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
       />
 
       <div className="lg:pl-72">
-      <main className="platform-content section-stack">
+      <main className="platform-content section-stack has-admin-mobile-nav">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
           <ExportButton managers={managerSummaries} responses={responses} />
@@ -147,6 +145,11 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
         {selectedManager && <ManagerDetailPanel manager={selectedManager} onClose={() => setSelectedManager(null)} />}
       </AnimatePresence>
       <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+
+      <AdminMobileTabBar
+        onOpenCopilot={() => setChatOpen(true)}
+        onSignOut={handleLogout}
+      />
     </div>
   );
 }

@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import PlatformSidebar from '@/components/PlatformSidebar';
-import { Trophy, Medal, Award, Loader2, Star, Users } from 'lucide-react';
+import { Trophy, Medal, Award, Star, Users } from 'lucide-react';
+import { WallOfFamePageSkeleton } from '@/components/shell/LoadingShells';
 
 interface RankedEmployee {
   employee_id: string;
@@ -100,11 +101,7 @@ export default function WallOfFame() {
   };
 
   if (loading) {
-    return (
-      <div className="app-page flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
+    return <WallOfFamePageSkeleton />;
   }
 
   return (

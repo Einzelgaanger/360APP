@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, Loader2, Brain, MessageCircle } from 'lucide-react';
+import { Send, X, Brain, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChatMessage, InsightSuggestion } from '@/types/appraisal';
@@ -97,13 +97,22 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
     if (!content.trim() || loading) return;
 
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-u`,
       role: 'user',
       content,
       timestamp: new Date(),
     };
+    const assistantId = `${Date.now()}-a`;
+    const assistantPlaceholder: ChatMessage = {
+      id: assistantId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+    };
 
-    setMessages(prev => [...prev, userMessage]);
+    const historyForApi = [...messages, userMessage].map(m => ({ role: m.role, content: m.content }));
+
+    setMessages(prev => [...prev, userMessage, assistantPlaceholder]);
     setInput('');
     setLoading(true);
 
@@ -115,7 +124,7 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
           'Authorization': `Bearer ${supabasePublishableKey}`,
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
+          messages: historyForApi,
           dataContext,
         }),
       });
@@ -126,43 +135,36 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
       const decoder = new TextDecoder();
       let assistantContent = '';
 
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: '',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-
       while (reader) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\n');
-        
+
         for (const line of lines) {
           if (line.startsWith('data: ') && line !== 'data: [DONE]') {
             try {
               const data = JSON.parse(line.slice(6));
-              const content = data.choices?.[0]?.delta?.content;
-              if (content) {
-                assistantContent += content;
-                setMessages(prev => prev.map(m => 
-                  m.id === assistantMessage.id ? { ...m, content: formatResponse(assistantContent) } : m
+              const piece = data.choices?.[0]?.delta?.content;
+              if (piece) {
+                assistantContent += piece;
+                setMessages(prev => prev.map(m =>
+                  m.id === assistantId ? { ...m, content: formatResponse(assistantContent) } : m
                 ));
               }
-            } catch {}
+            } catch {
+              /* ignore malformed stream chunks */
+            }
           }
         }
       }
-    } catch (error) {
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again.',
-        timestamp: new Date(),
-      }]);
+    } catch {
+      setMessages(prev => prev.map(m =>
+        m.id === assistantId
+          ? { ...m, content: 'I apologize, but I encountered an error. Please try again.' }
+          : m
+      ));
     } finally {
       setLoading(false);
     }
@@ -237,6 +239,14 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
                   className={cn('chat-bubble', msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai')}
                 >
                   {msg.role === 'assistant' ? (
+                    !msg.content.trim() && loading && msg.id === messages.filter(m => m.role === 'assistant').slice(-1)[0]?.id ? (
+                      <div className="space-y-2 py-1 w-full min-h-[3rem]">
+                        <div className="h-2.5 rounded-full bg-muted skeleton-pulse-fast w-[92%]" />
+                        <div className="h-2.5 rounded-full bg-muted skeleton-pulse-slow w-[78%]" />
+                        <div className="h-2.5 rounded-full bg-muted skeleton-pulse-slow w-[64%]" />
+                        <p className="text-[11px] text-muted-foreground pt-1">Generating insights…</p>
+                      </div>
+                    ) : (
                     <div 
                       className="text-sm leading-relaxed prose prose-sm prose-invert max-w-none
                         prose-strong:text-primary prose-strong:font-semibold
@@ -255,17 +265,12 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
                           .replace(/\n/g, '<br />')
                       }}
                     />
+                    )
                   ) : (
                     <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                   )}
                 </motion.div>
               ))}
-              {loading && messages[messages.length - 1]?.role === 'user' && (
-                <div className="chat-bubble chat-bubble-ai flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Analyzing...</span>
-                </div>
-              )}
               <div ref={messagesEndRef} />
             </div>
           )}

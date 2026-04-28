@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,8 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import PlatformSidebar from '@/components/PlatformSidebar';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
-  Building2, User, ClipboardList, Send, Loader2, Shield, BarChart3, Trophy
+  Building2, User, ClipboardList, Send, Shield, BarChart3, Trophy
 } from 'lucide-react';
+import { PlatformHubSkeleton } from '@/components/shell/LoadingShells';
 import { toast } from 'sonner';
 
 interface Subsidiary { id: string; name: string; }
@@ -27,6 +28,7 @@ const SCALE_OPTIONS = [
 
 export default function Survey() {
   const { user, profile, isAdmin, logout } = useEmployeeAuth();
+  const submitInFlight = useRef(false);
   const navigate = useNavigate();
   const [step, setStep] = useState<'subsidiary' | 'employee' | 'questions' | 'submitted'>('subsidiary');
   const [subsidiaries, setSubsidiaries] = useState<Subsidiary[]>([]);
@@ -37,8 +39,8 @@ export default function Survey() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
   const [completedEmployees, setCompletedEmployees] = useState<Set<string>>(new Set());
 
   // Load completions from database
@@ -53,20 +55,6 @@ export default function Survey() {
         });
     }
   }, [user]);
-
-  const markEmployeeCompleted = async (employeeId: string) => {
-    if (user) {
-      await supabase.from('review_completions').insert({
-        reviewer_id: user.id,
-        employee_id: employeeId,
-      });
-    }
-    setCompletedEmployees(prev => {
-      const next = new Set(prev);
-      next.add(employeeId);
-      return next;
-    });
-  };
 
   useEffect(() => { loadData(); }, []);
 
@@ -85,14 +73,20 @@ export default function Survey() {
   };
 
   const loadEmployees = async (subsidiaryId: string) => {
-    const { data } = await supabase.from('employees').select('*').eq('subsidiary_id', subsidiaryId).order('sort_order');
-    if (data) setEmployees(data);
+    setEmployeesLoading(true);
+    try {
+      const { data } = await supabase.from('employees').select('*').eq('subsidiary_id', subsidiaryId).order('sort_order');
+      if (data) setEmployees(data);
+    } finally {
+      setEmployeesLoading(false);
+    }
   };
 
   const handleSelectSubsidiary = (sub: Subsidiary) => {
     setSelectedSubsidiary(sub);
-    loadEmployees(sub.id);
+    setEmployees([]);
     setStep('employee');
+    void loadEmployees(sub.id);
   };
 
   const handleSelectEmployee = (emp: Employee) => {
@@ -114,15 +108,28 @@ export default function Survey() {
   const progress = totalScoredQuestions > 0 ? (answeredScoredQuestions / totalScoredQuestions) * 100 : 0;
 
   const handleSubmit = async () => {
-    if (!selectedEmployee || !selectedSubsidiary) return;
-    setSubmitting(true);
+    if (!selectedEmployee || !selectedSubsidiary || !user || submitInFlight.current) return;
+    submitInFlight.current = true;
+    const emp = selectedEmployee;
+    const sub = selectedSubsidiary;
+
+    setCompletedEmployees(prev => {
+      const next = new Set(prev);
+      next.add(emp.id);
+      return next;
+    });
+    setStep('submitted');
+    toast.success('Response submitted successfully.');
+
+    let responseId: string | null = null;
     try {
       const { data: responseData, error: responseError } = await supabase
         .from('survey_responses')
-        .insert({ employee_id: selectedEmployee.id, subsidiary_id: selectedSubsidiary.id })
+        .insert({ employee_id: emp.id, subsidiary_id: sub.id })
         .select('id')
         .single();
       if (responseError) throw responseError;
+      responseId = responseData.id;
 
       const answerRows = Object.entries(answers).map(([questionId, value]) => ({
         response_id: responseData.id,
@@ -133,21 +140,30 @@ export default function Survey() {
       const { error: answersError } = await supabase.from('survey_answers').insert(answerRows);
       if (answersError) throw answersError;
 
-      markEmployeeCompleted(selectedEmployee.id);
-      setStep('submitted');
-      toast.success('Response submitted successfully.');
+      const { error: completionError } = await supabase.from('review_completions').insert({
+        reviewer_id: user.id,
+        employee_id: emp.id,
+      });
+      if (completionError) throw completionError;
     } catch (err) {
       console.error(err);
+      if (responseId) {
+        await supabase.from('survey_responses').delete().eq('id', responseId);
+      }
+      setCompletedEmployees(prev => {
+        const next = new Set(prev);
+        next.delete(emp.id);
+        return next;
+      });
+      setStep('questions');
       toast.error('Failed to submit. Please try again.');
-    } finally { setSubmitting(false); }
+    } finally {
+      submitInFlight.current = false;
+    }
   };
 
   if (loading) {
-    return (
-      <div className="app-page flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
+    return <PlatformHubSkeleton />;
   }
 
   const stepNumber = step === 'subsidiary' ? 1 : step === 'employee' ? 2 : step === 'questions' ? 3 : 4;
@@ -253,7 +269,14 @@ export default function Survey() {
                   <p className="text-muted-foreground text-sm">{selectedSubsidiary?.name}</p>
                 </div>
                 <div className="grid gap-2 max-h-[60vh] overflow-y-auto scrollbar-thin pr-1">
-                  {employees.map(emp => {
+                  {employeesLoading ? (
+                    <div className="space-y-2 py-2">
+                      <p className="text-xs text-muted-foreground">Loading people…</p>
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <div key={i} className="h-14 rounded-2xl bg-muted skeleton-pulse-fast" />
+                      ))}
+                    </div>
+                  ) : employees.map(emp => {
                     const isCompleted = completedEmployees.has(emp.id);
                     return (
                       <button
@@ -287,7 +310,8 @@ export default function Survey() {
                         )}
                       </button>
                     );
-                  })}
+                  })
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -390,11 +414,11 @@ export default function Survey() {
                     </Button>
                   ) : (
                     <Button
-                      onClick={handleSubmit}
-                      disabled={submitting || answeredScoredQuestions < totalScoredQuestions}
+                      onClick={() => void handleSubmit()}
+                      disabled={answeredScoredQuestions < totalScoredQuestions}
                       className="gap-1.5"
                     >
-                      {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      <Send className="w-4 h-4" />
                       Submit Response
                     </Button>
                   )}

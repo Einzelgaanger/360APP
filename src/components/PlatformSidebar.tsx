@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
 
 type SidebarItem = {
@@ -25,6 +24,11 @@ interface PlatformSidebarProps {
   items: SidebarItem[];
   onLogout?: () => void;
   actions?: React.ReactNode;
+  /**
+   * When true, no mobile top bar is rendered (parent supplies mobile chrome, e.g. bottom tabs).
+   * Desktop sidebar is unchanged.
+   */
+  suppressMobileHeader?: boolean;
 }
 
 export default function PlatformSidebar({
@@ -34,8 +38,8 @@ export default function PlatformSidebar({
   items,
   onLogout,
   actions,
+  suppressMobileHeader = false,
 }: PlatformSidebarProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const visibleMeta = (meta ?? []).filter((entry) => Boolean(entry.value));
 
   return (
@@ -109,59 +113,22 @@ export default function PlatformSidebar({
         </div>
       </aside>
 
-      <header className="lg:hidden sticky top-0 z-30 border-b border-border bg-background">
-        <div className="px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto" />
-            <span className="font-display text-sm font-medium">{title}</span>
+      {!suppressMobileHeader && (
+        <header
+          className="lg:hidden sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
+          <div className="flex h-14 items-center gap-3 px-4">
+            <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-display text-sm font-medium text-foreground">{title}</p>
+              {subtitle && (
+                <p className="truncate text-[11px] text-muted-foreground">{subtitle}</p>
+              )}
+            </div>
           </div>
-          <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setMobileOpen((v) => !v)}>
-            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </Button>
-        </div>
-        {mobileOpen && (
-          <div className="border-t border-border px-3 py-3 space-y-2 bg-card">
-            {items.map((item) => {
-              const className = `w-full justify-start gap-2.5 ${
-                item.active ? 'bg-foreground text-background' : ''
-              }`;
-
-              if (item.to) {
-                return (
-                  <Button key={item.key} variant={item.active ? 'default' : 'outline'} size="sm" asChild className={className}>
-                    <Link to={item.to} onClick={() => setMobileOpen(false)}>
-                      {item.icon}
-                      {item.label}
-                    </Link>
-                  </Button>
-                );
-              }
-
-              return (
-                <Button
-                  key={item.key}
-                  variant={item.active ? 'default' : 'outline'}
-                  size="sm"
-                  className={className}
-                  onClick={() => {
-                    item.onClick?.();
-                    setMobileOpen(false);
-                  }}
-                >
-                  {item.icon}
-                  {item.label}
-                </Button>
-              );
-            })}
-            {actions}
-            {onLogout && (
-              <Button variant="outline" size="sm" onClick={onLogout} className="w-full gap-2">
-                <LogOut className="w-4 h-4" /> Sign Out
-              </Button>
-            )}
-          </div>
-        )}
-      </header>
+        </header>
+      )}
     </>
   );
 }

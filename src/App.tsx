@@ -16,29 +16,29 @@ import DemoDashboard from "./pages/DemoDashboard";
 import EmployeeHub from "./pages/EmployeeHub";
 import AppraisalAdmin from "./pages/AppraisalAdmin";
 import NotFound from "./pages/NotFound";
-import { Loader2 } from "lucide-react";
 import ProfileCompletionGate from "@/components/ProfileCompletionGate";
+import { AppBootstrapSkeleton } from "@/components/shell/LoadingShells";
 
 const queryClient = new QueryClient();
 
 function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated: isLegacyAdmin } = useAuth();
   const { isAuthenticated: isEmployee, isAdmin, isLoading } = useEmployeeAuth();
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (isLoading) return <AppBootstrapSkeleton />;
   if (isLegacyAdmin || (isEmployee && isAdmin)) return <>{children}</>;
   return <Navigate to="/admin" replace />;
 }
 
 function ProtectedEmployeeRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useEmployeeAuth();
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (isLoading) return <AppBootstrapSkeleton />;
   return isAuthenticated ? <ProfileCompletionGate>{children}</ProfileCompletionGate> : <Navigate to="/login" replace />;
 }
 
 function AdminGate() {
   const { isAuthenticated: isLegacyAdmin } = useAuth();
   const { isAuthenticated: isEmployee, isAdmin, isLoading } = useEmployeeAuth();
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (isLoading) return <AppBootstrapSkeleton />;
   if (isLegacyAdmin || (isEmployee && isAdmin)) return <Navigate to="/dashboard" replace />;
   return <Login />;
 }
@@ -47,7 +47,7 @@ function AppRoutes() {
   const { isAuthenticated: isEmployee, isLoading } = useEmployeeAuth();
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+    return <AppBootstrapSkeleton />;
   }
 
   return (
@@ -76,7 +76,12 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <EmployeeAuthProvider>
             <AuthProvider>
               <AppRoutes />

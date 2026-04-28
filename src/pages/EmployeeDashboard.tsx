@@ -5,8 +5,9 @@ import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import PlatformSidebar from '@/components/PlatformSidebar';
 import {
-  BarChart3, Users, Trophy, ClipboardList, Loader2, Star,
+  BarChart3, Users, Trophy, ClipboardList, Star,
 } from 'lucide-react';
+import { EmployeeDashboardPageSkeleton } from '@/components/shell/LoadingShells';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -130,11 +131,7 @@ export default function EmployeeDashboard() {
   const handleLogout = async () => { await logout(); navigate('/'); };
 
   if (loading) {
-    return (
-      <div className="app-page flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
+    return <EmployeeDashboardPageSkeleton />;
   }
 
   return (
