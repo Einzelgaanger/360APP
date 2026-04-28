@@ -7,7 +7,13 @@ interface Profile {
   employee_id: string | null;
   name: string;
   email: string;
+  role: string | null;
   department: string | null;
+  subsidiary_id: string | null;
+  hierarchy_level: number | null;
+  profile_completed: boolean | null;
+  profile_completed_at: string | null;
+  profile_confirmed_at: string | null;
   created_at: string | null;
 }
 
@@ -18,6 +24,7 @@ interface EmployeeAuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   isLoading: boolean;
+  refreshProfile: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
@@ -31,19 +38,20 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setIsLoading(false);
+      setAuthReady(true);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setIsLoading(false);
+      setAuthReady(true);
     });
 
     return () => subscription.unsubscribe();
@@ -57,8 +65,10 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
       if (!user) {
         setProfile(null);
         setIsAdmin(false);
+        setProfileLoading(false);
         return;
       }
+      setProfileLoading(true);
 
       const [{ data: profileData }, { data: roleData }] = await Promise.all([
         supabase
@@ -105,6 +115,7 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
       if (cancelled) return;
       setProfile(resolvedProfile);
       setIsAdmin(!!roleData);
+      setProfileLoading(false);
     };
 
     void loadUserContext();
@@ -113,6 +124,18 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [user]);
+
+  const refreshProfile = async () => {
+    if (!user) return;
+    setProfileLoading(true);
+    const [{ data: profileData }, { data: roleData }] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+      supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').maybeSingle(),
+    ]);
+    setProfile(profileData as Profile | null);
+    setIsAdmin(!!roleData);
+    setProfileLoading(false);
+  };
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -143,7 +166,8 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
         user, session, profile,
         isAuthenticated: !!session,
         isAdmin,
-        isLoading,
+        isLoading: !authReady || profileLoading,
+        refreshProfile,
         login, logout, resetPassword, updatePassword,
       }}
     >
