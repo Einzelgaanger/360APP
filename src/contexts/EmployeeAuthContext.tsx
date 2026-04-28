@@ -45,12 +45,14 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setProfileLoading(!!session);
       setAuthReady(true);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setProfileLoading(!!session);
       setAuthReady(true);
     });
 
