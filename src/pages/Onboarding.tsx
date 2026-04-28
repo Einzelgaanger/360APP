@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronLeft, ArrowRight, Search } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
-import heroPeopleData from '@/assets/hero-people-data.jpg';
-import authPersonData from '@/assets/auth-person-data.jpg';
+import heroFeedbackSession from '@/assets/hero-feedback-session.jpg';
+import heroReflectionData from '@/assets/hero-reflection-data.jpg';
 import heroTeam from '@/assets/hero-team-mobile.jpg';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -30,8 +30,8 @@ const SLIDES: SlideDef[] = [
     headlineHTML: 'Performance, written in <em>plain ink.</em>',
     body:
       'A 360° appraisal platform built for honesty, anonymity and craft. Less ceremony, more signal. This is how Venture Garden Group measures growth.',
-    image: heroPeopleData,
-    caption: 'Fig. 01 — Feedback in conversation',
+    image: heroFeedbackSession,
+    caption: 'Fig. 01 — Feedback with data',
   },
   {
     no: '02',
@@ -50,8 +50,8 @@ const SLIDES: SlideDef[] = [
     headlineHTML: 'Your voice, on the record. <em>Anonymously.</em>',
     body:
       'Sign in with your VGG credentials. Every response is encrypted and detached from your identity before analytics ever sees it.',
-    image: authPersonData,
-    caption: 'Fig. 03 — A moment of reflection',
+    image: heroReflectionData,
+    caption: 'Fig. 03 — Reflection with analytics',
   },
 ];
 

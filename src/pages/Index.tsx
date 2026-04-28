@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import heroPeopleData from '@/assets/hero-people-data.jpg';
+import heroFeedbackSession from '@/assets/hero-feedback-session.jpg';
 import vggLogo from '@/assets/vgg-logo.webp';
 
 const Index = () => {
@@ -23,13 +23,13 @@ const Index = () => {
         {/* Mobile-only hero strip */}
         <div className="mobile-hero">
           <img
-            src={heroPeopleData}
-            alt="Two colleagues in candid feedback conversation"
+            src={heroFeedbackSession}
+            alt="Team reviewing performance analytics together"
             fetchPriority="high"
           />
           <div className="mobile-hero-caption">
             <span>◉ Fig. 01</span>
-            <span>Feedback, in conversation</span>
+            <span>Feedback, with data</span>
           </div>
         </div>
 
@@ -57,8 +57,8 @@ const Index = () => {
         <section className="relative hidden lg:block min-h-[360px] border-l border-border p-12">
           <div className="ink-frame relative h-full w-full overflow-hidden">
             <img
-              src={heroPeopleData}
-              alt="Two colleagues in candid feedback conversation, with subtle data overlay"
+              src={heroFeedbackSession}
+              alt="Team reviewing performance analytics together, with subtle data overlay"
               className="absolute inset-0 h-full w-full object-cover"
             />
           </div>
