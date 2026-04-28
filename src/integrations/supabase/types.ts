@@ -587,24 +587,42 @@ export type Database = {
           department: string | null
           email: string
           employee_id: string | null
+          hierarchy_level: number | null
           id: string
           name: string
+          profile_completed: boolean
+          profile_completed_at: string | null
+          profile_confirmed_at: string | null
+          role: string | null
+          subsidiary_id: string | null
         }
         Insert: {
           created_at?: string | null
           department?: string | null
           email: string
           employee_id?: string | null
+          hierarchy_level?: number | null
           id: string
           name: string
+          profile_completed?: boolean
+          profile_completed_at?: string | null
+          profile_confirmed_at?: string | null
+          role?: string | null
+          subsidiary_id?: string | null
         }
         Update: {
           created_at?: string | null
           department?: string | null
           email?: string
           employee_id?: string | null
+          hierarchy_level?: number | null
           id?: string
           name?: string
+          profile_completed?: boolean
+          profile_completed_at?: string | null
+          profile_confirmed_at?: string | null
+          role?: string | null
+          subsidiary_id?: string | null
         }
         Relationships: [
           {
