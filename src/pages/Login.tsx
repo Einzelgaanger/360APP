@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { AuthHeroPanel } from '@/components/auth/AuthHeroPanel';
 import { Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 import vggLogo from '@/assets/vgg-logo.webp';
-import heroPeopleData from '@/assets/hero-people-data.jpg';
+import heroFeedbackSession from '@/assets/hero-feedback-session.jpg';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -45,7 +45,7 @@ export default function Login() {
 
       {/* Mobile-only hero strip */}
       <div className="mobile-hero">
-        <img src={heroPeopleData} alt="Colleagues in conversation" fetchPriority="high" />
+        <img src={heroFeedbackSession} alt="Team reviewing performance analytics" fetchPriority="high" />
         <div className="mobile-hero-caption">
           <span>◉ VGG / Administrator</span>
           <span>Auth / 01</span>

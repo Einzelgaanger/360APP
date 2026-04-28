@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import authPersonData from '@/assets/auth-person-data.jpg';
-import heroPeopleData from '@/assets/hero-people-data.jpg';
+import heroReflectionData from '@/assets/hero-reflection-data.jpg';
+import heroFeedbackSession from '@/assets/hero-feedback-session.jpg';
 
 type AuthHeroPanelProps = {
   eyebrow?: string;
@@ -21,8 +21,8 @@ export function AuthHeroPanel({
   variant = 'login',
   children,
 }: AuthHeroPanelProps) {
-  const art = variant === 'hub' ? authPersonData : heroPeopleData;
-  const caption = variant === 'hub' ? 'Fig. 02 — A moment of reflection' : 'Fig. 01 — Feedback in conversation';
+  const art = variant === 'hub' ? heroReflectionData : heroFeedbackSession;
+  const caption = variant === 'hub' ? 'Fig. 03 — Reflection with analytics' : 'Fig. 01 — Feedback with data';
 
   return (
     <aside className="relative hidden min-h-0 w-[48%] flex-col bg-paper-deep/40 lg:flex">
