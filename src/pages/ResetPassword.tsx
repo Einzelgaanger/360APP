@@ -206,13 +206,13 @@ export default function ResetPassword() {
               </motion.div>
             )}
 
-            <Button type="submit" disabled={loading} className="w-full h-10 rounded-lg text-sm sm:rounded-sm">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Set Password'}
+            <Button type="submit" disabled={loading} className="w-full h-11 rounded-md text-sm">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Set password & continue'}
             </Button>
           </form>
 
           <p className="mt-4 text-[11px] text-muted-foreground">
-            If this link has expired, return to <Link to="/find-account" className="font-medium text-primary hover:underline">Find Account</Link> and request a new reset email.
+            Link expired? Go back to <Link to="/find-account" className="font-medium text-primary hover:underline">activate your account</Link> and request a new email.
           </p>
         </motion.div>
       </div>
