@@ -64,11 +64,11 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div className="mobile-flow-shell app-page flex items-center justify-center px-6">
+      <div className="app-page flex min-h-dvh-screen items-center justify-center px-5 py-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mobile-flow-card max-w-sm w-full text-center"
+          className="mobile-flow-card w-full max-w-sm text-center"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -78,12 +78,12 @@ export default function ResetPassword() {
           >
             <CheckCircle2 className="w-7 h-7 text-primary" />
           </motion.div>
-          <h1 className="text-xl font-semibold mb-1.5">Password Updated</h1>
+          <h1 className="text-xl font-semibold mb-1.5">Password set</h1>
           <p className="text-muted-foreground text-[13px] mb-5">
-            Your password has been updated. You can now sign in.
+            Next, confirm a few profile details so we can place you in the right review pools.
           </p>
-          <Button onClick={() => navigate('/login')} className="w-full h-10 rounded-lg text-sm sm:rounded-sm">
-            Go to Sign In
+          <Button onClick={() => navigate('/hub')} className="w-full h-11 rounded-md text-sm">
+            Continue to profile
           </Button>
         </motion.div>
       </div>
