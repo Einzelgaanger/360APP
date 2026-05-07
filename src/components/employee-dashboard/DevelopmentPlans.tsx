@@ -18,6 +18,15 @@ interface Plan {
   created_at: string;
 }
 
+interface LearningPath {
+  id: string;
+  focus_area: string;
+  title: string;
+  status: string;
+  goal_horizon_days: number;
+  created_at: string;
+}
+
 interface Props {
   userId: string;
   growthAreas: string[];
@@ -28,6 +37,7 @@ interface Props {
 
 export default function DevelopmentPlans({ userId, growthAreas, prefilledFocus, prefilledGoal, onClearPrefill }: Props) {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [paths, setPaths] = useState<LearningPath[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -46,9 +56,12 @@ export default function DevelopmentPlans({ userId, growthAreas, prefilledFocus, 
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('development_plans').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    setPlans(data || []);
+    const [{ data: plansData }, { data: pathsData }] = await Promise.all([
+      supabase.from('development_plans').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+      supabase.from('learning_paths').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    ]);
+    setPlans(plansData || []);
+    setPaths((pathsData || []) as LearningPath[]);
     setLoading(false);
   };
 
@@ -76,15 +89,34 @@ export default function DevelopmentPlans({ userId, growthAreas, prefilledFocus, 
       why_it_matters: form.why_it_matters.trim().slice(0, 500) || null,
       target_date: form.target_date || null,
     });
+    if (!error) {
+      await supabase.from('learning_paths').insert({
+        user_id: userId,
+        focus_area: form.focus_area.trim().slice(0, 100),
+        title: form.goal.trim().slice(0, 180),
+        goal_horizon_days: 28,
+        status: 'active',
+        pipeline_version: 'v2',
+      });
+    }
     setSubmitting(false);
     if (error) { toast.error('Could not create plan'); return; }
-    toast.success('Goal saved. We\'ll check in with you in 60 days.');
+    toast.success('Goal saved and synced to your learning path.');
     reset();
     void load();
   };
 
   const complete = async (id: string) => {
+    const plan = plans.find((p) => p.id === id);
     await supabase.from('development_plans').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', id);
+    if (plan?.focus_area) {
+      await supabase
+        .from('learning_paths')
+        .update({ status: 'completed' })
+        .eq('user_id', userId)
+        .eq('focus_area', plan.focus_area)
+        .eq('status', 'active');
+    }
     toast.success('Goal marked complete 🎉');
     void load();
   };
@@ -145,6 +177,22 @@ export default function DevelopmentPlans({ userId, growthAreas, prefilledFocus, 
         </div>
       ) : (
         <div className="space-y-2">
+          {paths.filter((p) => p.status === 'active').length > 0 && (
+            <div className="rounded-xl border border-primary/25 bg-primary/5 p-3">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Active learning paths</p>
+              <div className="space-y-1.5">
+                {paths
+                  .filter((p) => p.status === 'active')
+                  .slice(0, 3)
+                  .map((path) => (
+                    <div key={path.id} className="flex items-center justify-between rounded-lg bg-card/60 px-2 py-1.5">
+                      <span className="text-[11px]">{path.focus_area}: {path.title}</span>
+                      <Badge variant="outline" className="h-5 text-[9px]">{path.goal_horizon_days}d</Badge>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
           <AnimatePresence>
             {active.map(p => (
               <motion.div key={p.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="p-3 rounded-xl border-l-4 border-l-primary bg-card/40 border border-border/40">

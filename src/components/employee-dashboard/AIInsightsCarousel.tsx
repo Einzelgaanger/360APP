@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { ENABLE_APP_AI } from '@/lib/featureFlags';
 
 const REFRESH_INTERVAL_MS = 2 * 60 * 60 * 1000; // Re-generate every 2 hours
 
@@ -10,6 +11,8 @@ interface AIInsightsCarouselProps {
 }
 
 export default function AIInsightsCarousel({ dataContext }: AIInsightsCarouselProps) {
+  if (!ENABLE_APP_AI) return null;
+
   const [insights, setInsights] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);

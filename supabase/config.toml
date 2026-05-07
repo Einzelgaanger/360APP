@@ -7,3 +7,19 @@ project_id = "jniqqburulrdwcbjetug"
     verify_jwt = false
   [functions.process-email-queue]
     verify_jwt = true
+  [functions.adaptive-resources]
+    verify_jwt = true
+  [functions.research-resources]
+    verify_jwt = true
+  [functions.recommendation-candidates]
+    verify_jwt = true
+  [functions.recommendation-rank]
+    verify_jwt = true
+  [functions.recommendation-personalize]
+    verify_jwt = true
+  [functions.recommendation-run]
+    verify_jwt = true
+  [functions.learning-path-generate]
+    verify_jwt = true
+  [functions.recommendation-evaluate]
+    verify_jwt = false

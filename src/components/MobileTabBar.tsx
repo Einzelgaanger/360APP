@@ -1,4 +1,4 @@
-import { ClipboardList, BarChart3, Sparkles, Trophy, User } from 'lucide-react';
+import { ClipboardList, BarChart3, Trophy, User } from 'lucide-react';
 
 export type MobileTab = 'survey' | 'dashboard' | 'growth' | 'rankings' | 'profile';
 
@@ -10,13 +10,13 @@ interface MobileTabBarProps {
 const TABS: { key: MobileTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'survey',    label: 'Survey',    icon: ClipboardList },
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-  { key: 'growth',    label: 'Growth',    icon: Sparkles },
+  { key: 'growth',    label: 'Growth',    icon: BarChart3 },
   { key: 'rankings',  label: 'Rankings',  icon: Trophy },
   { key: 'profile',   label: 'Profile',   icon: User },
 ];
 
 /**
- * WhatsApp-style fixed bottom tab bar â€” mobile only (hidden on lg+).
+ * WhatsApp-style fixed bottom tab bar — mobile only (hidden on lg+).
  * Editorial: hairline top border, paper background, ink text, green active state.
  */
 export default function MobileTabBar({ active, onChange }: MobileTabBarProps) {
@@ -45,7 +45,15 @@ export default function MobileTabBar({ active, onChange }: MobileTabBarProps) {
                     className="absolute top-0 left-1/2 -translate-x-1/2 h-[2px] w-8 bg-primary"
                   />
                 )}
-                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.25]' : ''}`} />
+                {key === 'growth' ? (
+                  <img
+                    src="/favicon.png"
+                    alt="Growth"
+                    className="w-5 h-5 rounded-sm object-contain"
+                  />
+                ) : (
+                  <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.25]' : ''}`} />
+                )}
                 <span
                   className="text-[10px] font-medium tracking-wide"
                   style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}

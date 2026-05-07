@@ -102,7 +102,6 @@ export default function EmployeeHub() {
   const [myScores, setMyScores] = useState<CategoryScore[]>([]);
   const [directionScores, setDirectionScores] = useState<DirectionScores>({ above: [], peer: [], below: [] });
   const [directionCounts, setDirectionCounts] = useState<{ above: number; peer: number; below: number }>({ above: 0, peer: 0, below: 0 });
-  const [totalReviews, setTotalReviews] = useState(0);
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [qualitativeFeedback, setQualitativeFeedback] = useState<{ startDoing: FeedbackItem[]; stopDoing: FeedbackItem[]; continueDoing: FeedbackItem[] }>({ startDoing: [], stopDoing: [], continueDoing: [] });
   const [aiDataContext, setAiDataContext] = useState('');
@@ -122,6 +121,7 @@ export default function EmployeeHub() {
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
 
   const normalizedProfileEmail = profile?.email?.trim().toLowerCase() ?? '';
+  const normalizedAuthEmail = user?.email?.trim().toLowerCase() ?? '';
 
   const currentEmployee = useMemo(() => {
     if (profile?.employee_id) {
@@ -129,10 +129,16 @@ export default function EmployeeHub() {
       if (matchedById) return matchedById;
     }
 
-    if (!normalizedProfileEmail) return null;
+    const emailCandidates = [normalizedProfileEmail, normalizedAuthEmail].filter(Boolean);
+    if (!emailCandidates.length) return null;
 
-    return allEmployees.find(employee => (employee.email ?? '').trim().toLowerCase() === normalizedProfileEmail) ?? null;
-  }, [allEmployees, normalizedProfileEmail, profile?.employee_id]);
+    return (
+      allEmployees.find((employee) => {
+        const employeeEmail = (employee.email ?? '').trim().toLowerCase();
+        return emailCandidates.includes(employeeEmail);
+      }) ?? null
+    );
+  }, [allEmployees, normalizedProfileEmail, normalizedAuthEmail, profile?.employee_id]);
 
   // Load completions from database
   useEffect(() => {
@@ -180,7 +186,6 @@ export default function EmployeeHub() {
       setDirectionCounts({ above: 0, peer: 0, below: 0 });
       setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
       setAiDataContext('');
-      setTotalReviews(0);
       setDashboardLoading(false);
       return;
     }
@@ -281,7 +286,6 @@ export default function EmployeeHub() {
           peer: buildDirScores('peer'),
           below: buildDirScores('below'),
         });
-        setTotalReviews(myResponses.length);
 
         // Fetch qualitative (text) answers
         let allTextAnswers: any[] = [];
@@ -484,7 +488,6 @@ export default function EmployeeHub() {
         setMyScores([]);
         setDirectionScores({ above: [], peer: [], below: [] });
         setDirectionCounts({ above: 0, peer: 0, below: 0 });
-        setTotalReviews(0);
         setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
         setAiDataContext('');
         setCohortScores([]);
@@ -806,7 +809,13 @@ export default function EmployeeHub() {
         onLogout={handleLogout}
         items={[
           { key: 'dashboard', label: 'My Dashboard', icon: <BarChart3 className="w-4 h-4" />, active: activeTab === 'dashboard', onClick: () => setTab('dashboard') },
-          { key: 'growth', label: 'Growth Hub', icon: <Sparkles className="w-4 h-4" />, active: activeTab === 'growth', onClick: () => setTab('growth') },
+          {
+            key: 'growth',
+            label: 'Growth Hub',
+            icon: <img src="/favicon.png" alt="Growth Hub" className="w-4 h-4 rounded-sm object-contain" />,
+            active: activeTab === 'growth',
+            onClick: () => setTab('growth')
+          },
           { key: 'rankings', label: 'Rankings', icon: <Trophy className="w-4 h-4" />, active: activeTab === 'rankings', onClick: () => setTab('rankings') },
           { key: 'survey', label: 'Survey', icon: <ClipboardList className="w-4 h-4" />, active: activeTab === 'survey', onClick: () => setTab('survey') },
         ]}
@@ -1416,7 +1425,7 @@ export default function EmployeeHub() {
                 </div>
               ) : !user ? null : myScores.length === 0 ? (
                 <div className="glass-panel p-12 text-center">
-                  <Sparkles className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+                  <img src="/favicon.png" alt="Growth Hub" className="w-10 h-10 mx-auto mb-4 rounded-xl object-contain" />
                   <h2 className="text-lg font-semibold mb-2">Growth Hub Unlocks With Feedback</h2>
                   <p className="text-muted-foreground text-sm">Once you have reviews, we'll generate personalised resources and help you build a development plan.</p>
                 </div>
@@ -1425,7 +1434,7 @@ export default function EmployeeHub() {
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5 bg-secondary/35">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                        <Sparkles className="w-5 h-5 text-primary" />
+                        <img src="/favicon.png" alt="Growth Hub" className="w-5 h-5 rounded-sm object-contain" />
                       </div>
                       <div>
                         <h2 className="text-base font-bold">Your Growth Hub</h2>

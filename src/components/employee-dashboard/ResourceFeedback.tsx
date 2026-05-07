@@ -26,11 +26,14 @@ interface Props {
   resourceId: string;
   resourceTitle: string;
   focusArea: string;
+  runId?: string;
+  itemId?: string;
+  rankPosition?: number;
   initialScore?: number | null;
   onSubmitted?: (score: number, tag: ReasonTag | null) => void;
 }
 
-export default function ResourceFeedback({ userId, resourceId, resourceTitle, focusArea, initialScore, onSubmitted }: Props) {
+export default function ResourceFeedback({ userId, resourceId, resourceTitle, focusArea, runId, itemId, rankPosition, initialScore, onSubmitted }: Props) {
   const [score, setScore] = useState<number | null>(initialScore ?? null);
   const [showReasons, setShowReasons] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -47,6 +50,17 @@ export default function ResourceFeedback({ userId, resourceId, resourceTitle, fo
         reason_tag: reasonTag,
       }, { onConflict: 'user_id,resource_id' });
       if (error) throw error;
+      if (runId && itemId) {
+        await supabase.from('recommendation_events').insert({
+          user_id: userId,
+          run_id: runId,
+          item_id: itemId,
+          event_type: relevance >= 4 ? 'feedback_up' : 'feedback_down',
+          position: rankPosition || null,
+          focus_area: focusArea,
+          metadata: { reason_tag: reasonTag, resource_title: resourceTitle } as any,
+        });
+      }
       setScore(relevance);
       setShowReasons(false);
       toast.success(relevance >= 4 ? "Got it — more like this." : "Got it — we'll adjust.", { duration: 1800 });

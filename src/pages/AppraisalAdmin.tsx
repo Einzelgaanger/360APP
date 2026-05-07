@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { AppraisalAdminSkeleton } from '@/components/shell/LoadingShells';
 import AdminMobileTabBar from '@/components/AdminMobileTabBar';
+import { ENABLE_APP_AI } from '@/lib/featureFlags';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -291,9 +292,11 @@ ${feedbackSample || '• No text feedback yet'}`;
             <Button variant="ghost" size="sm" onClick={loadAllData} className="gap-1">
               <RefreshCw className="w-3 h-3" /> Refresh
             </Button>
-            <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2 h-8 text-xs">
-              <Brain className="w-3.5 h-3.5" /> AI Copilot
-            </Button>
+            {ENABLE_APP_AI && (
+              <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2 h-8 text-xs">
+                <Brain className="w-3.5 h-3.5" /> AI Copilot
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={() => void handleLogout()}>
               <span className="text-xs">Sign Out</span>
             </Button>
@@ -629,10 +632,14 @@ ${feedbackSample || '• No text feedback yet'}`;
         )}
       </main>
 
-      <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+      {ENABLE_APP_AI && (
+        <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+      )}
 
       <AdminMobileTabBar
-        onOpenCopilot={() => setChatOpen(true)}
+        onOpenCopilot={() => {
+          if (ENABLE_APP_AI) setChatOpen(true);
+        }}
         onSignOut={handleLogout}
         onRefresh={loadAllData}
       />
