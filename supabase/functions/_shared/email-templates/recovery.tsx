@@ -29,29 +29,32 @@ export const RecoveryEmail = ({
 }: RecoveryEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Password reset request for your VGG 360° Appraisal account</Preview>
+    <Preview>Set your password and activate your VGG 360° Appraisal account</Preview>
     <Body style={main}>
       <Container style={outerContainer}>
         <Section style={headerSection}>
           <Img src={LOGO_URL} alt="Venture Garden Group" width="140" height="auto" style={logo} />
         </Section>
         <Section style={contentSection}>
-          <Text style={eyebrow}>VGG 360° Appraisal / Security</Text>
-          <Heading style={h1}>Reset your password</Heading>
+          <Text style={eyebrow}>VGG 360° Appraisal / Activate</Text>
+          <Heading style={h1}>Set your new password</Heading>
           <Text style={text}>
-            We received a request to reset the password for your VGG 360° Appraisal account. Click the button below to set a new password. This link will expire shortly for your security.
+            You're a step away from your VGG 360° Appraisal account. Tap the button below to choose a new password — then we'll guide you through confirming your profile and starting your appraisals.
           </Text>
           <Section style={buttonContainer}>
             <Button style={button} href={confirmationUrl}>
-              Reset Password
+              Set New Password
             </Button>
           </Section>
           <Text style={dividerText}>— or copy this link into your browser —</Text>
           <Text style={urlText}>{confirmationUrl}</Text>
+          <Text style={{ ...text, fontSize: '12px', margin: '22px 0 0', color: '#6f7f77' }}>
+            For your security, this link will expire shortly. If it does, just request a new one from the activation page.
+          </Text>
         </Section>
         <Hr style={hr} />
         <Text style={footer}>
-          If you did not request a password reset, no action is needed — your account remains secure.
+          If you weren't expecting this email, you can safely ignore it — no changes will be made to your account.
         </Text>
         <Text style={copyright}>© {new Date().getFullYear()} Venture Garden Group. All rights reserved.</Text>
       </Container>

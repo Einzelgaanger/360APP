@@ -64,11 +64,11 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div className="mobile-flow-shell app-page flex items-center justify-center px-6">
+      <div className="app-page flex min-h-dvh-screen items-center justify-center px-5 py-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mobile-flow-card max-w-sm w-full text-center"
+          className="mobile-flow-card w-full max-w-sm text-center"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -78,12 +78,12 @@ export default function ResetPassword() {
           >
             <CheckCircle2 className="w-7 h-7 text-primary" />
           </motion.div>
-          <h1 className="text-xl font-semibold mb-1.5">Password Updated</h1>
+          <h1 className="text-xl font-semibold mb-1.5">Password set</h1>
           <p className="text-muted-foreground text-[13px] mb-5">
-            Your password has been updated. You can now sign in.
+            Next, confirm a few profile details so we can place you in the right review pools.
           </p>
-          <Button onClick={() => navigate('/login')} className="w-full h-10 rounded-lg text-sm sm:rounded-sm">
-            Go to Sign In
+          <Button onClick={() => navigate('/hub')} className="w-full h-11 rounded-md text-sm">
+            Continue to profile
           </Button>
         </motion.div>
       </div>
@@ -109,12 +109,12 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="mobile-flow-shell app-page flex min-h-dvh-screen flex-col">
+    <div className="app-page flex min-h-dvh-screen flex-col">
       <div className="mobile-hero shrink-0">
         <img src={heroTeam} alt="Team collaboration at VGG" />
         <div className="mobile-hero-caption">
-          <span>◉ VGG / Password Reset</span>
-          <span>Auth / Recovery</span>
+          <span>◉ VGG / Activate</span>
+          <span>Auth / Set password</span>
         </div>
       </div>
 
@@ -126,7 +126,7 @@ export default function ResetPassword() {
         </Button>
       </div>
 
-      <div className="mobile-flow-content flex flex-1 flex-col items-stretch justify-start sm:items-center sm:justify-center">
+      <div className="flex flex-1 flex-col items-stretch justify-start px-4 py-4 sm:items-center sm:justify-center sm:px-6 sm:py-6">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -134,12 +134,12 @@ export default function ResetPassword() {
         >
           <div className="mb-6">
             <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto mb-5" />
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center mb-3">
+            <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center mb-3">
               <Lock className="w-5 h-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-semibold">Set a new password</h1>
+            <h1 className="text-xl font-semibold">Set your new password</h1>
             <p className="text-muted-foreground mt-1 text-[13px]">
-              Choose a secure password for your account.
+              Choose a secure password — you'll use this every time you sign in to VGG Appraisals.
             </p>
           </div>
 
@@ -206,13 +206,13 @@ export default function ResetPassword() {
               </motion.div>
             )}
 
-            <Button type="submit" disabled={loading} className="w-full h-10 rounded-lg text-sm sm:rounded-sm">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Set Password'}
+            <Button type="submit" disabled={loading} className="w-full h-11 rounded-md text-sm">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Set password & continue'}
             </Button>
           </form>
 
           <p className="mt-4 text-[11px] text-muted-foreground">
-            If this link has expired, return to <Link to="/find-account" className="font-medium text-primary hover:underline">Find Account</Link> and request a new reset email.
+            Link expired? Go back to <Link to="/find-account" className="font-medium text-primary hover:underline">activate your account</Link> and request a new email.
           </p>
         </motion.div>
       </div>
