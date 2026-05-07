@@ -310,8 +310,7 @@ export default function Survey() {
                         )}
                       </button>
                     );
-                  })
-                  )}
+                  }))}
                 </div>
               </div>
             </motion.div>
