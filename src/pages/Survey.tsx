@@ -276,7 +276,7 @@ export default function Survey() {
                         <div key={i} className="h-14 rounded-2xl bg-muted skeleton-pulse-fast" />
                       ))}
                     </div>
-                  ) : employees.map(emp => {
+                  ) : (employees.map(emp => {
                     const isCompleted = completedEmployees.has(emp.id);
                     return (
                       <button
