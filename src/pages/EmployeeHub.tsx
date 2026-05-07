@@ -1318,6 +1318,16 @@ export default function EmployeeHub() {
                         <DetailedCategoryBreakdown scores={myScores} />
                       </div>
 
+                      {/* Cohort Comparisons: department / level / subsidiary / org */}
+                      {cohortMeta && cohortScores.length > 0 && (
+                        <PerformanceContext
+                          scores={cohortScores}
+                          meta={cohortMeta}
+                          yourOverall={overallScore}
+                          ranks={cohortRanks}
+                        />
+                      )}
+
                       {/* Segmented Feedback by Direction */}
                       <div>
                         <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
