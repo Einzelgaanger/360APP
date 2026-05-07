@@ -361,11 +361,11 @@ export default function FindAccount() {
                 onClick={(e) => e.stopPropagation()}
                 className="w-full max-w-sm bg-card border border-border rounded-xl p-4 shadow-xl sm:rounded-sm"
               >
-                <h2 className="text-base font-semibold mb-1">Confirm Your Identity</h2>
+                <h2 className="text-base font-semibold mb-1">Is this you?</h2>
                 <p className="text-[13px] text-muted-foreground mb-4">
-                  We'll send a password reset link to the email associated with this account. Please confirm this is you:
+                  We'll send a secure link to this email so you can set your new password and complete your profile.
                 </p>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border mb-4 sm:rounded-sm">
+                <div className="flex items-center gap-3 p-3 rounded-md bg-muted/50 border border-border mb-4">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <span className="text-xs font-semibold text-primary">
                       {confirmEmployee.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
@@ -374,28 +374,28 @@ export default function FindAccount() {
                   <div className="min-w-0">
                     <p className="font-medium text-[13px] truncate">{confirmEmployee.name}</p>
                     {confirmEmployee.email && (
-                      <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Mail className="w-3 h-3" />
-                        {confirmEmployee.email.replace(/(.{3})(.*)(@.*)/, '$1***$3')}
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 truncate">
+                        <Mail className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{confirmEmployee.email.replace(/(.{3})(.*)(@.*)/, '$1***$3')}</span>
                       </p>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2.5">
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:gap-2.5">
                   <Button
                     variant="outline"
-                    className="flex-1 h-10 text-xs"
+                    className="w-full h-11 text-sm sm:flex-1"
                     onClick={() => setConfirmEmployee(null)}
                     disabled={sending}
                   >
-                    Cancel
+                    Not me
                   </Button>
                   <Button
-                    className="flex-1 h-10 text-xs"
+                    className="w-full h-11 text-sm sm:flex-1"
                     onClick={handleConfirmSendReset}
                     disabled={sending}
                   >
-                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Reset Link'}
+                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Email me my link'}
                   </Button>
                 </div>
               </motion.div>
