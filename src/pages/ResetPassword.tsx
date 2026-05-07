@@ -109,12 +109,12 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="mobile-flow-shell app-page flex min-h-dvh-screen flex-col">
+    <div className="app-page flex min-h-dvh-screen flex-col">
       <div className="mobile-hero shrink-0">
         <img src={heroTeam} alt="Team collaboration at VGG" />
         <div className="mobile-hero-caption">
-          <span>◉ VGG / Password Reset</span>
-          <span>Auth / Recovery</span>
+          <span>◉ VGG / Activate</span>
+          <span>Auth / Set password</span>
         </div>
       </div>
 
@@ -126,7 +126,7 @@ export default function ResetPassword() {
         </Button>
       </div>
 
-      <div className="mobile-flow-content flex flex-1 flex-col items-stretch justify-start sm:items-center sm:justify-center">
+      <div className="flex flex-1 flex-col items-stretch justify-start px-4 py-4 sm:items-center sm:justify-center sm:px-6 sm:py-6">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -134,12 +134,12 @@ export default function ResetPassword() {
         >
           <div className="mb-6">
             <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto mb-5" />
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center mb-3">
+            <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center mb-3">
               <Lock className="w-5 h-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-semibold">Set a new password</h1>
+            <h1 className="text-xl font-semibold">Set your new password</h1>
             <p className="text-muted-foreground mt-1 text-[13px]">
-              Choose a secure password for your account.
+              Choose a secure password — you'll use this every time you sign in to VGG Appraisals.
             </p>
           </div>
 
