@@ -222,9 +222,9 @@ export default function FindAccount() {
         >
           <div className="mb-4">
             <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto mb-5" />
-            <h1 className="text-xl font-semibold mb-1">Find your account</h1>
+            <h1 className="text-xl font-semibold mb-1">Activate your account</h1>
             <p className="text-muted-foreground text-[13px]">
-              Search by your full name or work email, then select your profile.
+              Find your name below — we'll email you a secure link to set your new password and finish setting up your profile.
             </p>
           </div>
 
