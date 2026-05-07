@@ -312,7 +312,7 @@ export default function EmployeeHub() {
           if (qText.includes('stop')) fb.stopDoing.push(item);
           else if (qText.includes('start')) fb.startDoing.push(item);
           else if (qText.includes('continue')) fb.continueDoing.push(item);
-          else fb.continueDoing.push(item); // default bucket
+          // else: skip — don't bucket unrelated open-ended into Continue
         });
         setQualitativeFeedback(fb);
 
