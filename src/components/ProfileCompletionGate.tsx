@@ -106,7 +106,7 @@ export default function ProfileCompletionGate({ children }: { children: ReactNod
     [employees],
   );
 
-  const canSave = name.trim() && role && department && subsidiaryId && hierarchyLevel;
+  const canSave = name.trim() && role.trim() && department.trim() && subsidiaryId && hierarchyLevel;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -184,53 +184,61 @@ export default function ProfileCompletionGate({ children }: { children: ReactNod
                     <Input id="profile-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Your full name" maxLength={140} />
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Role / title</Label>
-                      <Select value={role} onValueChange={setRole}>
-                        <SelectTrigger><SelectValue placeholder="Select title" /></SelectTrigger>
-                        <SelectContent>
-                          {roleOptions.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Department</Label>
-                      <Select value={department} onValueChange={setDepartment}>
-                        <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                        <SelectContent>
-                          {departmentOptions.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Subsidiary</Label>
+                    <Select value={subsidiaryId} onValueChange={setSubsidiaryId}>
+                      <SelectTrigger><SelectValue placeholder="Select subsidiary" /></SelectTrigger>
+                      <SelectContent>
+                        {subsidiaries.map((subsidiary) => <SelectItem key={subsidiary.id} value={subsidiary.id}>{subsidiary.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Subsidiary</Label>
-                      <Select value={subsidiaryId} onValueChange={setSubsidiaryId}>
-                        <SelectTrigger><SelectValue placeholder="Select subsidiary" /></SelectTrigger>
-                        <SelectContent>
-                          {subsidiaries.map((subsidiary) => <SelectItem key={subsidiary.id} value={subsidiary.id}>{subsidiary.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-department">Department</Label>
+                    <Input
+                      id="profile-department"
+                      list="department-options"
+                      value={department}
+                      onChange={(event) => setDepartment(event.target.value)}
+                      placeholder="Pick from list or type your own"
+                      maxLength={140}
+                      autoComplete="off"
+                    />
+                    <datalist id="department-options">
+                      {departmentOptions.map((option) => <option key={option} value={option} />)}
+                    </datalist>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label>Seniority level</Label>
-                      <Select value={hierarchyLevel} onValueChange={setHierarchyLevel}>
-                        <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(HIERARCHY_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>L{value} — {label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-role">Role / title</Label>
+                    <Input
+                      id="profile-role"
+                      list="role-options"
+                      value={role}
+                      onChange={(event) => setRole(event.target.value)}
+                      placeholder="Pick from list or type your own"
+                      maxLength={140}
+                      autoComplete="off"
+                    />
+                    <datalist id="role-options">
+                      {roleOptions.map((option) => <option key={option} value={option} />)}
+                    </datalist>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Seniority level</Label>
+                    <Select value={hierarchyLevel} onValueChange={setHierarchyLevel}>
+                      <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(HIERARCHY_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>L{value} — {label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="flex items-start gap-2 border-t border-border pt-4 text-xs text-muted-foreground">
                     <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-                    <p>Your confirmed details are used only to place reviews into the right subsidiary, department, and hierarchy pools.</p>
+                    <p>Your confirmed details are used only to place reviews into the right subsidiary, department, and hierarchy pools. You can pick from the list or type your own value.</p>
                   </div>
 
                   <Button type="submit" className="w-full" disabled={!canSave || saving}>
