@@ -298,7 +298,7 @@ export default function FindAccount() {
               className="space-y-2"
             >
               <p className="text-[11px] text-muted-foreground font-medium mb-2.5">
-                {results.length} result{results.length !== 1 ? 's' : ''} — select your profile to receive a password reset email:
+                {results.length} result{results.length !== 1 ? 's' : ''} — pick your profile to receive your activation email:
               </p>
               {query.length > 0 && (
                 <p className="mb-2.5 text-[11px] text-foreground/70">
