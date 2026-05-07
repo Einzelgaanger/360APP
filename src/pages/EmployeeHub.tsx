@@ -47,8 +47,6 @@ interface Category { id: string; name: string; sort_order: number; }
 interface Question { id: string; category_id: string; question_text: string; question_type: string; sort_order: number; }
 interface CategoryScore { category: string; myScore: number; orgAvg: number; }
 interface DirectionScores { above: CategoryScore[]; peer: CategoryScore[]; below: CategoryScore[]; }
-import type { CohortScore, CohortMeta, RankInfo } from '@/components/employee-dashboard/PerformanceContext';
-import PerformanceContext from '@/components/employee-dashboard/PerformanceContext';
 
 const HIERARCHY_LABELS: Record<number, string> = {
   0: 'Intern', 1: 'Junior', 2: 'Analyst', 3: 'Associate', 4: 'Senior Associate',
