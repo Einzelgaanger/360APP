@@ -336,27 +336,150 @@ export default function EmployeeHub() {
         ];
         setAiDataContext(contextParts.join('\n'));
 
-        // Load org averages in background (sample-based for speed)
-        supabase
-          .from('survey_answers')
-          .select('score, question_id')
-          .not('score', 'is', null)
-          .limit(5000)
-          .then(({ data: sampleAnswers }) => {
-            if (!sampleAnswers) return;
-            const orgCatScores: Record<string, number[]> = {};
-            (sampleAnswers as any[]).forEach(a => {
-              const cat = questionCatMap[a.question_id];
-              if (cat && a.score) {
-                if (!orgCatScores[cat]) orgCatScores[cat] = [];
-                orgCatScores[cat].push(a.score);
-              }
+        // === COHORT ANALYSIS: compute proper Department / Level / Subsidiary / Org averages ===
+        // (replaces the previous random 5,000-row sample which was statistically unsound)
+        void (async () => {
+          try {
+            const me = currentEmployee;
+            if (!me) return;
+
+            // 1) All responses with cohort metadata, excluding self
+            const { data: allResponses } = await supabase
+              .from('survey_responses')
+              .select('id, employee_id, subsidiary_id, reviewee_hierarchy_level')
+              .neq('employee_id', me.id);
+            if (!allResponses?.length) return;
+
+            // 2) Build employee lookup (department + subsidiary + level), excluding self
+            const empById: Record<string, Employee> = {};
+            allEmployees.forEach(e => { if (e.id !== me.id) empById[e.id] = e; });
+
+            // 3) Batch-fetch all answer scores for those responses
+            const respIds = allResponses.map(r => r.id);
+            const batch = 500;
+            let allAns: Array<{ response_id: string; question_id: string; score: number }> = [];
+            for (let i = 0; i < respIds.length; i += batch) {
+              const slice = respIds.slice(i, i + batch);
+              const { data } = await supabase
+                .from('survey_answers')
+                .select('response_id, question_id, score')
+                .in('response_id', slice)
+                .not('score', 'is', null);
+              if (data) allAns = allAns.concat(data as any);
+            }
+
+            // 4) Aggregate score arrays per category, per cohort
+            const catList = cats; // categories the user has data in
+            const blank = () => Object.fromEntries(catList.map(c => [c, [] as number[]])) as Record<string, number[]>;
+            const orgScores = blank();
+            const subsidiaryScores = blank();
+            const departmentScores = blank();
+            const levelScores = blank();
+
+            // Per-employee accumulator for ranking (avg of all category-means)
+            const empAns: Record<string, number[]> = {};
+
+            const respMap: Record<string, { employee_id: string; subsidiary_id: string; level: number | null }> = {};
+            allResponses.forEach(r => {
+              respMap[r.id] = {
+                employee_id: r.employee_id,
+                subsidiary_id: r.subsidiary_id,
+                level: r.reviewee_hierarchy_level,
+              };
             });
-            setMyScores(prev => prev.map(s => ({
-              ...s,
-              orgAvg: orgCatScores[s.category] ? avgArr(orgCatScores[s.category]) : 0,
-            })));
-          });
+
+            allAns.forEach(a => {
+              const r = respMap[a.response_id];
+              if (!r) return;
+              const cat = questionCatMap[a.question_id];
+              if (!cat || !catList.includes(cat)) return;
+
+              orgScores[cat].push(a.score);
+              if (r.subsidiary_id === me.subsidiary_id) subsidiaryScores[cat].push(a.score);
+
+              const emp = empById[r.employee_id];
+              if (emp) {
+                if (me.department && emp.department && emp.department.toLowerCase() === me.department.toLowerCase()) {
+                  departmentScores[cat].push(a.score);
+                }
+                if ((emp.hierarchy_level ?? 3) === (me.hierarchy_level ?? 3)) {
+                  levelScores[cat].push(a.score);
+                }
+              }
+
+              if (!empAns[r.employee_id]) empAns[r.employee_id] = [];
+              empAns[r.employee_id].push(a.score);
+            });
+
+            // 5) Build CohortScore rows (need at least 3 scores in a cohort to show, else 0 → '—')
+            const MIN_COHORT_N = 3;
+            const safeAvg = (arr: number[]) => arr.length >= MIN_COHORT_N ? parseFloat((arr.reduce((s, n) => s + n, 0) / arr.length).toFixed(2)) : 0;
+            const cohortRows: CohortScore[] = catList.map(c => ({
+              category: c,
+              you: avgArr(myCatScores[c] || []),
+              department: safeAvg(departmentScores[c] || []),
+              level: safeAvg(levelScores[c] || []),
+              subsidiary: safeAvg(subsidiaryScores[c] || []),
+              organisation: safeAvg(orgScores[c] || []),
+            }));
+            setCohortScores(cohortRows);
+
+            // 6) Cohort sizes (people with ≥1 review)
+            const peopleInCohort = (filter: (e: Employee) => boolean) => {
+              const ids = new Set<string>();
+              Object.keys(empAns).forEach(eid => {
+                const emp = empById[eid];
+                if (emp && filter(emp)) ids.add(eid);
+              });
+              return ids.size;
+            };
+            const meDept = me.department?.toLowerCase() || null;
+            const meLvl = me.hierarchy_level ?? 3;
+
+            const meta: CohortMeta = {
+              departmentName: me.department,
+              subsidiaryName: subsidiaries.find(s => s.id === me.subsidiary_id)?.name ?? null,
+              levelLabel: HIERARCHY_LABELS[meLvl] || `L${meLvl}`,
+              departmentSize: peopleInCohort(e => !!meDept && (e.department?.toLowerCase() === meDept) && e.subsidiary_id === me.subsidiary_id),
+              levelSize: peopleInCohort(e => (e.hierarchy_level ?? 3) === meLvl),
+              subsidiarySize: peopleInCohort(e => e.subsidiary_id === me.subsidiary_id),
+              organisationSize: Object.keys(empAns).length,
+            };
+            setCohortMeta(meta);
+
+            // 7) Rankings — overall average per employee, plus self
+            const myOverallScore = avgArr(Object.values(myCatScores).flat());
+            const empAvg: Array<{ id: string; avg: number }> = Object.entries(empAns)
+              .filter(([, arr]) => arr.length >= MIN_COHORT_N)
+              .map(([id, arr]) => ({ id, avg: arr.reduce((s, n) => s + n, 0) / arr.length }));
+            empAvg.push({ id: me.id, avg: myOverallScore });
+
+            const rankIn = (filter: (e: Employee) => boolean, scope: RankInfo['scope']): RankInfo => {
+              const pool = empAvg.filter(({ id }) => id === me.id || (empById[id] && filter(empById[id])));
+              if (pool.length < 2) return { rank: 0, total: 0, percentile: 0, scope };
+              pool.sort((a, b) => b.avg - a.avg);
+              const idx = pool.findIndex(p => p.id === me.id);
+              const rank = idx + 1;
+              const percentile = Math.round(((pool.length - rank) / (pool.length - 1)) * 100);
+              return { rank, total: pool.length, percentile, scope };
+            };
+
+            setCohortRanks([
+              rankIn(e => !!meDept && (e.department?.toLowerCase() === meDept) && e.subsidiary_id === me.subsidiary_id, 'department'),
+              rankIn(e => (e.hierarchy_level ?? 3) === meLvl, 'level'),
+              rankIn(e => e.subsidiary_id === me.subsidiary_id, 'subsidiary'),
+              rankIn(() => true, 'organisation'),
+            ]);
+
+            // Also update legacy myScores.orgAvg so existing radar/bar charts use a real average
+            setMyScores(prev => prev.map(s => {
+              const row = cohortRows.find(c => c.category === s.category);
+              return row ? { ...s, orgAvg: row.organisation } : s;
+            }));
+          } catch (e) {
+            console.error('Cohort analysis error:', e);
+          }
+        })();
       } else {
         setMyScores([]);
         setDirectionScores({ above: [], peer: [], below: [] });
