@@ -193,7 +193,7 @@ export default function FindAccount() {
   }
 
   return (
-    <div className="mobile-flow-shell app-page flex min-h-dvh-screen flex-col">
+    <div className="app-page flex min-h-dvh-screen flex-col bg-background">
       <div className="mobile-hero shrink-0 max-h-[24vh]">
         <img src={heroTeam} alt="A team in collaboration" />
         <div className="mobile-hero-caption">
@@ -211,7 +211,7 @@ export default function FindAccount() {
         </div>
       </div>
 
-      <div className="mobile-flow-content flex flex-1 flex-col items-stretch justify-start sm:items-center sm:justify-center">
+      <div className="flex flex-1 flex-col items-stretch justify-start px-4 py-4 sm:items-center sm:justify-center sm:px-6 sm:py-5">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -302,7 +302,7 @@ export default function FindAccount() {
                   Searching for <span className="font-semibold text-foreground">{query}</span>
                 </p>
               )}
-              <div className="max-h-[44vh] overflow-y-auto space-y-2 pr-1 sm:max-h-[340px]">
+              <div className="space-y-2">
                 {results.map((emp) => (
                   <button
                     key={emp.id}
