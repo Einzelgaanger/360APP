@@ -106,7 +106,7 @@ export default function ProfileCompletionGate({ children }: { children: ReactNod
     [employees],
   );
 
-  const canSave = name.trim() && role && department && subsidiaryId && hierarchyLevel;
+  const canSave = name.trim() && role.trim() && department.trim() && subsidiaryId && hierarchyLevel;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
