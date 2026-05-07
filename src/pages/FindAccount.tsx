@@ -258,7 +258,7 @@ export default function FindAccount() {
             {query.length === 0 ? (
               <p className="mt-2 text-[11px] text-muted-foreground">Showing all accounts. Type to narrow the list.</p>
             ) : (
-              <p className="mt-2 text-[11px] text-muted-foreground">Tap your profile to send a reset link.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">Tap your profile and we'll email you a link to set your password.</p>
             )}
           </div>
 
