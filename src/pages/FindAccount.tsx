@@ -157,11 +157,11 @@ export default function FindAccount() {
 
   if (sent) {
     return (
-      <div className="mobile-flow-shell app-page flex items-center justify-center px-6">
+      <div className="app-page flex min-h-dvh-screen items-center justify-center px-5 py-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mobile-flow-card max-w-sm w-full text-center"
+          className="mobile-flow-card w-full max-w-sm text-center"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -171,22 +171,25 @@ export default function FindAccount() {
           >
             <CheckCircle2 className="w-8 h-8 text-primary" />
           </motion.div>
-          <h1 className="text-xl font-semibold font-serif mb-1.5">Check Your Email</h1>
+          <h1 className="text-xl font-semibold font-serif mb-1.5">Check your email</h1>
           <p className="text-muted-foreground text-[13px] mb-1">
-            We've sent a password reset link to
+            We've sent an activation link to
           </p>
-          <p className="text-foreground font-semibold text-[13px] mb-5">{sentTo}</p>
-          <div className="space-y-2 text-left bg-muted/50 rounded-lg p-3.5 mb-6 sm:rounded-sm">
-            <p className="text-[11px] font-semibold text-foreground mb-1.5">Next steps:</p>
+          <p className="text-foreground font-semibold text-[13px] mb-5 break-all">{sentTo}</p>
+          <div className="space-y-2 text-left bg-muted/50 rounded-md p-3.5 mb-6">
+            <p className="text-[11px] font-semibold text-foreground mb-1.5">What happens next:</p>
             <ol className="text-[11px] text-muted-foreground space-y-1.5 list-decimal list-inside">
-              <li>Open the email and click the reset link</li>
-              <li>Set a new password for your account</li>
-              <li>Return here and sign in with your new password</li>
+              <li>Open the email and tap the activation link</li>
+              <li>Set your new password</li>
+              <li>Confirm your profile details, then start your appraisals</li>
             </ol>
           </div>
-          <Button onClick={() => navigate('/login')} className="w-full h-10 rounded-lg text-sm sm:rounded-sm">
-            Go to Sign In
+          <Button onClick={() => navigate('/login')} className="w-full h-11 rounded-md text-sm">
+            Back to sign in
           </Button>
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            Didn't receive it? Check spam, or wait a minute and try again.
+          </p>
         </motion.div>
       </div>
     );
