@@ -302,7 +302,7 @@ export default function FindAccount() {
                   Searching for <span className="font-semibold text-foreground">{query}</span>
                 </p>
               )}
-              <div className="max-h-[44vh] overflow-y-auto space-y-2 pr-1 sm:max-h-[340px]">
+              <div className="space-y-2">
                 {results.map((emp) => (
                   <button
                     key={emp.id}
