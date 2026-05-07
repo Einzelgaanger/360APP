@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS employees_email_lower_unique ON employees (lower(email));

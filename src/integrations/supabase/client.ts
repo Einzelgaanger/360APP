@@ -2,8 +2,22 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim();
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  const missing = [
+    !SUPABASE_URL && 'VITE_SUPABASE_URL',
+    !SUPABASE_PUBLISHABLE_KEY && 'VITE_SUPABASE_PUBLISHABLE_KEY',
+  ]
+    .filter(Boolean)
+    .join(' and ');
+  throw new Error(
+    `[Supabase] Missing ${missing}. Create a .env file in the project root (copy from .env.example). ` +
+      'Set VITE_SUPABASE_URL to https://<project-ref>.supabase.co and paste the anon public key from ' +
+      'Supabase Dashboard → Project Settings → API. Restart the dev server after saving .env.'
+  );
+}
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

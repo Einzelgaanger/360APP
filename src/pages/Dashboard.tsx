@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppraisalData } from '@/hooks/useAppraisalData';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { useNavigate } from 'react-router-dom';
 import StatsCard from '@/components/dashboard/StatsCard';
 import ManagerLeaderboard from '@/components/dashboard/ManagerLeaderboard';
@@ -13,12 +14,16 @@ import ManagerDetailPanel from '@/components/dashboard/ManagerDetailPanel';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 import ExportButton from '@/components/dashboard/ExportButton';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
+import PlatformSidebar from '@/components/PlatformSidebar';
+import AdminMobileTabBar from '@/components/AdminMobileTabBar';
 import { Button } from '@/components/ui/button';
 import { ManagerSummary } from '@/types/appraisal';
-import { BarChart3, Users, Trophy, Target, Zap, LogOut, Loader2 } from 'lucide-react';
+import { BarChart3, Users, Trophy, Target, Zap, ClipboardList } from 'lucide-react';
+import { AdminDashboardSkeleton } from '@/components/shell/LoadingShells';
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { logout: legacyLogout } = useAuth();
+  const { logout: employeeLogout } = useEmployeeAuth();
   const navigate = useNavigate();
   const {
     responses, managerSummaries, competencyScores, relationshipDistribution,
@@ -81,41 +86,38 @@ QUALITATIVE FEEDBACK - CONTINUE DOING (Strengths):
 ${feedbackData.continueDoing || '• No feedback available'}`;
   }, [managerSummaries, overallStats, competencyScores, relationshipDistribution, scoreDistribution, feedbackThemes]);
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = async () => { legacyLogout(); await employeeLogout(); navigate('/'); };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AdminDashboardSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-lg">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-xl font-bold">VGG 360° Analytics</h1>
-              <p className="text-xs text-muted-foreground">Performance Intelligence</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
-            <ExportButton managers={managerSummaries} responses={responses} />
-            <Button onClick={() => setChatOpen(true)} className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90">
-              <Zap className="w-4 h-4" /> Analytics Copilot
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
-          </div>
-        </div>
-      </header>
+    <div className="app-page">
+      <div className="app-page-grid" />
+      <PlatformSidebar
+        title="Admin Dashboard"
+        subtitle="Performance Intelligence"
+        onLogout={handleLogout}
+        items={[
+          { key: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" />, active: true, onClick: () => {} },
+          { key: 'appraisal', label: '360° Appraisal', icon: <ClipboardList className="w-4 h-4" />, to: '/appraisal' },
+        ]}
+        actions={
+          <Button onClick={() => setChatOpen(true)} size="sm" className="w-full gap-2">
+            <Zap className="w-4 h-4" /> Analytics Copilot
+          </Button>
+        }
+      />
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <div className="lg:pl-72">
+      <main className="platform-content section-stack has-admin-mobile-nav">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
+          <ExportButton managers={managerSummaries} responses={responses} />
+        </div>
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatsCard title="Total Responses" value={overallStats.totalResponses} icon={Users} variant="default" delay={0} />
           <StatsCard title="Managers Evaluated" value={overallStats.totalManagers} icon={Target} variant="primary" delay={0.1} />
           <StatsCard title="Average Score" value={`${overallStats.avgOverallScore}/4.0`} subtitle={`${((overallStats.avgOverallScore/4)*100).toFixed(0)}% performance`} icon={BarChart3} variant="accent" delay={0.2} />
@@ -123,25 +125,31 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-1"><ManagerLeaderboard managers={managerSummaries} onSelectManager={setSelectedManager} selectedManager={selectedManager?.manager_name} /></div>
-          <div className="lg:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start">
               <CompetencyRadar competencies={competencyScores} />
               <ScoreDistributionChart distribution={scoreDistribution} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start">
               <RelationshipPieChart distribution={relationshipDistribution} />
               <FeedbackThemes themes={feedbackThemes} />
             </div>
           </div>
         </div>
       </main>
+      </div>
 
       <AnimatePresence>
         {selectedManager && <ManagerDetailPanel manager={selectedManager} onClose={() => setSelectedManager(null)} />}
       </AnimatePresence>
       <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+
+      <AdminMobileTabBar
+        onOpenCopilot={() => setChatOpen(true)}
+        onSignOut={handleLogout}
+      />
     </div>
   );
 }
