@@ -487,6 +487,9 @@ export default function EmployeeHub() {
         setTotalReviews(0);
         setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
         setAiDataContext('');
+        setCohortScores([]);
+        setCohortMeta(null);
+        setCohortRanks([]);
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
