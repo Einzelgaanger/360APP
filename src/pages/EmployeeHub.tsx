@@ -106,6 +106,9 @@ export default function EmployeeHub() {
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [qualitativeFeedback, setQualitativeFeedback] = useState<{ startDoing: FeedbackItem[]; stopDoing: FeedbackItem[]; continueDoing: FeedbackItem[] }>({ startDoing: [], stopDoing: [], continueDoing: [] });
   const [aiDataContext, setAiDataContext] = useState('');
+  const [cohortScores, setCohortScores] = useState<CohortScore[]>([]);
+  const [cohortMeta, setCohortMeta] = useState<CohortMeta | null>(null);
+  const [cohortRanks, setCohortRanks] = useState<RankInfo[]>([]);
 
   // Growth Hub state
   const [selectedFocusArea, setSelectedFocusArea] = useState<string | null>(null);
