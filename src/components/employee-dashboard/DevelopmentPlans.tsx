@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Plus, Check, Trash2, Calendar, Loader2, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
+const sb = supabase as any;
 import { toast } from 'sonner';
 
 interface Plan {
@@ -58,10 +60,10 @@ export default function DevelopmentPlans({ userId, growthAreas, prefilledFocus, 
     setLoading(true);
     const [{ data: plansData }, { data: pathsData }] = await Promise.all([
       supabase.from('development_plans').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-      supabase.from('learning_paths').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+      sb.from('learning_paths').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
     ]);
-    setPlans(plansData || []);
-    setPaths((pathsData || []) as LearningPath[]);
+    setPlans((plansData as Plan[] | null) || []);
+    setPaths(((pathsData as unknown) as LearningPath[]) || []);
     setLoading(false);
   };
 
@@ -90,7 +92,7 @@ export default function DevelopmentPlans({ userId, growthAreas, prefilledFocus, 
       target_date: form.target_date || null,
     });
     if (!error) {
-      await supabase.from('learning_paths').insert({
+      await sb.from('learning_paths').insert({
         user_id: userId,
         focus_area: form.focus_area.trim().slice(0, 100),
         title: form.goal.trim().slice(0, 180),
@@ -110,7 +112,7 @@ export default function DevelopmentPlans({ userId, growthAreas, prefilledFocus, 
     const plan = plans.find((p) => p.id === id);
     await supabase.from('development_plans').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', id);
     if (plan?.focus_area) {
-      await supabase
+      await sb
         .from('learning_paths')
         .update({ status: 'completed' })
         .eq('user_id', userId)

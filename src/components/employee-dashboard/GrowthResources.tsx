@@ -179,7 +179,7 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
 
   const logInteraction = async (r: Resource, action: 'opened' | 'saved' | 'dismissed' | 'completed') => {
     if (r.item_id && r.run_id) {
-      await supabase.from('recommendation_events').insert({
+      await (supabase as any).from('recommendation_events').insert({
         user_id: userId,
         run_id: r.run_id,
         item_id: r.item_id,
@@ -295,7 +295,7 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
                   <div className="mb-2 flex flex-wrap gap-1">
                     {r.reason_codes?.slice(0, 3).map((code) => (
                       <Badge key={code} variant="outline" className="h-5 px-1.5 text-[9px]">
-                        {code.replaceAll('_', ' ')}
+                        {code.split('_').join(' ')}
                       </Badge>
                     ))}
                     {typeof r.trust_score === 'number' && (

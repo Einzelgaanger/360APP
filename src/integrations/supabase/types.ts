@@ -98,6 +98,181 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_answers: {
+        Row: {
+          created_at: string
+          id: string
+          no_opportunity: boolean
+          question_id: string
+          response_id: string
+          score: number | null
+          text_answer: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          no_opportunity?: boolean
+          question_id: string
+          response_id: string
+          score?: number | null
+          text_answer?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          no_opportunity?: boolean
+          question_id?: string
+          response_id?: string
+          score?: number | null
+          text_answer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_answers_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_forms: {
+        Row: {
+          allows_no_opportunity: boolean
+          anonymous: boolean
+          cadence: string
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          scale_max: number
+          scale_min: number
+          title: string
+        }
+        Insert: {
+          allows_no_opportunity?: boolean
+          anonymous?: boolean
+          cadence?: string
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          scale_max?: number
+          scale_min?: number
+          title: string
+        }
+        Update: {
+          allows_no_opportunity?: boolean
+          anonymous?: boolean
+          cadence?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          scale_max?: number
+          scale_min?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      assessment_questions: {
+        Row: {
+          created_at: string
+          form_id: string
+          helper_text: string | null
+          id: string
+          min_words: number | null
+          question_text: string
+          question_type: string
+          section: string
+          section_order: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          form_id: string
+          helper_text?: string | null
+          id?: string
+          min_words?: number | null
+          question_text: string
+          question_type?: string
+          section: string
+          section_order?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          form_id?: string
+          helper_text?: string | null
+          id?: string
+          min_words?: number | null
+          question_text?: string
+          question_type?: string
+          section?: string
+          section_order?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_questions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_responses: {
+        Row: {
+          created_at: string
+          form_id: string
+          id: string
+          period: string
+          reviewee_id: string
+          reviewer_id: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          form_id: string
+          id?: string
+          period: string
+          reviewee_id: string
+          reviewer_id: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          form_id?: string
+          id?: string
+          period?: string
+          reviewee_id?: string
+          reviewer_id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_responses_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demo_appraisal_responses: {
         Row: {
           analyzes_change_score: number | null
@@ -907,6 +1082,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_employee_id: { Args: never; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -914,6 +1090,30 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_my_360_results: {
+        Args: { _period: string }
+        Returns: {
+          avg_score: number
+          question_id: string
+          question_text: string
+          response_count: number
+          section: string
+        }[]
+      }
+      get_review_assignments: {
+        Args: { _period: string }
+        Returns: {
+          anonymous: boolean
+          form_code: string
+          form_title: string
+          response_id: string
+          reviewee_department: string
+          reviewee_id: string
+          reviewee_name: string
+          reviewee_role: string
+          status: string
+        }[]
       }
       has_role: {
         Args: {

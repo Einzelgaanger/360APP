@@ -51,7 +51,7 @@ export default function ResourceFeedback({ userId, resourceId, resourceTitle, fo
       }, { onConflict: 'user_id,resource_id' });
       if (error) throw error;
       if (runId && itemId) {
-        await supabase.from('recommendation_events').insert({
+        await (supabase as any).from('recommendation_events').insert({
           user_id: userId,
           run_id: runId,
           item_id: itemId,
