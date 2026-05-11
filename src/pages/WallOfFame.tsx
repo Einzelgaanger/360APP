@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import PlatformSidebar from '@/components/PlatformSidebar';
 import { Trophy, Medal, Award, Star, Users } from 'lucide-react';
 import { WallOfFamePageSkeleton } from '@/components/shell/LoadingShells';
+import { fetchOrgPerformanceRankings } from '@/lib/boomDashboard360';
 
 interface RankedEmployee {
   employee_id: string;
@@ -25,81 +25,7 @@ export default function WallOfFame() {
 
   const loadRankings = async () => {
     try {
-      // Fetch employees, subsidiaries, and responses separately to avoid heavy nested joins
-      const [empsRes, subsRes, responsesRes] = await Promise.all([
-        supabase.from('employees').select('id, name, subsidiary_id'),
-        supabase.from('subsidiaries').select('id, name'),
-        supabase.from('survey_responses').select('id, employee_id'),
-      ]);
-
-      if (!empsRes.data || !responsesRes.data || !subsRes.data) return;
-
-      const subMap: Record<string, string> = {};
-      subsRes.data.forEach((s: any) => { subMap[s.id] = s.name; });
-
-      const empResponseIds: Record<string, string[]> = {};
-      responsesRes.data.forEach((r: any) => {
-        if (!empResponseIds[r.employee_id]) empResponseIds[r.employee_id] = [];
-        empResponseIds[r.employee_id].push(r.id);
-      });
-
-      const allResponseIds = responsesRes.data.map((r: any) => r.id);
-
-      // Batch fetch scores
-      const batchSize = 500;
-      let allScores: any[] = [];
-      for (let i = 0; i < allResponseIds.length; i += batchSize) {
-        const batch = allResponseIds.slice(i, i + batchSize);
-        const { data } = await supabase
-          .from('survey_answers')
-          .select('response_id, score')
-          .in('response_id', batch)
-          .not('score', 'is', null);
-        if (data) allScores = allScores.concat(data);
-      }
-
-      const responseScoreMap: Record<string, number[]> = {};
-      allScores.forEach((a: any) => {
-        if (!responseScoreMap[a.response_id]) responseScoreMap[a.response_id] = [];
-        responseScoreMap[a.response_id].push(a.score);
-      });
-
-      const scoreMap: Record<string, { scores: number[]; count: number }> = {};
-      Object.entries(empResponseIds).forEach(([empId, rIds]) => {
-        scoreMap[empId] = { scores: [], count: rIds.length };
-        rIds.forEach(rId => {
-          if (responseScoreMap[rId]) scoreMap[empId].scores.push(...responseScoreMap[rId]);
-        });
-      });
-
-      const { data: boomRows, error: boomErr } = await supabase.rpc('list_peer_360_ranking_detail');
-      if (!boomErr && boomRows?.length) {
-        const boomAgg: Record<string, { scores: number[]; responses: Set<string> }> = {};
-        for (const row of boomRows as { reviewee_id: string; response_id: string; score: number }[]) {
-          if (!boomAgg[row.reviewee_id]) {
-            boomAgg[row.reviewee_id] = { scores: [], responses: new Set() };
-          }
-          boomAgg[row.reviewee_id].scores.push(row.score);
-          boomAgg[row.reviewee_id].responses.add(row.response_id);
-        }
-        Object.entries(boomAgg).forEach(([empId, b]) => {
-          if (!scoreMap[empId]) scoreMap[empId] = { scores: [], count: 0 };
-          scoreMap[empId].scores.push(...b.scores);
-          scoreMap[empId].count += b.responses.size;
-        });
-      }
-
-      const ranked: RankedEmployee[] = empsRes.data
-        .filter((e: any) => scoreMap[e.id]?.scores.length > 0)
-        .map((e: any) => ({
-          employee_id: e.id,
-          name: e.name,
-          subsidiary: subMap[e.subsidiary_id] || 'Unknown',
-          avgScore: parseFloat((scoreMap[e.id].scores.reduce((a: number, b: number) => a + b, 0) / scoreMap[e.id].scores.length).toFixed(2)),
-          totalReviews: scoreMap[e.id].count,
-        }))
-        .sort((a, b) => b.avgScore - a.avgScore);
-
+      const ranked = await fetchOrgPerformanceRankings();
       setRankings(ranked);
     } catch (err) {
       console.error('Rankings error:', err);
@@ -140,7 +66,8 @@ export default function WallOfFame() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="text-2xl font-bold font-serif mb-2">Performance Rankings</h1>
           <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-            Top performers from the organisation-wide survey and from submitted BOOM peer 360 reviews (Likert items averaged per person).
+            Combined leaderboard: legacy organisation-wide survey scores plus submitted BOOM quarterly peer 360 (Likert only,
+            averaged per person). Executive EPA self-assessments are not included.
           </p>
         </motion.div>
 

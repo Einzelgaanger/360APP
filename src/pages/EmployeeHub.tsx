@@ -42,6 +42,8 @@ import {
   getSurveyFeedbackDirection,
   assignHierarchyPool,
 } from '@/lib/hierarchyConvention';
+import { defaultQuarterPeriod } from '@/lib/boomPeriods';
+import { fetchMyAggregatedPeer360Scores, fetchOrgPerformanceRankings } from '@/lib/boomDashboard360';
 
 interface FeedbackItem {
   text: string;
@@ -104,6 +106,9 @@ export default function EmployeeHub() {
   const [cohortScores, setCohortScores] = useState<CohortScore[]>([]);
   const [cohortMeta, setCohortMeta] = useState<CohortMeta | null>(null);
   const [cohortRanks, setCohortRanks] = useState<RankInfo[]>([]);
+  /** legacy multi-subsidiary survey vs aggregated BOOM peer 360 */
+  const [dashboardScoreSource, setDashboardScoreSource] = useState<'legacy_survey' | 'boom_peer_360' | 'none'>('none');
+  const [boom360DashMeta, setBoom360DashMeta] = useState<{ period: string; maxPeerResponses: number } | null>(null);
 
   // Growth Hub state
   const [selectedFocusArea, setSelectedFocusArea] = useState<string | null>(null);
@@ -192,6 +197,8 @@ export default function EmployeeHub() {
   const loadDashboardData = async (employeeId: string) => {
     if (!user) return;
     setDashboardLoading(true);
+    setBoom360DashMeta(null);
+    setDashboardScoreSource('none');
     try {
       const { data: myResponses } = await supabase
         .from('survey_responses')
@@ -282,6 +289,35 @@ export default function EmployeeHub() {
           peer: buildDirScores('peer'),
           below: buildDirScores('below'),
         });
+
+        if (cats.length === 0) {
+          const q = defaultQuarterPeriod();
+          const boom = await fetchMyAggregatedPeer360Scores(q);
+          if (boom?.scores.length) {
+            setMyScores(boom.scores);
+            setDashboardScoreSource('boom_peer_360');
+            setBoom360DashMeta({ period: q, maxPeerResponses: boom.maxPeerResponsesHint });
+            setDirectionScores({ above: [], peer: [], below: [] });
+            setDirectionCounts({ above: 0, peer: 0, below: 0 });
+            setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+            setAiDataContext(
+              `BOOM Executive Office peer 360 (${q}): anonymous aggregated averages by behaviour section. Peer depth (max across sections): ${boom.maxPeerResponsesHint}.`,
+            );
+            setCohortScores([]);
+            setCohortMeta(null);
+            setCohortRanks([]);
+          } else {
+            setDashboardScoreSource('none');
+            setBoom360DashMeta(null);
+            setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+            setAiDataContext('');
+            setCohortScores([]);
+            setCohortMeta(null);
+            setCohortRanks([]);
+          }
+        } else {
+          setDashboardScoreSource('legacy_survey');
+          setBoom360DashMeta(null);
 
         // Fetch qualitative (text) answers
         let allTextAnswers: any[] = [];
@@ -482,15 +518,35 @@ export default function EmployeeHub() {
             console.error('Cohort analysis error:', e);
           }
         })();
+        }
       } else {
-        setMyScores([]);
-        setDirectionScores({ above: [], peer: [], below: [] });
-        setDirectionCounts({ above: 0, peer: 0, below: 0 });
-        setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
-        setAiDataContext('');
-        setCohortScores([]);
-        setCohortMeta(null);
-        setCohortRanks([]);
+        const q = defaultQuarterPeriod();
+        const boom = await fetchMyAggregatedPeer360Scores(q);
+        if (boom?.scores.length) {
+          setMyScores(boom.scores);
+          setDashboardScoreSource('boom_peer_360');
+          setBoom360DashMeta({ period: q, maxPeerResponses: boom.maxPeerResponsesHint });
+          setDirectionScores({ above: [], peer: [], below: [] });
+          setDirectionCounts({ above: 0, peer: 0, below: 0 });
+          setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+          setAiDataContext(
+            `BOOM Executive Office peer 360 (${q}): anonymous aggregated averages by behaviour section. Peer depth (max across sections): ${boom.maxPeerResponsesHint}.`,
+          );
+          setCohortScores([]);
+          setCohortMeta(null);
+          setCohortRanks([]);
+        } else {
+          setMyScores([]);
+          setDashboardScoreSource('none');
+          setBoom360DashMeta(null);
+          setDirectionScores({ above: [], peer: [], below: [] });
+          setDirectionCounts({ above: 0, peer: 0, below: 0 });
+          setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+          setAiDataContext('');
+          setCohortScores([]);
+          setCohortMeta(null);
+          setCohortRanks([]);
+        }
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
@@ -509,70 +565,13 @@ export default function EmployeeHub() {
   const loadRankings = async () => {
     setRankingsLoading(true);
     try {
-      // Fetch employees and responses separately to avoid massive nested joins
-      const [empsRes, responsesRes] = await Promise.all([
-        supabase.from('employees').select('id, name, subsidiary_id'),
-        supabase.from('survey_responses').select('id, employee_id'),
-      ]);
-
-      if (!empsRes.data || !responsesRes.data) return;
-
-      // Get subsidiary names
-      const subMap: Record<string, string> = {};
-      subsidiaries.forEach(s => { subMap[s.id] = s.name; });
-
-      // Build a map of employee_id -> response_ids
-      const empResponseIds: Record<string, string[]> = {};
-      responsesRes.data.forEach((r: any) => {
-        if (!empResponseIds[r.employee_id]) empResponseIds[r.employee_id] = [];
-        empResponseIds[r.employee_id].push(r.id);
-      });
-
-      // Only fetch scores for employees that have responses
-      const allResponseIds = responsesRes.data.map((r: any) => r.id);
-      
-      // Batch fetch scores
-      const batchSize = 500;
-      let allScores: any[] = [];
-      for (let i = 0; i < allResponseIds.length; i += batchSize) {
-        const batch = allResponseIds.slice(i, i + batchSize);
-        const { data } = await supabase
-          .from('survey_answers')
-          .select('response_id, score')
-          .in('response_id', batch)
-          .not('score', 'is', null);
-        if (data) allScores = allScores.concat(data);
-      }
-
-      // Map response scores back to employees
-      const responseScoreMap: Record<string, number[]> = {};
-      allScores.forEach((a: any) => {
-        if (!responseScoreMap[a.response_id]) responseScoreMap[a.response_id] = [];
-        responseScoreMap[a.response_id].push(a.score);
-      });
-
-      const scoreMap: Record<string, { scores: number[]; count: number }> = {};
-      Object.entries(empResponseIds).forEach(([empId, rIds]) => {
-        scoreMap[empId] = { scores: [], count: rIds.length };
-        rIds.forEach(rId => {
-          if (responseScoreMap[rId]) scoreMap[empId].scores.push(...responseScoreMap[rId]);
-        });
-      });
-
-      const ranked: RankedEmployee[] = empsRes.data
-        .filter((e: any) => scoreMap[e.id]?.scores.length > 0)
-        .map((e: any) => ({
-          employee_id: e.id,
-          name: e.name,
-          subsidiary: subMap[e.subsidiary_id] || 'Unknown',
-          avgScore: parseFloat((scoreMap[e.id].scores.reduce((a: number, b: number) => a + b, 0) / scoreMap[e.id].scores.length).toFixed(2)),
-          totalReviews: scoreMap[e.id].count,
-        }))
-        .sort((a: RankedEmployee, b: RankedEmployee) => b.avgScore - a.avgScore);
-
+      const ranked = await fetchOrgPerformanceRankings();
       setRankings(ranked);
-    } catch (err) { console.error(err); }
-    finally { setRankingsLoading(false); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRankingsLoading(false);
+    }
   };
 
   // Realtime subscriptions for live data
@@ -584,6 +583,14 @@ export default function EmployeeHub() {
         if (activeTab === 'rankings') void loadRankings();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'survey_answers' }, () => {
+        if (activeTab === 'dashboard' && currentEmployee?.id) void loadDashboardData(currentEmployee.id);
+        if (activeTab === 'rankings') void loadRankings();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'assessment_responses' }, () => {
+        if (activeTab === 'dashboard' && currentEmployee?.id) void loadDashboardData(currentEmployee.id);
+        if (activeTab === 'rankings') void loadRankings();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assessment_answers' }, () => {
         if (activeTab === 'dashboard' && currentEmployee?.id) void loadDashboardData(currentEmployee.id);
         if (activeTab === 'rankings') void loadRankings();
       })
@@ -1281,6 +1288,21 @@ export default function EmployeeHub() {
                   transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <AnonymityBanner />
+                  {boom360DashMeta && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="glass-panel p-4 border border-primary/20 bg-primary/5"
+                    >
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        <span className="font-semibold text-foreground">BOOM peer 360</span> (quarter{' '}
+                        <span className="font-mono">{boom360DashMeta.period}</span>): these scores are{' '}
+                        <strong>aggregated anonymous peer averages</strong> by behaviour section. The legacy multi-subsidiary
+                        survey &quot;feedback by source&quot; breakdown does not apply. Complete open 360 tasks under{' '}
+                        <strong>Survey</strong>; HR must release the quarter before averages appear here.
+                      </p>
+                    </motion.div>
+                  )}
                   {/* Your Level & Pool Summary */}
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5">
                     <div className="flex items-center justify-between mb-3">
@@ -1290,7 +1312,11 @@ export default function EmployeeHub() {
                         </div>
                         <div>
                           <h3 className="text-sm font-bold">Your Appraisal Pool</h3>
-                          <p className="text-[10px] text-muted-foreground">Level: {displayHierarchyLabel(myHierarchyLevel, mySubsidiaryLowerSenior)} — {globalPoolCounts.total} people can review you</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Level: {displayHierarchyLabel(myHierarchyLevel, mySubsidiaryLowerSenior)} — {globalPoolCounts.total}{' '}
+                            people may be in your 360 network. BOOM quarterly forms (executive, peer 360, monthly self) are
+                            assigned separately on the Survey tab.
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1312,46 +1338,83 @@ export default function EmployeeHub() {
                   </motion.div>
 
                   {/* Stats row */}
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Star className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground">Overall</p>
-                          <p className="text-xl font-bold">{overallScore}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
-                        </div>
-                      </div>
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                          <BarChart3 className="w-3.5 h-3.5 text-accent" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground">Org Avg</p>
-                          <p className="text-xl font-bold">{orgOverall}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
-                        </div>
-                      </div>
-                    </motion.div>
-                    {/* Direction counts */}
-                    {[
-                      { label: 'From Above', count: directionCounts.above, icon: '↓', color: 'text-blue-500 bg-blue-500/10' },
-                      { label: 'From Peers', count: directionCounts.peer, icon: '↔', color: 'text-emerald-500 bg-emerald-500/10' },
-                      { label: 'From Below', count: directionCounts.below, icon: '↑', color: 'text-amber-500 bg-amber-500/10' },
-                    ].map((d, i) => (
-                      <motion.div key={d.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="glass-panel p-4">
+                  {boom360DashMeta ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${d.color}`}>{d.icon}</div>
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Star className="w-3.5 h-3.5 text-primary" />
+                          </div>
                           <div>
-                            <p className="text-[10px] text-muted-foreground">{d.label}</p>
-                            <p className="text-xl font-bold">{d.count}</p>
+                            <p className="text-[10px] text-muted-foreground">Overall (360 avg.)</p>
+                            <p className="text-xl font-bold">{overallScore}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
                           </div>
                         </div>
                       </motion.div>
-                    ))}
-                  </div>
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                            <BarChart3 className="w-3.5 h-3.5 text-accent" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">BOOM quarter</p>
+                            <p className="text-lg font-bold font-mono">{boom360DashMeta.period}</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                            <Users className="w-3.5 h-3.5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">Peer depth (max section)</p>
+                            <p className="text-xl font-bold">{boom360DashMeta.maxPeerResponses}</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Star className="w-3.5 h-3.5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">Overall</p>
+                            <p className="text-xl font-bold">{overallScore}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
+                          </div>
+                        </div>
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                            <BarChart3 className="w-3.5 h-3.5 text-accent" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">Org Avg</p>
+                            <p className="text-xl font-bold">{orgOverall}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
+                          </div>
+                        </div>
+                      </motion.div>
+                      {[
+                        { label: 'From Above', count: directionCounts.above, icon: '↓', color: 'text-blue-500 bg-blue-500/10' },
+                        { label: 'From Peers', count: directionCounts.peer, icon: '↔', color: 'text-emerald-500 bg-emerald-500/10' },
+                        { label: 'From Below', count: directionCounts.below, icon: '↑', color: 'text-amber-500 bg-amber-500/10' },
+                      ].map((d, i) => (
+                        <motion.div key={d.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="glass-panel p-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${d.color}`}>{d.icon}</div>
+                            <div>
+                              <p className="text-[10px] text-muted-foreground">{d.label}</p>
+                              <p className="text-xl font-bold">{d.count}</p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
 
                   {myScores.length > 0 ? (
                     <>
@@ -1361,18 +1424,24 @@ export default function EmployeeHub() {
                       {/* Overall charts */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-6">
-                          <h2 className="text-sm font-semibold mb-4">Overall Competency Overview</h2>
+                          <h2 className="text-sm font-semibold mb-4">
+                            {dashboardScoreSource === 'boom_peer_360' ? 'BOOM peer 360 — behaviour sections' : 'Overall Competency Overview'}
+                          </h2>
                           <ResponsiveContainer width="100%" height={280}>
                             <RadarChart data={myScores}>
                               <PolarGrid stroke="hsl(var(--border))" />
                               <PolarAngleAxis dataKey="category" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                               <Radar name="You" dataKey="myScore" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
-                              <Radar name="Org Avg" dataKey="orgAvg" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.05} strokeWidth={1} strokeDasharray="4 4" />
+                              {dashboardScoreSource !== 'boom_peer_360' && (
+                                <Radar name="Org Avg" dataKey="orgAvg" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.05} strokeWidth={1} strokeDasharray="4 4" />
+                              )}
                             </RadarChart>
                           </ResponsiveContainer>
                           <div className="flex gap-4 justify-center mt-2 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-primary rounded" /> You</span>
-                            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-muted-foreground rounded" /> Org Average</span>
+                            {dashboardScoreSource !== 'boom_peer_360' && (
+                              <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-muted-foreground rounded" /> Org Average</span>
+                            )}
                           </div>
                         </motion.div>
 
@@ -1389,78 +1458,85 @@ export default function EmployeeHub() {
                         />
                       )}
 
-                      {/* Segmented Feedback by Direction */}
-                      <div>
-                        <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                          <Users className="w-4 h-4 text-primary" />
-                          Feedback by Source
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {[
-                            { key: 'above' as const, label: 'From Leadership Above', icon: '↓', color: 'border-blue-500/30', accent: 'hsl(210, 80%, 55%)', desc: 'Scores from people above your level' },
-                            { key: 'peer' as const, label: 'From Peers', icon: '↔', color: 'border-emerald-500/30', accent: 'hsl(160, 60%, 45%)', desc: 'Scores from people at your level' },
-                            { key: 'below' as const, label: 'From Reports Below', icon: '↑', color: 'border-amber-500/30', accent: 'hsl(40, 80%, 50%)', desc: 'Scores from people below your level' },
-                          ].map(({ key, label, icon, color, accent, desc }) => {
-                            const scores = directionScores[key];
-                            const avg = scores.length
-                              ? parseFloat((scores.reduce((s, c) => s + c.myScore, 0) / scores.length).toFixed(2))
-                              : 0;
-                            return (
-                              <motion.div
-                                key={key}
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`glass-panel p-5 border-l-4 ${color}`}
-                              >
-                                <div className="flex items-center gap-2 mb-3">
-                                  <span className="text-lg">{icon}</span>
-                                  <div>
-                                    <h3 className="text-xs font-bold">{label}</h3>
-                                    <p className="text-[10px] text-muted-foreground">{desc}</p>
-                                  </div>
-                                </div>
-                                {scores.length > 0 ? (
-                                  <>
-                                    <div className="text-center mb-3">
-                                      <span className="text-2xl font-bold">{avg}</span>
-                                      <span className="text-xs text-muted-foreground">/5</span>
-                                      <p className="text-[10px] text-muted-foreground mt-0.5">{directionCounts[key]} review{directionCounts[key] !== 1 ? 's' : ''}</p>
+                      {dashboardScoreSource === 'legacy_survey' && (
+                        <>
+                          <div>
+                            <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                              <Users className="w-4 h-4 text-primary" />
+                              Feedback by Source
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {[
+                                { key: 'above' as const, label: 'From Leadership Above', icon: '↓', color: 'border-blue-500/30', accent: 'hsl(210, 80%, 55%)', desc: 'Scores from people above your level' },
+                                { key: 'peer' as const, label: 'From Peers', icon: '↔', color: 'border-emerald-500/30', accent: 'hsl(160, 60%, 45%)', desc: 'Scores from people at your level' },
+                                { key: 'below' as const, label: 'From Reports Below', icon: '↑', color: 'border-amber-500/30', accent: 'hsl(40, 80%, 50%)', desc: 'Scores from people below your level' },
+                              ].map(({ key, label, icon, color, accent, desc }) => {
+                                const scores = directionScores[key];
+                                const avg = scores.length
+                                  ? parseFloat((scores.reduce((s, c) => s + c.myScore, 0) / scores.length).toFixed(2))
+                                  : 0;
+                                return (
+                                  <motion.div
+                                    key={key}
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`glass-panel p-5 border-l-4 ${color}`}
+                                  >
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <span className="text-lg">{icon}</span>
+                                      <div>
+                                        <h3 className="text-xs font-bold">{label}</h3>
+                                        <p className="text-[10px] text-muted-foreground">{desc}</p>
+                                      </div>
                                     </div>
-                                    <div className="space-y-1.5">
-                                      {scores.map(s => (
-                                        <div key={s.category} className="flex items-center gap-2">
-                                          <span className="text-[10px] text-muted-foreground w-20 truncate">{s.category}</span>
-                                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                                            <div className="h-full rounded-full" style={{ width: `${(s.myScore / 5) * 100}%`, backgroundColor: accent }} />
-                                          </div>
-                                          <span className="text-[10px] font-semibold w-6 text-right">{s.myScore}</span>
+                                    {scores.length > 0 ? (
+                                      <>
+                                        <div className="text-center mb-3">
+                                          <span className="text-2xl font-bold">{avg}</span>
+                                          <span className="text-xs text-muted-foreground">/5</span>
+                                          <p className="text-[10px] text-muted-foreground mt-0.5">{directionCounts[key]} review{directionCounts[key] !== 1 ? 's' : ''}</p>
                                         </div>
-                                      ))}
-                                    </div>
-                                  </>
-                                ) : (
-                                  <div className="text-center py-4">
-                                    <p className="text-xs text-muted-foreground">No reviews from this source yet</p>
-                                  </div>
-                                )}
-                              </motion.div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                                        <div className="space-y-1.5">
+                                          {scores.map(s => (
+                                            <div key={s.category} className="flex items-center gap-2">
+                                              <span className="text-[10px] text-muted-foreground w-20 truncate">{s.category}</span>
+                                              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full" style={{ width: `${(s.myScore / 5) * 100}%`, backgroundColor: accent }} />
+                                              </div>
+                                              <span className="text-[10px] font-semibold w-6 text-right">{s.myScore}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="text-center py-4">
+                                        <p className="text-xs text-muted-foreground">No reviews from this source yet</p>
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                );
+                              })}
+                            </div>
+                          </div>
 
-                      {/* Qualitative Feedback Section */}
-                      <QualitativeFeedback
-                        startDoing={qualitativeFeedback.startDoing}
-                        stopDoing={qualitativeFeedback.stopDoing}
-                        continueDoing={qualitativeFeedback.continueDoing}
-                      />
+                          <QualitativeFeedback
+                            startDoing={qualitativeFeedback.startDoing}
+                            stopDoing={qualitativeFeedback.stopDoing}
+                            continueDoing={qualitativeFeedback.continueDoing}
+                          />
+                        </>
+                      )}
                     </>
                   ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center">
                       <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-                      <h2 className="text-lg font-semibold mb-2">No Results Yet</h2>
-                      <p className="text-muted-foreground text-sm">Your colleagues haven't submitted reviews for you yet. Check back later.</p>
+                      <h2 className="text-lg font-semibold mb-2">No dashboard scores yet</h2>
+                      <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                        If you use the <strong>legacy organisation-wide survey</strong>, scores appear when colleagues submit
+                        reviews about you. For the <strong>Executive Office BOOM</strong> programme, open{' '}
+                        <strong>Survey</strong> — complete peer 360 tasks; your aggregated 360 chart appears here after HR
+                        releases <span className="font-mono">{defaultQuarterPeriod()}</span> and enough peers have rated you.
+                      </p>
                     </motion.div>
                   )}
                 </motion.div>
@@ -1479,7 +1555,11 @@ export default function EmployeeHub() {
                 <div className="glass-panel p-12 text-center">
                   <img src="/favicon.png" alt="Growth Hub" className="w-10 h-10 mx-auto mb-4 rounded-xl object-contain" />
                   <h2 className="text-lg font-semibold mb-2">Growth Hub Unlocks With Feedback</h2>
-                  <p className="text-muted-foreground text-sm">Once you have reviews, we'll generate personalised resources and help you build a development plan.</p>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                    We use your <strong>dashboard competency scores</strong> (legacy survey and/or released BOOM peer 360).
+                    Complete open reviews on the <strong>Survey</strong> tab; once averages show on <strong>My Dashboard</strong>,
+                    pick a focus area below for resources and your IDP.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -1565,7 +1645,10 @@ export default function EmployeeHub() {
                 >
                   <div className="text-center mb-6">
                     <h1 className="text-xl font-bold mb-1">Performance Rankings</h1>
-                    <p className="text-muted-foreground text-sm">Top performers based on peer review scores.</p>
+                    <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+                      Legacy survey averages combined with BOOM <strong>peer 360</strong> Likert scores (submitted reviews
+                      only). Executive EPA self-ratings are excluded.
+                    </p>
                   </div>
 
                   {/* Top 3 podium */}

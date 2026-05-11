@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { EmployeeAuthProvider, useEmployeeAuth } from "@/contexts/EmployeeAuthContext";
 import Onboarding from "./pages/Onboarding";
+import Index from "./pages/Index";
 import EmployeeLogin from "./pages/EmployeeLogin";
 import FindAccount from "./pages/FindAccount";
 import ResetPassword from "./pages/ResetPassword";
@@ -54,6 +55,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={isEmployee ? <Navigate to="/hub?tab=dashboard" /> : <Onboarding />} />
       <Route path="/login" element={isEmployee ? <Navigate to="/hub?tab=dashboard" /> : <EmployeeLogin />} />
+      <Route path="/landing" element={<Index />} />
       <Route path="/find-account" element={<FindAccount />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/hub" element={<ProtectedEmployeeRoute><EmployeeHub /></ProtectedEmployeeRoute>} />

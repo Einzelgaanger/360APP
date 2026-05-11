@@ -200,7 +200,7 @@ export default function FindAccount() {
       <div className="mobile-hero shrink-0 max-h-[24vh]">
         <img src={heroTeam} alt="A team in collaboration" />
         <div className="mobile-hero-caption">
-          <span>◉ VGG / Find Account</span>
+          <span>◉ VGG / BOOM — Account</span>
           <span>Auth / 03</span>
         </div>
       </div>
@@ -223,8 +223,9 @@ export default function FindAccount() {
           <div className="mb-4">
             <img src={vggLogo} alt="Venture Garden Group" className="h-6 w-auto mb-5" />
             <h1 className="text-xl font-semibold mb-1">Activate your account</h1>
-            <p className="text-muted-foreground text-[13px]">
-              Find your name below — we'll email you a secure link to set your new password and finish setting up your profile.
+            <p className="text-muted-foreground text-[13px] leading-relaxed">
+              Find your name below — we&apos;ll email you a link to set your password and complete your profile. Then you can
+              access BOOM assessments (peer 360, executive self, monthly reflection) from the hub.
             </p>
           </div>
 

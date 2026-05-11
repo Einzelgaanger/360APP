@@ -26,32 +26,32 @@ const SLIDES: SlideDef[] = [
   {
     no: '01',
     label: 'Overview',
-    kicker: 'Why this system exists',
-    headlineHTML: 'Performance, written in <em>plain ink.</em>',
+    kicker: 'Executive Office — BOOM programme',
+    headlineHTML: 'One hub for <em>EO performance.</em>',
     body:
-      'A 360° appraisal platform built for honesty, anonymity and craft. Less ceremony, more signal. This is how Venture Garden Group measures growth.',
+      'Built for the Executive Office of the GCEO: BOOM peer 360 (anonymous aggregated results), quarterly executive self-assessment (EPA), monthly reflection, and optional multi-subsidiary survey — role-based assignments, one workspace after you sign in.',
     image: heroTeam,
-    caption: 'Fig. 01 — Feedback with data',
+    caption: 'Fig. 01 — EO performance workspace',
   },
   {
     no: '02',
-    label: 'Process',
-    kicker: 'Simple 3-step process',
-    headlineHTML: 'Find. Review. <em>Read the chorus back.</em>',
+    label: 'Inside the hub',
+    kicker: 'Survey · Dashboard · Growth · Rankings',
+    headlineHTML: 'Assignments first. <em>Insight second.</em>',
     body:
-      'Find your profile, review your colleagues across the leadership canon, then read the chorus back as a personal dashboard. No scoreboards. No spectacle.',
+      'Open the Survey tab for your BOOM queue (peer reviews, executive form, EA or monthly tasks). My Dashboard shows legacy survey scores and/or released peer-360 averages by behaviour section. Growth Hub and Rankings turn feedback into development — HR controls when aggregate 360 is visible.',
     image: heroFeedbackSession,
-    caption: 'Fig. 02 — A team in the room',
+    caption: 'Fig. 02 — Reviews and analytics together',
   },
   {
     no: '03',
     label: 'Access',
-    kicker: 'Sign in and continue',
-    headlineHTML: 'Your voice, on the record. <em>Anonymously.</em>',
+    kicker: 'Sign in securely',
+    headlineHTML: 'Honest input. <em>Protected identity.</em>',
     body:
-      'Sign in with your VGG credentials. Every response is encrypted and detached from your identity before analytics ever sees it.',
+      'Sign in with your VGG email. Peer 360 ratings stay anonymous to reviewees; only consolidated averages surface on your dashboard. Use Find my account if you still need to activate your login.',
     image: heroReflectionData,
-    caption: 'Fig. 03 — Reflection with analytics',
+    caption: 'Fig. 03 — Secure access',
   },
 ];
 
@@ -76,12 +76,12 @@ export default function Onboarding() {
           <img src={vggLogo} alt="VGG" className="h-6 w-auto sm:h-7" />
           <div className="hidden h-5 w-px bg-border sm:block" />
           <span className="font-mono hidden sm:inline text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground">
-            VGG / 360° / Performance Edition
+            VGG / BOOM — EO Appraisal
           </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="font-mono hidden lg:inline text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground">
-            Vol. 01 · Issue 03
+            BOOM v2 · 2026
           </span>
           <Button variant="green" size="sm" className="h-8 px-3 text-xs" onClick={() => navigate('/login')}>
             Sign In
