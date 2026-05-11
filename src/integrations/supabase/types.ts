@@ -182,8 +182,44 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_period_releases: {
+        Row: {
+          form_id: string
+          id: string
+          note: string | null
+          period: string
+          released_at: string
+          released_by: string | null
+        }
+        Insert: {
+          form_id: string
+          id?: string
+          note?: string | null
+          period: string
+          released_at?: string
+          released_by?: string | null
+        }
+        Update: {
+          form_id?: string
+          id?: string
+          note?: string | null
+          period?: string
+          released_at?: string
+          released_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_period_releases_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_questions: {
         Row: {
+          audience: string
           created_at: string
           form_id: string
           helper_text: string | null
@@ -196,6 +232,7 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          audience?: string
           created_at?: string
           form_id: string
           helper_text?: string | null
@@ -208,6 +245,7 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          audience?: string
           created_at?: string
           form_id?: string
           helper_text?: string | null
@@ -269,6 +307,128 @@ export type Database = {
             columns: ["form_id"]
             isOneToOne: false
             referencedRelation: "assessment_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_assessor_ratings: {
+        Row: {
+          assessor_review_id: string
+          created_at: string
+          id: string
+          question_id: string
+          score: number
+        }
+        Insert: {
+          assessor_review_id: string
+          created_at?: string
+          id?: string
+          question_id: string
+          score: number
+        }
+        Update: {
+          assessor_review_id?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_assessor_ratings_assessor_review_id_fkey"
+            columns: ["assessor_review_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_assessor_reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_assessor_ratings_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_assessor_reviews: {
+        Row: {
+          assessor_employee_id: string
+          created_at: string
+          id: string
+          self_response_id: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          assessor_employee_id: string
+          created_at?: string
+          id?: string
+          self_response_id: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assessor_employee_id?: string
+          created_at?: string
+          id?: string
+          self_response_id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_assessor_reviews_assessor_employee_id_fkey"
+            columns: ["assessor_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_assessor_reviews_self_response_id_fkey"
+            columns: ["self_response_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_gate_decisions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decision: string
+          employee_id: string
+          id: string
+          period: string
+          rationale: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decision: string
+          employee_id: string
+          id?: string
+          period: string
+          rationale: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decision?: string
+          employee_id?: string
+          id?: string
+          period?: string
+          rationale?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_gate_decisions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -531,6 +691,82 @@ export type Database = {
         }
         Relationships: []
       }
+      ea_quarterly_recommendations: {
+        Row: {
+          id: string
+          notes: string | null
+          recommendation: string
+          response_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          recommendation?: string
+          response_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          recommendation?: string
+          response_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ea_quarterly_recommendations_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: true
+            referencedRelation: "assessment_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_period_okrs: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          key_result_text: string | null
+          objective_text: string
+          period: string
+          slot_index: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          key_result_text?: string | null
+          objective_text?: string
+          period: string
+          slot_index: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          key_result_text?: string | null
+          objective_text?: string
+          period?: string
+          slot_index?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_period_okrs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           created_at: string | null
@@ -538,6 +774,8 @@ export type Database = {
           email: string | null
           hierarchy_level: number | null
           id: string
+          is_epa_assessor: boolean
+          is_eo_lead_assessor: boolean
           manager_id: string | null
           name: string
           role: string | null
@@ -550,6 +788,8 @@ export type Database = {
           email?: string | null
           hierarchy_level?: number | null
           id?: string
+          is_epa_assessor?: boolean
+          is_eo_lead_assessor?: boolean
           manager_id?: string | null
           name: string
           role?: string | null
@@ -562,6 +802,8 @@ export type Database = {
           email?: string | null
           hierarchy_level?: number | null
           id?: string
+          is_epa_assessor?: boolean
+          is_eo_lead_assessor?: boolean
           manager_id?: string | null
           name?: string
           role?: string | null
@@ -877,16 +1119,19 @@ export type Database = {
       subsidiaries: {
         Row: {
           created_at: string | null
+          hierarchy_lower_is_senior: boolean
           id: string
           name: string
         }
         Insert: {
           created_at?: string | null
+          hierarchy_lower_is_senior?: boolean
           id?: string
           name: string
         }
         Update: {
           created_at?: string | null
+          hierarchy_lower_is_senior?: boolean
           id?: string
           name?: string
         }
@@ -1101,8 +1346,20 @@ export type Database = {
           section: string
         }[]
       }
-      get_review_assignments: {
+      peer_360_results_released: {
         Args: { _period: string }
+        Returns: boolean
+      }
+      release_assessment_period: {
+        Args: { _form_code: string; _note?: string | null; _period: string }
+        Returns: undefined
+      }
+      unrelease_assessment_period: {
+        Args: { _form_code: string; _period: string }
+        Returns: undefined
+      }
+      get_review_assignments: {
+        Args: { _period_month: string; _period_quarter: string }
         Returns: {
           anonymous: boolean
           form_code: string
@@ -1113,6 +1370,34 @@ export type Database = {
           reviewee_name: string
           reviewee_role: string
           status: string
+        }[]
+      }
+      get_epa_assessor_tasks: {
+        Args: { _period: string }
+        Returns: {
+          assessor_review_id: string | null
+          assessor_status: string
+          reviewee_id: string
+          reviewee_name: string
+          reviewee_role: string | null
+          self_response_id: string
+        }[]
+      }
+      upsert_assessment_gate_decision: {
+        Args: {
+          _decision: string
+          _employee_id: string
+          _period: string
+          _rationale: string
+        }
+        Returns: undefined
+      }
+      list_peer_360_ranking_detail: {
+        Args: never
+        Returns: {
+          response_id: string
+          reviewee_id: string
+          score: number
         }[]
       }
       has_role: {

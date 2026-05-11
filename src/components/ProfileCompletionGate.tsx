@@ -17,8 +17,9 @@ import {
 } from '@/components/ui/select';
 import vggLogo from '@/assets/vgg-logo.webp';
 import heroHub from '@/assets/hero-hub.jpg';
+import { displayHierarchyLabel } from '@/lib/hierarchyConvention';
 
-interface Subsidiary { id: string; name: string; }
+interface Subsidiary { id: string; name: string; hierarchy_lower_is_senior?: boolean; }
 interface EmployeeOption {
   name: string;
   role: string | null;
@@ -28,17 +29,7 @@ interface EmployeeOption {
   email: string | null;
 }
 
-const HIERARCHY_LABELS: Record<number, string> = {
-  0: 'Intern',
-  1: 'Junior',
-  2: 'Analyst',
-  3: 'Associate',
-  4: 'Senior Associate',
-  5: 'Manager',
-  6: 'Principal / Head',
-  7: 'C-Suite',
-  8: 'Partner',
-};
+const HIERARCHY_LEVEL_VALUES = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 const FALLBACK_DEPARTMENTS = ['Executive', 'Finance', 'HR', 'Investment', 'Legal', 'Operations', 'Portfolio', 'Sales', 'Technology'];
 const FALLBACK_ROLES = ['Analyst', 'Associate', 'Senior Associate', 'Manager', 'Principal', 'Head of Department', 'Director', 'Partner'];
@@ -66,7 +57,7 @@ export default function ProfileCompletionGate({ children }: { children: ReactNod
     const loadOptions = async () => {
       setLoadingOptions(true);
       const [subRes, empRes] = await Promise.all([
-        supabase.from('subsidiaries').select('id, name').order('name'),
+        supabase.from('subsidiaries').select('id, name, hierarchy_lower_is_senior').order('name'),
         supabase.from('employees').select('name, role, department, subsidiary_id, hierarchy_level, email').order('name'),
       ]);
       setSubsidiaries(subRes.data ?? []);
@@ -104,6 +95,11 @@ export default function ProfileCompletionGate({ children }: { children: ReactNod
   const roleOptions = useMemo(
     () => uniqueSorted([...employees.map((employee) => employee.role), ...FALLBACK_ROLES]),
     [employees],
+  );
+
+  const profileHierarchyLowerSenior = useMemo(
+    () => subsidiaries.find((s) => s.id === subsidiaryId)?.hierarchy_lower_is_senior ?? false,
+    [subsidiaries, subsidiaryId],
   );
 
   const canSave = name.trim() && role.trim() && department.trim() && subsidiaryId && hierarchyLevel;
@@ -231,7 +227,11 @@ export default function ProfileCompletionGate({ children }: { children: ReactNod
                     <Select value={hierarchyLevel} onValueChange={setHierarchyLevel}>
                       <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
                       <SelectContent>
-                        {Object.entries(HIERARCHY_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>L{value} — {label}</SelectItem>)}
+                        {HIERARCHY_LEVEL_VALUES.map((value) => (
+                          <SelectItem key={value} value={String(value)}>
+                            L{value} — {displayHierarchyLabel(value, profileHierarchyLowerSenior)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

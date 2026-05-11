@@ -16,7 +16,7 @@ const TABS: { key: MobileTab; label: string; icon: React.ComponentType<{ classNa
 ];
 
 /**
- * WhatsApp-style fixed bottom tab bar — mobile only (hidden on lg+).
+ * WhatsApp-style fixed bottom tab bar ï¿½ mobile only (hidden on lg+).
  * Editorial: hairline top border, paper background, ink text, green active state.
  */
 export default function MobileTabBar({ active, onChange }: MobileTabBarProps) {

@@ -12,6 +12,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
+import { defaultQuarterPeriod } from '@/lib/boomPeriods';
 
 interface CategoryScore {
   category: string;
@@ -33,6 +34,32 @@ export default function EmployeeDashboard() {
 
   const loadDashboardData = async () => {
     if (!profile?.employee_id || !user) return;
+    const applyReleasedBoom360 = async () => {
+      const qPeriod = defaultQuarterPeriod();
+      const { data: boom360 } = await supabase.rpc('get_my_360_results', { _period: qPeriod });
+      if (!boom360?.length) return;
+      const bySection: Record<string, { wsum: number; w: number }> = {};
+      for (const row of boom360 as {
+        section: string;
+        avg_score: number;
+        response_count: number;
+      }[]) {
+        const sec = row.section?.trim() || '360 feedback';
+        if (!bySection[sec]) bySection[sec] = { wsum: 0, w: 0 };
+        bySection[sec].wsum += Number(row.avg_score) * row.response_count;
+        bySection[sec].w += row.response_count;
+      }
+      const avgSec = (wsum: number, w: number) => (w ? parseFloat((wsum / w).toFixed(2)) : 0);
+      const scores = Object.entries(bySection).map(([category, v]) => ({
+        category,
+        myScore: avgSec(v.wsum, v.w),
+        orgAvg: 0,
+      }));
+      setMyScores(scores);
+      const maxR = Math.max(...(boom360 as { response_count: number }[]).map((r) => r.response_count), 0);
+      setTotalReviews(maxR);
+    };
+
     try {
       // Load my responses
       const { data: myResponses } = await supabase
@@ -41,6 +68,7 @@ export default function EmployeeDashboard() {
         .eq('employee_id', profile.employee_id);
 
       if (!myResponses?.length) {
+        await applyReleasedBoom360();
         setLoading(false);
         return;
       }
@@ -89,6 +117,9 @@ export default function EmployeeDashboard() {
         orgAvg: 0,
       }));
       setMyScores(scores);
+      if (cats.length === 0) {
+        await applyReleasedBoom360();
+      }
 
       // Load org averages in background (sampled for speed)
       supabase
@@ -223,8 +254,10 @@ export default function EmployeeDashboard() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center">
             <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-lg font-semibold mb-2">No Results Yet</h2>
-            <p className="text-muted-foreground text-sm">
-              Your colleagues haven't submitted reviews for you yet. Check back later.
+            <p className="text-muted-foreground text-sm max-w-md mx-auto">
+              Scores from the organisation-wide survey appear here once you have received reviews. If your team uses BOOM
+              peer 360, aggregated results show after HR releases the quarter and at least three peers have submitted — see
+              the Survey tab for status.
             </p>
           </motion.div>
         )}

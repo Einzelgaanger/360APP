@@ -72,6 +72,23 @@ export default function WallOfFame() {
         });
       });
 
+      const { data: boomRows, error: boomErr } = await supabase.rpc('list_peer_360_ranking_detail');
+      if (!boomErr && boomRows?.length) {
+        const boomAgg: Record<string, { scores: number[]; responses: Set<string> }> = {};
+        for (const row of boomRows as { reviewee_id: string; response_id: string; score: number }[]) {
+          if (!boomAgg[row.reviewee_id]) {
+            boomAgg[row.reviewee_id] = { scores: [], responses: new Set() };
+          }
+          boomAgg[row.reviewee_id].scores.push(row.score);
+          boomAgg[row.reviewee_id].responses.add(row.response_id);
+        }
+        Object.entries(boomAgg).forEach(([empId, b]) => {
+          if (!scoreMap[empId]) scoreMap[empId] = { scores: [], count: 0 };
+          scoreMap[empId].scores.push(...b.scores);
+          scoreMap[empId].count += b.responses.size;
+        });
+      }
+
       const ranked: RankedEmployee[] = empsRes.data
         .filter((e: any) => scoreMap[e.id]?.scores.length > 0)
         .map((e: any) => ({
@@ -122,7 +139,9 @@ export default function WallOfFame() {
       <main className="platform-content section-stack">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="text-2xl font-bold font-serif mb-2">Performance Rankings</h1>
-          <p className="text-muted-foreground text-sm">Top performers based on peer review scores across all competencies.</p>
+          <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+            Top performers from the organisation-wide survey and from submitted BOOM peer 360 reviews (Likert items averaged per person).
+          </p>
         </motion.div>
 
         {/* Top 3 podium */}

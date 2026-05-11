@@ -11,7 +11,7 @@ SELECT cron.schedule(
   '15 2 * * *',
   $$
   SELECT net.http_post(
-    url := 'https://jniqqburulrdwcbjetug.supabase.co/functions/v1/recommendation-evaluate',
+    url := 'https://sgttsotrvemmgmujcuay.supabase.co/functions/v1/recommendation-evaluate',
     headers := '{"Content-Type":"application/json"}'::jsonb,
     body := jsonb_build_object('metricDate', (now()::date - 1)::text)
   );

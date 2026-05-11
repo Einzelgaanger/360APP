@@ -36,29 +36,25 @@ import {
   EmployeeDashboardTabSkeleton,
   RankingsTabSkeleton,
 } from '@/components/shell/LoadingShells';
+import BoomReviewHub from '@/components/boom/BoomReviewHub';
+import {
+  displayHierarchyLabel,
+  getSurveyFeedbackDirection,
+  assignHierarchyPool,
+} from '@/lib/hierarchyConvention';
 
 interface FeedbackItem {
   text: string;
   direction: string;
 }
 
-interface Subsidiary { id: string; name: string; }
+interface Subsidiary { id: string; name: string; hierarchy_lower_is_senior?: boolean; }
 interface Employee { id: string; name: string; role: string | null; department: string | null; subsidiary_id: string; email: string | null; hierarchy_level: number | null; }
 interface Category { id: string; name: string; sort_order: number; }
 interface Question { id: string; category_id: string; question_text: string; question_type: string; sort_order: number; }
 interface CategoryScore { category: string; myScore: number; orgAvg: number; }
 interface DirectionScores { above: CategoryScore[]; peer: CategoryScore[]; below: CategoryScore[]; }
 
-const HIERARCHY_LABELS: Record<number, string> = {
-  0: 'Intern', 1: 'Junior', 2: 'Analyst', 3: 'Associate', 4: 'Senior Associate',
-  5: 'Manager', 6: 'Principal/Head', 7: 'C-Suite', 8: 'Partner',
-};
-
-function getFeedbackDirection(reviewerLevel: number, revieweeLevel: number): string {
-  if (reviewerLevel > revieweeLevel) return 'above';
-  if (reviewerLevel < revieweeLevel) return 'below';
-  return 'peer';
-}
 interface RankedEmployee { employee_id: string; name: string; subsidiary: string; avgScore: number; totalReviews: number; }
 
 const SCALE_OPTIONS = [
@@ -440,10 +436,12 @@ export default function EmployeeHub() {
             const meDept = me.department?.toLowerCase() || null;
             const meLvl = me.hierarchy_level ?? 3;
 
+            const dashLowerSenior =
+              subsidiaries.find(s => s.id === me.subsidiary_id)?.hierarchy_lower_is_senior ?? false;
             const meta: CohortMeta = {
               departmentName: me.department,
               subsidiaryName: subsidiaries.find(s => s.id === me.subsidiary_id)?.name ?? null,
-              levelLabel: HIERARCHY_LABELS[meLvl] || `L${meLvl}`,
+              levelLabel: displayHierarchyLabel(meLvl, dashLowerSenior),
               departmentSize: peopleInCohort(e => !!meDept && (e.department?.toLowerCase() === meDept) && e.subsidiary_id === me.subsidiary_id),
               levelSize: peopleInCohort(e => (e.hierarchy_level ?? 3) === meLvl),
               subsidiarySize: peopleInCohort(e => e.subsidiary_id === me.subsidiary_id),
@@ -639,7 +637,11 @@ export default function EmployeeHub() {
     const reviewerEmp = currentEmployee;
     const reviewerLevel = reviewerEmp?.hierarchy_level ?? 3;
     const revieweeLevel = emp.hierarchy_level ?? 3;
-    const direction = getFeedbackDirection(reviewerLevel, revieweeLevel);
+    const direction = getSurveyFeedbackDirection(
+      reviewerLevel,
+      revieweeLevel,
+      mySubsidiaryLowerSenior,
+    );
 
     setCompletedEmployees(prev => {
       const next = new Set(prev);
@@ -712,6 +714,19 @@ export default function EmployeeHub() {
     return currentEmployee?.hierarchy_level ?? 3;
   }, [currentEmployee]);
 
+  /** EO pilot: lower hierarchy_level = more senior. Legacy survey: higher = more senior. */
+  const mySubsidiaryLowerSenior = useMemo(
+    () => subsidiaries.find(s => s.id === currentEmployee?.subsidiary_id)?.hierarchy_lower_is_senior ?? false,
+    [subsidiaries, currentEmployee?.subsidiary_id],
+  );
+
+  const surveyHierarchyLowerSenior = useMemo(() => {
+    if (selectedSubsidiary) {
+      return subsidiaries.find(s => s.id === selectedSubsidiary.id)?.hierarchy_lower_is_senior ?? false;
+    }
+    return mySubsidiaryLowerSenior;
+  }, [subsidiaries, selectedSubsidiary, mySubsidiaryLowerSenior]);
+
   // Subsidiary employee counts
   const subsidiaryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -739,13 +754,14 @@ export default function EmployeeHub() {
     filteredEmployees.forEach(emp => {
       if (emp.id === currentEmployee?.id) return;
       const level = emp.hierarchy_level ?? 3;
-      if (level > myHierarchyLevel) above.push(emp);
-      else if (level < myHierarchyLevel) below.push(emp);
+      const pool = assignHierarchyPool(level, myHierarchyLevel, surveyHierarchyLowerSenior);
+      if (pool === 'above') above.push(emp);
+      else if (pool === 'below') below.push(emp);
       else peers.push(emp);
     });
 
     return { above, peers, below };
-  }, [currentEmployee?.id, filteredEmployees, myHierarchyLevel]);
+  }, [currentEmployee?.id, filteredEmployees, myHierarchyLevel, surveyHierarchyLowerSenior]);
 
   // Pool counts across ALL employees (not just selected subsidiary)
   const globalPoolCounts = useMemo(() => {
@@ -753,12 +769,13 @@ export default function EmployeeHub() {
     allEmployees.forEach(emp => {
       if (emp.id === currentEmployee?.id) return;
       const level = emp.hierarchy_level ?? 3;
-      if (level > myHierarchyLevel) above++;
-      else if (level < myHierarchyLevel) below++;
+      const pool = assignHierarchyPool(level, myHierarchyLevel, mySubsidiaryLowerSenior);
+      if (pool === 'above') above++;
+      else if (pool === 'below') below++;
       else peers++;
     });
     return { above, peers, below, total: above + peers + below };
-  }, [allEmployees, currentEmployee?.id, myHierarchyLevel]);
+  }, [allEmployees, currentEmployee?.id, myHierarchyLevel, mySubsidiaryLowerSenior]);
 
   const overallScore = useMemo(() => {
     if (!myScores.length) return 0;
@@ -864,6 +881,27 @@ export default function EmployeeHub() {
         <Tabs value={activeTab} onValueChange={setTab}>
           {/* ============ SURVEY TAB ============ */}
           <TabsContent value="survey" className="mt-4">
+            <BoomReviewHub
+              reviewerEmployeeId={currentEmployee?.id ?? null}
+              reviewerHierarchyLevel={currentEmployee?.hierarchy_level ?? profile?.hierarchy_level ?? null}
+              reviewerName={currentEmployee?.name ?? profile?.name ?? null}
+              reviewerRole={currentEmployee?.role ?? profile?.role ?? null}
+              reviewerDepartment={currentEmployee?.department ?? profile?.department ?? null}
+              reviewerEmail={profile?.email ?? user?.email ?? null}
+            />
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center" aria-hidden>
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex flex-col items-center gap-1 text-center">
+                <span className="bg-background px-3 text-xs uppercase tracking-widest text-muted-foreground">
+                  Organisation-wide survey
+                </span>
+                <span className="bg-background px-3 text-[10px] text-muted-foreground/90 max-w-md">
+                  Multi-subsidiary legacy flow — separate from your EO BOOM assignments above (different pools and questions).
+                </span>
+              </div>
+            </div>
             {/* Step Indicator */}
             {step !== 'submitted' && (
               <div className="mb-4">
@@ -888,7 +926,7 @@ export default function EmployeeHub() {
             )}
 
             {/* Progress Bar */}
-            {step === 'questions' && (
+            {step === 'questions' && categories.length > 0 && (
               <div className="mb-4">
                 <div className="flex justify-between text-[11px] text-muted-foreground mb-2 font-medium">
                   <span>Section {currentCategoryIndex + 1} of {categories.length} — {currentCategory?.name}</span>
@@ -949,7 +987,7 @@ export default function EmployeeHub() {
                       <h2 className="text-xl font-bold mb-1">Select Person to Review</h2>
                       <p className="text-muted-foreground text-sm">{selectedSubsidiary?.name}</p>
                       <p className="text-[11px] text-muted-foreground mt-1">
-                        Your level: <span className="font-semibold text-foreground">{HIERARCHY_LABELS[myHierarchyLevel] || `L${myHierarchyLevel}`}</span>
+                        Your level: <span className="font-semibold text-foreground">{displayHierarchyLabel(myHierarchyLevel, surveyHierarchyLowerSenior)}</span>
                       </p>
                     </div>
 
@@ -1049,7 +1087,7 @@ export default function EmployeeHub() {
                                     ) : (
                                       <div className="flex items-center gap-1.5">
                                         <Badge variant="outline" className="text-[9px] px-1.5 py-0 hidden sm:inline-flex">
-                                          {HIERARCHY_LABELS[emp.hierarchy_level ?? 3] || `L${emp.hierarchy_level}`}
+                                          {displayHierarchyLabel(emp.hierarchy_level, surveyHierarchyLowerSenior)}
                                         </Badge>
                                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                       </div>
@@ -1069,6 +1107,20 @@ export default function EmployeeHub() {
                         </>
                       )}
                     </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 3: Questions — empty catalog (run DB migration to seed survey_categories / survey_questions) */}
+              {step === 'questions' && categories.length === 0 && (
+                <motion.div key="questions-empty" {...pageTransition}>
+                  <div className="glass-panel p-6 sm:p-8 max-w-lg mx-auto text-center space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      The organisation-wide survey has no question bank loaded yet. Apply the latest database migrations (or ask an admin to seed legacy survey tables), then refresh.
+                    </p>
+                    <Button variant="outline" onClick={() => setStep('employee')} className="gap-1.5">
+                      <ChevronLeft className="w-4 h-4" /> Back to person
+                    </Button>
                   </div>
                 </motion.div>
               )}
@@ -1238,7 +1290,7 @@ export default function EmployeeHub() {
                         </div>
                         <div>
                           <h3 className="text-sm font-bold">Your Appraisal Pool</h3>
-                          <p className="text-[10px] text-muted-foreground">Level: {HIERARCHY_LABELS[myHierarchyLevel] || `L${myHierarchyLevel}`} — {globalPoolCounts.total} people can review you</p>
+                          <p className="text-[10px] text-muted-foreground">Level: {displayHierarchyLabel(myHierarchyLevel, mySubsidiaryLowerSenior)} — {globalPoolCounts.total} people can review you</p>
                         </div>
                       </div>
                     </div>
