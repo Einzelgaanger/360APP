@@ -16,6 +16,7 @@ import ExportButton from '@/components/dashboard/ExportButton';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
 import PlatformSidebar from '@/components/PlatformSidebar';
 import AdminMobileTabBar from '@/components/AdminMobileTabBar';
+import { ENABLE_APP_AI } from '@/lib/featureFlags';
 import { Button } from '@/components/ui/button';
 import { ManagerSummary } from '@/types/appraisal';
 import { BarChart3, Users, Trophy, Target, Zap, ClipboardList } from 'lucide-react';
@@ -104,9 +105,11 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
           { key: 'appraisal', label: '360° Appraisal', icon: <ClipboardList className="w-4 h-4" />, to: '/appraisal' },
         ]}
         actions={
-          <Button onClick={() => setChatOpen(true)} size="sm" className="w-full gap-2">
-            <Zap className="w-4 h-4" /> Analytics Copilot
-          </Button>
+          ENABLE_APP_AI ? (
+            <Button onClick={() => setChatOpen(true)} size="sm" className="w-full gap-2">
+              <Zap className="w-4 h-4" /> Analytics Copilot
+            </Button>
+          ) : undefined
         }
       />
 
@@ -144,10 +147,14 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
       <AnimatePresence>
         {selectedManager && <ManagerDetailPanel manager={selectedManager} onClose={() => setSelectedManager(null)} />}
       </AnimatePresence>
-      <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+      {ENABLE_APP_AI && (
+        <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+      )}
 
       <AdminMobileTabBar
-        onOpenCopilot={() => setChatOpen(true)}
+        onOpenCopilot={() => {
+          if (ENABLE_APP_AI) setChatOpen(true);
+        }}
         onSignOut={handleLogout}
       />
     </div>

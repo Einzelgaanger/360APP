@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExternalLink, BookOpen, FileText, Video, Wrench, Loader2, RefreshCw, Clock, Target, Sparkles, X } from 'lucide-react';
+import { ExternalLink, BookOpen, FileText, Video, Wrench, Loader2, RefreshCw, Clock, Target, Sparkles, X, Route } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import ResourceFeedback from './ResourceFeedback';
+import { ENABLE_APP_AI, ENABLE_GROWTH_HUB_V2 } from '@/lib/featureFlags';
 
 interface Resource {
+  item_id?: string;
+  run_id?: string;
+  rank_position?: number;
   title: string;
   type: 'article' | 'book' | 'video' | 'exercise';
   source: string;
@@ -16,6 +20,9 @@ interface Resource {
   why_picked?: string;
   time_commitment: string;
   difficulty: 'foundational' | 'intermediate' | 'advanced';
+  reason_codes?: string[];
+  score_breakdown?: Record<string, number>;
+  trust_score?: number;
 }
 
 interface GrowthResourcesProps {
@@ -37,11 +44,15 @@ const TYPE_META = {
 const resourceId = (r: Resource) => `${r.type}::${r.title.toLowerCase().slice(0, 80).replace(/\s+/g, '_')}`;
 
 export default function GrowthResources({ userId, focusArea, currentScore, feedbackContext, onAddToGoal }: GrowthResourcesProps) {
+  if (!ENABLE_APP_AI) return null;
+
   const [resources, setResources] = useState<Resource[]>([]);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [generatedAt, setGeneratedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [feedbackMap, setFeedbackMap] = useState<Record<string, number>>({});
+  const [creatingPath, setCreatingPath] = useState(false);
 
   // Load any existing feedback for this user so thumbs persist.
   const loadFeedback = useCallback(async () => {
@@ -57,6 +68,7 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
   }, [userId]);
 
   const loadCached = useCallback(async () => {
+    if (ENABLE_GROWTH_HUB_V2) return false;
     const { data } = await supabase
       .from('growth_resources')
       .select('resources, generated_at, expires_at')
@@ -74,11 +86,57 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
     return false;
   }, [userId, focusArea]);
 
+  const createPathFromRun = useCallback(async () => {
+    if (!activeRunId) return;
+    setCreatingPath(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('learning-path-generate', {
+        body: { runId: activeRunId, focusArea, horizonDays: 28 },
+      });
+      if (error || data?.error) throw error || new Error(data?.error || 'Could not create path');
+      toast.success('Learning path created from this recommendation run.');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || 'Could not create learning path');
+    } finally {
+      setCreatingPath(false);
+    }
+  }, [activeRunId, focusArea]);
+
   const generate = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Use adaptive endpoint — falls back to legacy on error.
+      if (ENABLE_GROWTH_HUB_V2) {
+        const { data, error: fnErr } = await supabase.functions.invoke('recommendation-run', {
+          body: { focusArea, currentScore, feedbackContext: feedbackContext?.slice(0, 1500) },
+        });
+        if (fnErr || data?.error) throw fnErr || new Error(data?.error || 'No recommendations');
+        const items = (data?.items || []) as any[];
+        if (items.length === 0) throw new Error('No resources returned');
+        setActiveRunId(data?.run?.id || null);
+        const list: Resource[] = items.map((item) => ({
+          item_id: item.id,
+          run_id: item.run_id,
+          rank_position: item.rank_position,
+          title: item.title,
+          type: item.type,
+          source: item.source,
+          url: item.url,
+          why_relevant: item.why_relevant,
+          why_picked: item.why_picked,
+          time_commitment: item.time_commitment || '',
+          difficulty: item.difficulty,
+          reason_codes: item.reason_codes || [],
+          score_breakdown: item.score_breakdown || {},
+          trust_score: item.trust_score,
+        }));
+        setResources(list);
+        setGeneratedAt(new Date(data?.run?.generated_at || Date.now()));
+        return;
+      }
+
+      // Legacy fallback path.
       let { data, error: fnErr } = await supabase.functions.invoke('adaptive-resources', {
         body: { focusArea, currentScore, feedbackContext: feedbackContext?.slice(0, 1500) },
       });
@@ -112,6 +170,7 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
 
   useEffect(() => {
     setResources([]);
+    setActiveRunId(null);
     setGeneratedAt(null);
     setError(null);
     void loadFeedback();
@@ -119,6 +178,17 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
   }, [focusArea, loadCached, generate, loadFeedback]);
 
   const logInteraction = async (r: Resource, action: 'opened' | 'saved' | 'dismissed' | 'completed') => {
+    if (r.item_id && r.run_id) {
+      await (supabase as any).from('recommendation_events').insert({
+        user_id: userId,
+        run_id: r.run_id,
+        item_id: r.item_id,
+        event_type: action,
+        position: r.rank_position || null,
+        focus_area: focusArea,
+        metadata: { source: r.source, difficulty: r.difficulty } as any,
+      });
+    }
     await supabase.from('learning_interactions').insert({
       user_id: userId,
       resource_id: resourceId(r),
@@ -152,6 +222,17 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
           <span className="ml-1.5 text-[10px]">Refresh</span>
         </Button>
       </div>
+      {ENABLE_GROWTH_HUB_V2 && activeRunId && (
+        <div className="mb-4 flex items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+          <p className="text-[11px] text-muted-foreground">
+            Run ID: <span className="font-mono text-foreground">{activeRunId.slice(0, 8)}</span> · deterministic ranking active
+          </p>
+          <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={createPathFromRun} disabled={creatingPath}>
+            {creatingPath ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Route className="mr-1 h-3 w-3" />}
+            Build path
+          </Button>
+        </div>
+      )}
 
       {loading && resources.length === 0 && (
         <div className="py-12 text-center">
@@ -210,6 +291,20 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
                     {r.why_picked}
                   </div>
                 )}
+                {ENABLE_GROWTH_HUB_V2 && (
+                  <div className="mb-2 flex flex-wrap gap-1">
+                    {r.reason_codes?.slice(0, 3).map((code) => (
+                      <Badge key={code} variant="outline" className="h-5 px-1.5 text-[9px]">
+                        {code.split('_').join(' ')}
+                      </Badge>
+                    ))}
+                    {typeof r.trust_score === 'number' && (
+                      <Badge variant="outline" className="h-5 px-1.5 text-[9px]">
+                        trust {Math.round(r.trust_score)}
+                      </Badge>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-1.5 flex-wrap mt-auto mb-3">
                   <Badge variant="outline" className="text-[9px] py-0 h-5 gap-1"><Clock className="w-2.5 h-2.5" /> {r.time_commitment}</Badge>
@@ -237,6 +332,9 @@ export default function GrowthResources({ userId, focusArea, currentScore, feedb
                     resourceId={rid}
                     resourceTitle={r.title}
                     focusArea={focusArea}
+                    runId={r.run_id}
+                    itemId={r.item_id}
+                    rankPosition={r.rank_position}
                     initialScore={feedbackMap[rid] ?? null}
                     onSubmitted={(score) => setFeedbackMap(m => ({ ...m, [rid]: score }))}
                   />

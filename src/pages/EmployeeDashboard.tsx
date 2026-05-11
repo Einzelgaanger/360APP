@@ -12,6 +12,8 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
+import { defaultQuarterPeriod } from '@/lib/boomPeriods';
+import { fetchMyAggregatedPeer360Scores } from '@/lib/boomDashboard360';
 
 interface CategoryScore {
   category: string;
@@ -25,6 +27,7 @@ export default function EmployeeDashboard() {
   const [myScores, setMyScores] = useState<CategoryScore[]>([]);
   const [totalReviews, setTotalReviews] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [scoresFromBoom360, setScoresFromBoom360] = useState(false);
 
   useEffect(() => {
     if (!user || !profile?.employee_id) return;
@@ -33,7 +36,17 @@ export default function EmployeeDashboard() {
 
   const loadDashboardData = async () => {
     if (!profile?.employee_id || !user) return;
+    const applyReleasedBoom360 = async () => {
+      const qPeriod = defaultQuarterPeriod();
+      const boom = await fetchMyAggregatedPeer360Scores(qPeriod);
+      if (!boom) return;
+      setMyScores(boom.scores);
+      setTotalReviews(boom.maxPeerResponsesHint);
+      setScoresFromBoom360(true);
+    };
+
     try {
+      setScoresFromBoom360(false);
       // Load my responses
       const { data: myResponses } = await supabase
         .from('survey_responses')
@@ -41,6 +54,7 @@ export default function EmployeeDashboard() {
         .eq('employee_id', profile.employee_id);
 
       if (!myResponses?.length) {
+        await applyReleasedBoom360();
         setLoading(false);
         return;
       }
@@ -89,6 +103,11 @@ export default function EmployeeDashboard() {
         orgAvg: 0,
       }));
       setMyScores(scores);
+      if (cats.length === 0) {
+        await applyReleasedBoom360();
+      } else {
+        setScoresFromBoom360(false);
+      }
 
       // Load org averages in background (sampled for speed)
       supabase
@@ -190,18 +209,24 @@ export default function EmployeeDashboard() {
         {myScores.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-6">
-              <h2 className="text-sm font-semibold mb-4">Competency Overview</h2>
+              <h2 className="text-sm font-semibold mb-4">
+                {scoresFromBoom360 ? 'BOOM peer 360 — sections' : 'Competency Overview'}
+              </h2>
               <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={myScores}>
                   <PolarGrid stroke="hsl(var(--border))" />
                   <PolarAngleAxis dataKey="category" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                   <Radar name="You" dataKey="myScore" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
-                  <Radar name="Org Avg" dataKey="orgAvg" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.05} strokeWidth={1} strokeDasharray="4 4" />
+                  {!scoresFromBoom360 && (
+                    <Radar name="Org Avg" dataKey="orgAvg" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.05} strokeWidth={1} strokeDasharray="4 4" />
+                  )}
                 </RadarChart>
               </ResponsiveContainer>
               <div className="flex gap-4 justify-center mt-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-primary rounded" /> You</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-muted-foreground rounded border-dashed" /> Org Average</span>
+                {!scoresFromBoom360 && (
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-muted-foreground rounded border-dashed" /> Org Average</span>
+                )}
               </div>
             </motion.div>
 
@@ -214,7 +239,9 @@ export default function EmployeeDashboard() {
                   <YAxis dataKey="category" type="category" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
                   <Bar dataKey="myScore" name="You" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                  <Bar dataKey="orgAvg" name="Org Avg" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
+                  {!scoresFromBoom360 && (
+                    <Bar dataKey="orgAvg" name="Org Avg" fill="hsl(var(--muted))" radius={[0, 4, 4, 0]} />
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             </motion.div>
@@ -223,8 +250,11 @@ export default function EmployeeDashboard() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center">
             <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-lg font-semibold mb-2">No Results Yet</h2>
-            <p className="text-muted-foreground text-sm">
-              Your colleagues haven't submitted reviews for you yet. Check back later.
+            <p className="text-muted-foreground text-sm max-w-md mx-auto">
+              Legacy multi-subsidiary survey scores appear here if your record has received reviews. For the Executive Office,
+              your <strong>BOOM peer 360</strong> averages (quarter <span className="font-mono">{defaultQuarterPeriod()}</span>)
+              show here after HR releases results and enough peers have submitted — complete any open 360 tasks under{' '}
+              <strong>Survey → BOOM workspace</strong>.
             </p>
           </motion.div>
         )}

@@ -1,0 +1,127 @@
+import { supabase } from '@/integrations/supabase/client';
+import { defaultQuarterPeriod } from '@/lib/boomPeriods';
+
+export type Boom360CategoryScore = {
+  category: string;
+  myScore: number;
+  orgAvg: number;
+};
+
+export type RankedEmployeeScore = {
+  employee_id: string;
+  name: string;
+  subsidiary: string;
+  avgScore: number;
+  totalReviews: number;
+};
+
+/**
+ * Aggregated peer 360 about the current user (BOOM), after HR release and minimum peers server-side.
+ */
+export async function fetchMyAggregatedPeer360Scores(
+  period: string = defaultQuarterPeriod(),
+): Promise<{ scores: Boom360CategoryScore[]; maxPeerResponsesHint: number } | null> {
+  const { data: boom360, error } = await supabase.rpc('get_my_360_results', { _period: period });
+  if (error || !boom360?.length) return null;
+
+  const bySection: Record<string, { wsum: number; w: number }> = {};
+  for (const row of boom360 as {
+    section: string;
+    avg_score: number;
+    response_count: number;
+  }[]) {
+    const sec = row.section?.trim() || '360 feedback';
+    if (!bySection[sec]) bySection[sec] = { wsum: 0, w: 0 };
+    bySection[sec].wsum += Number(row.avg_score) * row.response_count;
+    bySection[sec].w += row.response_count;
+  }
+  const avgSec = (wsum: number, w: number) => (w ? parseFloat((wsum / w).toFixed(2)) : 0);
+  const scores = Object.entries(bySection).map(([category, v]) => ({
+    category,
+    myScore: avgSec(v.wsum, v.w),
+    orgAvg: 0,
+  }));
+  const maxR = Math.max(...(boom360 as { response_count: number }[]).map((r) => r.response_count), 0);
+  return { scores, maxPeerResponsesHint: maxR };
+}
+
+/**
+ * Org leaderboard: legacy subsidiary survey + submitted BOOM peer_360 Likert scores.
+ */
+export async function fetchOrgPerformanceRankings(): Promise<RankedEmployeeScore[]> {
+  const [empsRes, subsRes, responsesRes] = await Promise.all([
+    supabase.from('employees').select('id, name, subsidiary_id'),
+    supabase.from('subsidiaries').select('id, name'),
+    supabase.from('survey_responses').select('id, employee_id'),
+  ]);
+
+  if (!empsRes.data || !responsesRes.data || !subsRes.data) return [];
+
+  const subMap: Record<string, string> = {};
+  subsRes.data.forEach((s: { id: string; name: string }) => {
+    subMap[s.id] = s.name;
+  });
+
+  const empResponseIds: Record<string, string[]> = {};
+  responsesRes.data.forEach((r: { id: string; employee_id: string }) => {
+    if (!empResponseIds[r.employee_id]) empResponseIds[r.employee_id] = [];
+    empResponseIds[r.employee_id].push(r.id);
+  });
+
+  const allResponseIds = responsesRes.data.map((r: { id: string }) => r.id);
+  const batchSize = 500;
+  let allScores: { response_id: string; score: number }[] = [];
+  for (let i = 0; i < allResponseIds.length; i += batchSize) {
+    const batch = allResponseIds.slice(i, i + batchSize);
+    const { data } = await supabase
+      .from('survey_answers')
+      .select('response_id, score')
+      .in('response_id', batch)
+      .not('score', 'is', null);
+    if (data) allScores = allScores.concat(data as { response_id: string; score: number }[]);
+  }
+
+  const responseScoreMap: Record<string, number[]> = {};
+  allScores.forEach((a) => {
+    if (!responseScoreMap[a.response_id]) responseScoreMap[a.response_id] = [];
+    responseScoreMap[a.response_id].push(a.score);
+  });
+
+  const scoreMap: Record<string, { scores: number[]; count: number }> = {};
+  Object.entries(empResponseIds).forEach(([empId, rIds]) => {
+    scoreMap[empId] = { scores: [], count: rIds.length };
+    rIds.forEach((rId) => {
+      if (responseScoreMap[rId]) scoreMap[empId].scores.push(...responseScoreMap[rId]);
+    });
+  });
+
+  const { data: boomRows, error: boomErr } = await supabase.rpc('list_peer_360_ranking_detail');
+  if (!boomErr && boomRows?.length) {
+    const boomAgg: Record<string, { scores: number[]; responses: Set<string> }> = {};
+    for (const row of boomRows as { reviewee_id: string; response_id: string; score: number }[]) {
+      if (!boomAgg[row.reviewee_id]) {
+        boomAgg[row.reviewee_id] = { scores: [], responses: new Set() };
+      }
+      boomAgg[row.reviewee_id].scores.push(row.score);
+      boomAgg[row.reviewee_id].responses.add(row.response_id);
+    }
+    Object.entries(boomAgg).forEach(([empId, b]) => {
+      if (!scoreMap[empId]) scoreMap[empId] = { scores: [], count: 0 };
+      scoreMap[empId].scores.push(...b.scores);
+      scoreMap[empId].count += b.responses.size;
+    });
+  }
+
+  return empsRes.data
+    .filter((e: { id: string }) => scoreMap[e.id]?.scores.length > 0)
+    .map((e: { id: string; name: string; subsidiary_id: string }) => ({
+      employee_id: e.id,
+      name: e.name,
+      subsidiary: subMap[e.subsidiary_id] || 'Unknown',
+      avgScore: parseFloat(
+        (scoreMap[e.id].scores.reduce((a: number, b: number) => a + b, 0) / scoreMap[e.id].scores.length).toFixed(2),
+      ),
+      totalReviews: scoreMap[e.id].count,
+    }))
+    .sort((a, b) => b.avgScore - a.avgScore);
+}

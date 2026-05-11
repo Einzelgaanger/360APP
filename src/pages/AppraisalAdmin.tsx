@@ -7,16 +7,20 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AIChatPanel from '@/components/dashboard/AIChatPanel';
 import {
   BarChart3, Users, Building2, ClipboardCheck, ArrowLeft, RefreshCw,
   TrendingUp, Clock, ChevronDown, ChevronUp, Zap, Search,
-  Star, Target, Trophy, Activity, Brain
+  Star, Target, Trophy, Activity, Brain, Layers, Download, Lock, Unlock,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { AppraisalAdminSkeleton } from '@/components/shell/LoadingShells';
 import AdminMobileTabBar from '@/components/AdminMobileTabBar';
+import { ENABLE_APP_AI } from '@/lib/featureFlags';
+import { defaultQuarterPeriod, quarterOptions } from '@/lib/boomPeriods';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -25,10 +29,47 @@ import {
 
 interface ResponseRow { id: string; employee_id: string; subsidiary_id: string; created_at: string; }
 interface AnswerRow { id: string; response_id: string; question_id: string; score: number | null; text_answer: string | null; }
-interface EmployeeRow { id: string; name: string; role: string | null; department: string | null; subsidiary_id: string; }
+interface EmployeeRow {
+  id: string;
+  name: string;
+  role: string | null;
+  department: string | null;
+  subsidiary_id: string;
+  hierarchy_level: number | null;
+}
 interface SubsidiaryRow { id: string; name: string; }
 interface CategoryRow { id: string; name: string; sort_order: number; }
 interface QuestionRow { id: string; category_id: string; question_text: string; question_type: string; sort_order: number; }
+
+interface BoomResponseRow {
+  id: string;
+  form_id: string;
+  reviewer_id: string;
+  reviewee_id: string;
+  period: string;
+  status: string;
+  submitted_at: string | null;
+  created_at: string;
+}
+interface BoomAnswerRow {
+  id: string;
+  response_id: string;
+  question_id: string;
+  score: number | null;
+  text_answer: string | null;
+  no_opportunity: boolean;
+}
+interface BoomFormRow { id: string; code: string; title: string }
+interface BoomQuestionRow { id: string; form_id: string; question_text: string }
+interface BoomReleaseRow {
+  id: string;
+  form_id: string;
+  period: string;
+  released_at: string;
+  released_by: string | null;
+  note: string | null;
+  assessment_forms: { code: string; title: string } | null;
+}
 
 const CHART_COLORS = [
   'hsl(145, 63%, 42%)', 'hsl(210, 72%, 45%)', 'hsl(38, 80%, 50%)',
@@ -53,6 +94,143 @@ export default function AppraisalAdmin() {
   const [chatOpen, setChatOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [adminTab, setAdminTab] = useState('overview');
+  const [boomResponses, setBoomResponses] = useState<BoomResponseRow[]>([]);
+  const [boomAnswers, setBoomAnswers] = useState<BoomAnswerRow[]>([]);
+  const [boomForms, setBoomForms] = useState<BoomFormRow[]>([]);
+  const [boomQuestions, setBoomQuestions] = useState<BoomQuestionRow[]>([]);
+  const [boomPeriodFilter, setBoomPeriodFilter] = useState<string>('all');
+  const [boomReleases, setBoomReleases] = useState<BoomReleaseRow[]>([]);
+  const [releasePeriodInput, setReleasePeriodInput] = useState('');
+  const [releaseNoteInput, setReleaseNoteInput] = useState('');
+  const [releaseBusy, setReleaseBusy] = useState(false);
+
+  const [epaOkrEmployeeId, setEpaOkrEmployeeId] = useState<string>('');
+  const [epaOkrPeriod, setEpaOkrPeriod] = useState(defaultQuarterPeriod);
+  const [epaOkrSlots, setEpaOkrSlots] = useState(() =>
+    Array.from({ length: 4 }, () => ({ objective_text: '', key_result_text: '' })),
+  );
+  const [epaOkrBusy, setEpaOkrBusy] = useState(false);
+
+  const [gateEmployeeId, setGateEmployeeId] = useState<string>('');
+  const [gatePeriod, setGatePeriod] = useState(defaultQuarterPeriod);
+  const [gateDecision, setGateDecision] = useState<string>('pass');
+  const [gateRationale, setGateRationale] = useState('');
+  const [gateBusy, setGateBusy] = useState(false);
+
+  const executiveEmployees = useMemo(
+    () => employees.filter((e) => e.hierarchy_level != null && e.hierarchy_level <= 1).sort((a, b) => a.name.localeCompare(b.name)),
+    [employees],
+  );
+
+  useEffect(() => {
+    if (!epaOkrEmployeeId || !epaOkrPeriod) return;
+    void (async () => {
+      const { data, error } = await supabase
+        .from('executive_period_okrs')
+        .select('slot_index, objective_text, key_result_text')
+        .eq('employee_id', epaOkrEmployeeId)
+        .eq('period', epaOkrPeriod);
+      if (error) return;
+      const next = Array.from({ length: 4 }, () => ({ objective_text: '', key_result_text: '' }));
+      (data ?? []).forEach((row) => {
+        const i = row.slot_index - 1;
+        if (i >= 0 && i < 4) {
+          next[i] = {
+            objective_text: row.objective_text ?? '',
+            key_result_text: row.key_result_text ?? '',
+          };
+        }
+      });
+      setEpaOkrSlots(next);
+    })();
+  }, [epaOkrEmployeeId, epaOkrPeriod]);
+
+  useEffect(() => {
+    if (!gateEmployeeId || !gatePeriod) return;
+    void (async () => {
+      const { data, error } = await supabase
+        .from('assessment_gate_decisions')
+        .select('decision, rationale')
+        .eq('employee_id', gateEmployeeId)
+        .eq('period', gatePeriod)
+        .maybeSingle();
+      if (error) return;
+      if (data) {
+        setGateDecision(data.decision);
+        setGateRationale(data.rationale ?? '');
+      } else {
+        setGateDecision('pass');
+        setGateRationale('');
+      }
+    })();
+  }, [gateEmployeeId, gatePeriod]);
+
+  const saveEpaOkrs = async () => {
+    if (!epaOkrEmployeeId) {
+      toast.error('Select an executive');
+      return;
+    }
+    setEpaOkrBusy(true);
+    try {
+      for (let i = 0; i < 4; i++) {
+        const slot = i + 1;
+        const obj = epaOkrSlots[i].objective_text.trim();
+        const kr = epaOkrSlots[i].key_result_text.trim();
+        if (!obj && !kr) {
+          await supabase
+            .from('executive_period_okrs')
+            .delete()
+            .eq('employee_id', epaOkrEmployeeId)
+            .eq('period', epaOkrPeriod)
+            .eq('slot_index', slot);
+          continue;
+        }
+        const { error } = await supabase.from('executive_period_okrs').upsert(
+          {
+            employee_id: epaOkrEmployeeId,
+            period: epaOkrPeriod,
+            slot_index: slot,
+            objective_text: obj || '—',
+            key_result_text: kr || null,
+          },
+          { onConflict: 'employee_id,period,slot_index' },
+        );
+        if (error) throw error;
+      }
+      toast.success('OKR wording saved for this executive and quarter');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not save OKRs');
+    } finally {
+      setEpaOkrBusy(false);
+    }
+  };
+
+  const saveGateDecision = async () => {
+    if (!gateEmployeeId) {
+      toast.error('Select an executive');
+      return;
+    }
+    const rationale = gateRationale.trim();
+    if (rationale.length < 20) {
+      toast.error('Rationale must be at least 20 characters (formal record).');
+      return;
+    }
+    setGateBusy(true);
+    try {
+      const { error } = await supabase.rpc('upsert_assessment_gate_decision', {
+        _employee_id: gateEmployeeId,
+        _period: gatePeriod,
+        _decision: gateDecision,
+        _rationale: rationale,
+      });
+      if (error) throw error;
+      toast.success('Gate decision recorded');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not save gate decision');
+    } finally {
+      setGateBusy(false);
+    }
+  };
 
   useEffect(() => {
     loadAllData();
@@ -71,13 +249,21 @@ export default function AppraisalAdmin() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [resRes, ansRes, empRes, subRes, catRes, qRes] = await Promise.all([
+      const [resRes, ansRes, empRes, subRes, catRes, qRes, brRes, baRes, bfRes, bqRes, brelRes] = await Promise.all([
         supabase.from('survey_responses').select('*').order('created_at', { ascending: false }),
         supabase.from('survey_answers').select('*'),
         supabase.from('employees').select('*').order('name'),
         supabase.from('subsidiaries').select('*').order('name'),
         supabase.from('survey_categories').select('*').order('sort_order'),
         supabase.from('survey_questions').select('*').order('sort_order'),
+        supabase.from('assessment_responses').select('*').order('created_at', { ascending: false }),
+        supabase.from('assessment_answers').select('*'),
+        supabase.from('assessment_forms').select('id, code, title'),
+        supabase.from('assessment_questions').select('id, form_id, question_text'),
+        supabase
+          .from('assessment_period_releases')
+          .select('id, form_id, period, released_at, released_by, note, assessment_forms(code, title)')
+          .order('released_at', { ascending: false }),
       ]);
       if (resRes.data) setResponses(resRes.data);
       if (ansRes.data) setAnswers(ansRes.data);
@@ -85,6 +271,11 @@ export default function AppraisalAdmin() {
       if (subRes.data) setSubsidiaries(subRes.data);
       if (catRes.data) setCategories(catRes.data);
       if (qRes.data) setQuestions(qRes.data);
+      if (brRes.data) setBoomResponses(brRes.data as BoomResponseRow[]);
+      if (baRes.data) setBoomAnswers(baRes.data as BoomAnswerRow[]);
+      if (bfRes.data) setBoomForms(bfRes.data as BoomFormRow[]);
+      if (bqRes.data) setBoomQuestions(bqRes.data as BoomQuestionRow[]);
+      if (brelRes.data) setBoomReleases(brelRes.data as BoomReleaseRow[]);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -92,6 +283,106 @@ export default function AppraisalAdmin() {
   const getEmployeeName = (id: string) => employees.find(e => e.id === id)?.name || 'Unknown';
   const getSubsidiaryName = (id: string) => subsidiaries.find(s => s.id === id)?.name || 'Unknown';
   const getQuestionText = (id: string) => questions.find(q => q.id === id)?.question_text || '';
+  const getBoomFormCode = (formId: string) => boomForms.find(f => f.id === formId)?.code ?? formId;
+  const getBoomQuestionText = (questionId: string) => boomQuestions.find(q => q.id === questionId)?.question_text ?? '';
+
+  const boomPeriods = useMemo(() => {
+    const s = new Set(boomResponses.map(r => r.period));
+    return [...s].sort().reverse();
+  }, [boomResponses]);
+
+  const filteredBoomResponses = useMemo(() => {
+    if (boomPeriodFilter === 'all') return boomResponses;
+    return boomResponses.filter(r => r.period === boomPeriodFilter);
+  }, [boomResponses, boomPeriodFilter]);
+
+  const exportBoomCsv = () => {
+    const escapeCell = (v: string | number | boolean | null | undefined) => {
+      const s = v === null || v === undefined ? '' : String(v);
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const header = ['period', 'form_code', 'status', 'reviewer_name', 'reviewee_name', 'question_text', 'score', 'no_opportunity', 'text_answer'].join(',');
+    const lines = [header];
+    for (const r of filteredBoomResponses) {
+      const formCode = getBoomFormCode(r.form_id);
+      const reviewer = getEmployeeName(r.reviewer_id);
+      const reviewee = getEmployeeName(r.reviewee_id);
+      const ansFor = boomAnswers.filter(a => a.response_id === r.id);
+      if (ansFor.length === 0) {
+        lines.push([r.period, formCode, r.status, reviewer, reviewee, '', '', '', ''].map(escapeCell).join(','));
+      } else {
+        for (const a of ansFor) {
+          lines.push([
+            r.period,
+            formCode,
+            r.status,
+            reviewer,
+            reviewee,
+            getBoomQuestionText(a.question_id),
+            a.score ?? '',
+            a.no_opportunity ? 'yes' : 'no',
+            a.text_answer ?? '',
+          ].map(escapeCell).join(','));
+        }
+      }
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const el = document.createElement('a');
+    el.href = url;
+    el.download = `boom-assessments-${new Date().toISOString().slice(0, 10)}.csv`;
+    el.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const peer360Periods = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of boomResponses) {
+      if (getBoomFormCode(r.form_id) === 'peer_360') s.add(r.period);
+    }
+    return [...s].sort().reverse();
+  }, [boomResponses, boomForms]);
+
+  const releasePeer360Results = async () => {
+    const p = releasePeriodInput.trim();
+    if (!p) {
+      toast.error('Enter a period key (e.g. 2026-Q1) matching responses.');
+      return;
+    }
+    setReleaseBusy(true);
+    try {
+      const { error } = await supabase.rpc('release_assessment_period', {
+        _form_code: 'peer_360',
+        _period: p,
+        _note: releaseNoteInput.trim() || null,
+      });
+      if (error) throw error;
+      toast.success(`Employees can now see aggregated 360 for ${p} (subject to minimum reviews).`);
+      setReleaseNoteInput('');
+      await loadAllData();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Release failed');
+    } finally {
+      setReleaseBusy(false);
+    }
+  };
+
+  const unreleasePeer360 = async (period: string) => {
+    setReleaseBusy(true);
+    try {
+      const { error } = await supabase.rpc('unrelease_assessment_period', {
+        _form_code: 'peer_360',
+        _period: period,
+      });
+      if (error) throw error;
+      toast.success(`Aggregate 360 hidden again for ${period}.`);
+      await loadAllData();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Revoke failed');
+    } finally {
+      setReleaseBusy(false);
+    }
+  };
 
   const filteredResponses = useMemo(() => {
     let filtered = responses;
@@ -291,9 +582,11 @@ ${feedbackSample || '• No text feedback yet'}`;
             <Button variant="ghost" size="sm" onClick={loadAllData} className="gap-1">
               <RefreshCw className="w-3 h-3" /> Refresh
             </Button>
-            <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2 h-8 text-xs">
-              <Brain className="w-3.5 h-3.5" /> AI Copilot
-            </Button>
+            {ENABLE_APP_AI && (
+              <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2 h-8 text-xs">
+                <Brain className="w-3.5 h-3.5" /> AI Copilot
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={() => void handleLogout()}>
               <span className="text-xs">Sign Out</span>
             </Button>
@@ -345,22 +638,25 @@ ${feedbackSample || '• No text feedback yet'}`;
           ))}
         </div>
 
-        {totalResponses === 0 ? (
+        {totalResponses === 0 && boomResponses.length === 0 ? (
           <div className="glass-panel p-12 text-center">
             <ClipboardCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Responses Yet</h3>
-            <p className="text-muted-foreground text-sm mb-4">Share the survey link to start collecting feedback.</p>
+            <p className="text-muted-foreground text-sm mb-4">
+              Share the hub link for legacy subsidiary surveys, or complete BOOM assessments from the employee hub.
+            </p>
             <Button onClick={() => { navigator.clipboard.writeText(window.location.origin + '/hub'); }} className="bg-primary hover:bg-primary/90">
               Copy Survey Link
             </Button>
           </div>
         ) : (
           <Tabs value={adminTab} onValueChange={setAdminTab}>
-            <TabsList className="grid w-full grid-cols-4 h-10">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 min-h-11 h-auto gap-1 py-1">
               <TabsTrigger value="overview" className="text-xs gap-1.5"><BarChart3 className="w-3 h-3" /> Overview</TabsTrigger>
               <TabsTrigger value="people" className="text-xs gap-1.5"><Users className="w-3 h-3" /> People</TabsTrigger>
               <TabsTrigger value="trends" className="text-xs gap-1.5"><TrendingUp className="w-3 h-3" /> Trends</TabsTrigger>
               <TabsTrigger value="feed" className="text-xs gap-1.5"><Clock className="w-3 h-3" /> Live Feed</TabsTrigger>
+              <TabsTrigger value="boom" className="text-xs gap-1.5"><Layers className="w-3 h-3" /> BOOM</TabsTrigger>
             </TabsList>
 
             {/* ===== OVERVIEW TAB ===== */}
@@ -625,14 +921,375 @@ ${feedbackSample || '• No text feedback yet'}`;
                 </div>
               </div>
             </TabsContent>
+
+            {/* ===== BOOM ASSESSMENTS TAB ===== */}
+            <TabsContent value="boom" className="mt-4 space-y-4">
+              <div className="glass-panel p-5 border-amber-500/20 bg-amber-500/[0.03]">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15">
+                    <Lock className="h-5 w-5 text-amber-700 dark:text-amber-400" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <h3 className="text-sm font-semibold">HR release — peer 360 aggregates</h3>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Until you release a quarter, employees do <strong>not</strong> see the &quot;My 360 results&quot; chart
+                      (raw peer rows were already hidden). Use the same period label as in responses (e.g.{' '}
+                      <span className="font-mono">2026-Q1</span>). Revoke removes the release if you need to pull results
+                      back.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col lg:flex-row gap-3 lg:items-end">
+                  <div className="flex-1 space-y-1.5">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Period</span>
+                    <Input
+                      placeholder="e.g. 2026-Q1"
+                      value={releasePeriodInput}
+                      onChange={(e) => setReleasePeriodInput(e.target.value)}
+                      className="h-9 text-sm font-mono"
+                    />
+                    {peer360Periods.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {peer360Periods.slice(0, 8).map((p) => (
+                          <Button
+                            key={p}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-[10px] font-mono px-2"
+                            onClick={() => setReleasePeriodInput(p)}
+                          >
+                            {p}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Note (optional)</span>
+                    <Input
+                      placeholder="e.g. Approved by HR — pilot"
+                      value={releaseNoteInput}
+                      onChange={(e) => setReleaseNoteInput(e.target.value)}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    className="h-9 gap-1.5 shrink-0"
+                    disabled={releaseBusy}
+                    onClick={() => void releasePeer360Results()}
+                  >
+                    <Unlock className="w-3.5 h-3.5" /> Release aggregates
+                  </Button>
+                </div>
+                {boomReleases.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-border/60">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Active releases</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-left text-muted-foreground border-b border-border/50">
+                            <th className="pb-2 pr-3 font-medium">Form</th>
+                            <th className="pb-2 pr-3 font-medium">Period</th>
+                            <th className="pb-2 pr-3 font-medium">Released</th>
+                            <th className="pb-2 pr-3 font-medium hidden sm:table-cell">Note</th>
+                            <th className="pb-2 font-medium text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {boomReleases.map((row) => (
+                            <tr key={row.id} className="border-b border-border/30">
+                              <td className="py-2 pr-3 font-mono">{row.assessment_forms?.code ?? '—'}</td>
+                              <td className="py-2 pr-3 font-mono">{row.period}</td>
+                              <td className="py-2 pr-3 text-muted-foreground">
+                                {new Date(row.released_at).toLocaleString()}
+                              </td>
+                              <td className="py-2 pr-3 hidden sm:table-cell text-muted-foreground max-w-[200px] truncate">
+                                {row.note ?? '—'}
+                              </td>
+                              <td className="py-2 text-right">
+                                {(row.assessment_forms?.code === 'peer_360') && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-[10px] text-destructive"
+                                    disabled={releaseBusy}
+                                    onClick={() => void unreleasePeer360(row.period)}
+                                  >
+                                    Revoke
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="glass-panel p-5 border-primary/15 space-y-6">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                    <Target className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <h3 className="text-sm font-semibold">EPA — OKR wording &amp; formal gate</h3>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      OKR objective / key-result text is injected into each executive&apos;s <strong>self</strong> EPA form
+                      (Role-Specific OKRs section) for the selected quarter. The gate record is the PASS / CONCERN /
+                      IMPROVEMENT REQUIRED decision visible to that executive in-app.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="space-y-3 rounded-xl border border-border/60 bg-muted/10 p-4">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">OKR text (4 slots)</p>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] text-muted-foreground">Executive</span>
+                      <Select value={epaOkrEmployeeId || '__'} onValueChange={(v) => setEpaOkrEmployeeId(v === '__' ? '' : v)}>
+                        <SelectTrigger className="h-9 text-xs bg-background">
+                          <SelectValue placeholder="Select executive" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__" className="text-xs text-muted-foreground">
+                            Select…
+                          </SelectItem>
+                          {executiveEmployees.map((e) => (
+                            <SelectItem key={e.id} value={e.id} className="text-xs">
+                              {e.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] text-muted-foreground">Quarter</span>
+                      <Select value={epaOkrPeriod} onValueChange={setEpaOkrPeriod}>
+                        <SelectTrigger className="h-9 text-xs font-mono bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {quarterOptions().map((q) => (
+                            <SelectItem key={q} value={q} className="text-xs font-mono">
+                              {q}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-4 max-h-[320px] overflow-y-auto pr-1">
+                      {epaOkrSlots.map((slot, idx) => (
+                        <div key={idx} className="space-y-2 border-b border-border/40 pb-3 last:border-0">
+                          <p className="text-[11px] font-medium text-foreground">OKR {idx + 1}</p>
+                          <Textarea
+                            placeholder="Objective"
+                            value={slot.objective_text}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setEpaOkrSlots((prev) => {
+                                const next = [...prev];
+                                next[idx] = { ...next[idx], objective_text: v };
+                                return next;
+                              });
+                            }}
+                            className="min-h-[56px] text-xs"
+                          />
+                          <Textarea
+                            placeholder="Key result (optional)"
+                            value={slot.key_result_text}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setEpaOkrSlots((prev) => {
+                                const next = [...prev];
+                                next[idx] = { ...next[idx], key_result_text: v };
+                                return next;
+                              });
+                            }}
+                            className="min-h-[56px] text-xs"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full h-9"
+                      disabled={epaOkrBusy || !epaOkrEmployeeId}
+                      onClick={() => void saveEpaOkrs()}
+                    >
+                      {epaOkrBusy ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null} Save OKR text
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3 rounded-xl border border-border/60 bg-muted/10 p-4">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Formal gate decision</p>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] text-muted-foreground">Executive</span>
+                      <Select value={gateEmployeeId || '__'} onValueChange={(v) => setGateEmployeeId(v === '__' ? '' : v)}>
+                        <SelectTrigger className="h-9 text-xs bg-background">
+                          <SelectValue placeholder="Select executive" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__" className="text-xs text-muted-foreground">
+                            Select…
+                          </SelectItem>
+                          {executiveEmployees.map((e) => (
+                            <SelectItem key={e.id} value={e.id} className="text-xs">
+                              {e.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] text-muted-foreground">Quarter</span>
+                      <Select value={gatePeriod} onValueChange={setGatePeriod}>
+                        <SelectTrigger className="h-9 text-xs font-mono bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {quarterOptions().map((q) => (
+                            <SelectItem key={q} value={q} className="text-xs font-mono">
+                              {q}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] text-muted-foreground">Decision</span>
+                      <Select value={gateDecision} onValueChange={setGateDecision}>
+                        <SelectTrigger className="h-9 text-xs bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pass" className="text-xs">
+                            Pass
+                          </SelectItem>
+                          <SelectItem value="concern" className="text-xs">
+                            Concern
+                          </SelectItem>
+                          <SelectItem value="improvement_required" className="text-xs">
+                            Improvement required
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] text-muted-foreground">Rationale (min. 20 characters)</span>
+                      <Textarea
+                        value={gateRationale}
+                        onChange={(e) => setGateRationale(e.target.value)}
+                        placeholder="Joint / HR record — concise rationale for the executive file."
+                        className="min-h-[120px] text-xs"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full h-9"
+                      disabled={gateBusy || !gateEmployeeId}
+                      onClick={() => void saveGateDecision()}
+                    >
+                      {gateBusy ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null} Save gate decision
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-primary" /> Executive Office assessments
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Responses from <code className="text-[10px]">assessment_responses</code> /{' '}
+                    <code className="text-[10px]">assessment_answers</code>
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Select value={boomPeriodFilter} onValueChange={setBoomPeriodFilter}>
+                    <SelectTrigger className="w-[160px] h-9 bg-secondary/50 text-xs">
+                      <SelectValue placeholder="Period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All periods</SelectItem>
+                      {boomPeriods.map((p) => (
+                        <SelectItem key={p} value={p} className="text-xs">
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={exportBoomCsv} disabled={filteredBoomResponses.length === 0}>
+                    <Download className="w-3.5 h-3.5" /> Export CSV
+                  </Button>
+                </div>
+              </div>
+
+              {filteredBoomResponses.length === 0 ? (
+                <div className="glass-panel p-8 text-center text-sm text-muted-foreground">
+                  No BOOM assessment responses for this filter.
+                </div>
+              ) : (
+                <div className="glass-panel overflow-hidden">
+                  <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-muted/90 backdrop-blur-sm z-10 border-b border-border">
+                        <tr className="text-left text-[11px] text-muted-foreground">
+                          <th className="py-2.5 px-3 font-medium">Period</th>
+                          <th className="py-2.5 px-3 font-medium">Form</th>
+                          <th className="py-2.5 px-3 font-medium">Reviewer</th>
+                          <th className="py-2.5 px-3 font-medium">Reviewee</th>
+                          <th className="py-2.5 px-3 font-medium">Status</th>
+                          <th className="py-2.5 px-3 font-medium hidden lg:table-cell">Submitted</th>
+                          <th className="py-2.5 px-3 font-medium text-right">Answers</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredBoomResponses.map((r) => {
+                          const n = boomAnswers.filter((a) => a.response_id === r.id).length;
+                          return (
+                            <tr key={r.id} className="border-b border-border/40 hover:bg-secondary/20">
+                              <td className="py-2.5 px-3 font-mono text-xs">{r.period}</td>
+                              <td className="py-2.5 px-3 text-xs">{getBoomFormCode(r.form_id)}</td>
+                              <td className="py-2.5 px-3">{getEmployeeName(r.reviewer_id)}</td>
+                              <td className="py-2.5 px-3">{getEmployeeName(r.reviewee_id)}</td>
+                              <td className="py-2.5 px-3">
+                                <Badge variant={r.status === 'submitted' ? 'default' : 'secondary'} className="text-[10px]">
+                                  {r.status}
+                                </Badge>
+                              </td>
+                              <td className="py-2.5 px-3 text-xs text-muted-foreground hidden lg:table-cell">
+                                {r.submitted_at ? new Date(r.submitted_at).toLocaleString() : '—'}
+                              </td>
+                              <td className="py-2.5 px-3 text-right text-muted-foreground text-xs">{n}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
         )}
       </main>
 
-      <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+      {ENABLE_APP_AI && (
+        <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+      )}
 
       <AdminMobileTabBar
-        onOpenCopilot={() => setChatOpen(true)}
+        onOpenCopilot={() => {
+          if (ENABLE_APP_AI) setChatOpen(true);
+        }}
         onSignOut={handleLogout}
         onRefresh={loadAllData}
       />

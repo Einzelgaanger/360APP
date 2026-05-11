@@ -77,8 +77,10 @@ export default function EmployeeLogin() {
                 <h1 className="mt-2.5 font-serif text-[1.65rem] font-semibold leading-[1.0] tracking-[-0.02em] sm:text-[2.35rem] sm:leading-[0.98]">
                   Welcome back.
                 </h1>
-                <p className="mt-2 text-[13px] text-foreground/60 sm:text-sm">
-                  VGG 360° Appraisal — secure employee access.
+                <p className="mt-2 text-[13px] text-foreground/60 sm:text-sm leading-relaxed">
+                  Executive Office BOOM workspace — after sign-in you&apos;ll open the hub:{' '}
+                  <span className="text-foreground/75">Survey</span> (peer 360, EPA, monthly),{' '}
+                  <span className="text-foreground/75">Dashboard</span>, Growth, and Rankings. Secure employee access only.
                 </p>
               </div>
 

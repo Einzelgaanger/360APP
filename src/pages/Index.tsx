@@ -14,11 +14,11 @@ const Index = () => {
           <img src={vggLogo} alt="VGG" className="h-6 w-auto sm:h-7" />
           <div className="hidden h-5 w-px bg-border sm:block" />
           <span className="font-mono hidden text-[10.5px] uppercase tracking-[0.22em] text-muted-foreground sm:inline">
-            ◉ VGG / 360° / Performance Edition
+            ◉ VGG / BOOM — Executive Office
           </span>
         </div>
         <span className="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground sm:text-[10.5px] sm:tracking-[0.22em]">
-          Vol. 01
+          BOOM v2
         </span>
       </header>
 
@@ -35,25 +35,27 @@ const Index = () => {
         </div>
 
         <section className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-5 py-7 sm:px-12 sm:py-16 lg:px-20">
-          <span className="eyebrow-primary">◉ № 360 — Performance Intelligence</span>
+          <span className="eyebrow-primary">◉ BOOM — Executive Office appraisal</span>
 
           <h1 className="headline-collage display-serif mt-4 text-[clamp(1.85rem,7vw,5.5rem)] font-medium leading-[0.95] tracking-[-0.04em] text-foreground sm:mt-5">
-            A field manual for <em>honest performance.</em>
+            Peer 360, EPA, and <em>growth in one place.</em>
           </h1>
 
           <p className="mt-5 max-w-md text-[15px] leading-relaxed text-muted-foreground sm:mt-6 sm:text-base">
-            Executive‑grade appraisal analytics, anonymous peer review, and AI co‑analysis — built for VGG.
+            The live app opens on the guided intro at <span className="font-mono text-foreground/90">/</span>. Employees use{' '}
+            <strong className="text-foreground/90">Survey</strong> for BOOM assignments, <strong className="text-foreground/90">Dashboard</strong> for scores,
+            and optional AI insights where enabled. Admins use the console for releases, OKR text, and exports.
           </p>
 
           <div className="mt-8 hidden flex-col gap-2.5 sm:flex-row sm:gap-3 lg:flex">
             <Button variant="green" size="lg" asChild>
-              <Link to="/admin">Enter Console →</Link>
+              <Link to="/login">Employee sign in</Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <Link to="/login">Employee Sign In</Link>
+              <Link to="/onboarding">Explore programme</Link>
             </Button>
             <Button variant="ghost" size="lg" asChild>
-              <Link to="/onboarding">Explore Flow</Link>
+              <Link to="/admin">Admin console</Link>
             </Button>
           </div>
         </section>
@@ -72,13 +74,13 @@ const Index = () => {
       {/* Mobile: primary actions docked for thumb reach */}
       <div className="mobile-flow-sticky-cta mt-auto flex flex-col gap-2 lg:hidden">
         <Button variant="green" size="lg" className="h-12 w-full rounded-xl text-base shadow-sm" asChild>
-          <Link to="/admin">Enter Console</Link>
+          <Link to="/login">Employee sign in</Link>
         </Button>
         <Button variant="outline" size="lg" className="h-12 w-full rounded-xl text-base" asChild>
-          <Link to="/login">Employee Sign In</Link>
+          <Link to="/onboarding">Explore programme</Link>
         </Button>
         <Button variant="ghost" size="lg" className="h-11 w-full rounded-xl text-sm" asChild>
-          <Link to="/onboarding">Explore onboarding flow</Link>
+          <Link to="/admin">Admin console</Link>
         </Button>
       </div>
 

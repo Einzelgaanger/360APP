@@ -1,0 +1,2 @@
+DELETE FROM survey_answers WHERE response_id IN (SELECT id FROM survey_responses WHERE employee_id='1e133437-abf5-473e-8844-4c77e89594dc');
+DELETE FROM survey_responses WHERE employee_id='1e133437-abf5-473e-8844-4c77e89594dc';

@@ -17,6 +17,7 @@ import { ManagerSummary } from '@/types/appraisal';
 import { BarChart3, Users, Trophy, Target, Zap } from 'lucide-react';
 import { DemoDashboardSkeleton } from '@/components/shell/LoadingShells';
 import { Link } from 'react-router-dom';
+import { ENABLE_APP_AI } from '@/lib/featureFlags';
 
 export default function DemoDashboard() {
   const {
@@ -112,9 +113,11 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
           <div className="flex flex-wrap items-center gap-2">
             <FilterPanel filters={filters} setFilters={setFilters} uniqueManagers={uniqueManagers} uniqueRelationships={uniqueRelationships} />
             <ExportButton managers={managerSummaries} responses={responses} />
-            <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2">
-              <Zap className="w-4 h-4" /> Analytics Copilot
-            </Button>
+            {ENABLE_APP_AI && (
+              <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2">
+                <Zap className="w-4 h-4" /> Analytics Copilot
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -147,7 +150,9 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
       <AnimatePresence>
         {selectedManager && <ManagerDetailPanel manager={selectedManager} onClose={() => setSelectedManager(null)} />}
       </AnimatePresence>
-      <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+      {ENABLE_APP_AI && (
+        <AIChatPanel isOpen={chatOpen} onClose={() => setChatOpen(false)} dataContext={dataContext} />
+      )}
     </div>
   );
 }

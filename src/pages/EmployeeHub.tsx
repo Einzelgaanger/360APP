@@ -30,34 +30,33 @@ import DevelopmentPlans from '@/components/employee-dashboard/DevelopmentPlans';
 import SelfDebrief from '@/components/employee-dashboard/SelfDebrief';
 import WeeklyReflection from '@/components/employee-dashboard/WeeklyReflection';
 import LearningProfilePanel from '@/components/employee-dashboard/LearningProfilePanel';
+import PerformanceContext, { type CohortScore, type CohortMeta, type RankInfo } from '@/components/employee-dashboard/PerformanceContext';
 import {
   PlatformHubSkeleton,
   EmployeeDashboardTabSkeleton,
   RankingsTabSkeleton,
 } from '@/components/shell/LoadingShells';
+import BoomReviewHub from '@/components/boom/BoomReviewHub';
+import {
+  displayHierarchyLabel,
+  getSurveyFeedbackDirection,
+  assignHierarchyPool,
+} from '@/lib/hierarchyConvention';
+import { defaultQuarterPeriod } from '@/lib/boomPeriods';
+import { fetchMyAggregatedPeer360Scores, fetchOrgPerformanceRankings } from '@/lib/boomDashboard360';
 
 interface FeedbackItem {
   text: string;
   direction: string;
 }
 
-interface Subsidiary { id: string; name: string; }
+interface Subsidiary { id: string; name: string; hierarchy_lower_is_senior?: boolean; }
 interface Employee { id: string; name: string; role: string | null; department: string | null; subsidiary_id: string; email: string | null; hierarchy_level: number | null; }
 interface Category { id: string; name: string; sort_order: number; }
 interface Question { id: string; category_id: string; question_text: string; question_type: string; sort_order: number; }
 interface CategoryScore { category: string; myScore: number; orgAvg: number; }
 interface DirectionScores { above: CategoryScore[]; peer: CategoryScore[]; below: CategoryScore[]; }
 
-const HIERARCHY_LABELS: Record<number, string> = {
-  0: 'Intern', 1: 'Junior', 2: 'Analyst', 3: 'Associate', 4: 'Senior Associate',
-  5: 'Manager', 6: 'Principal/Head', 7: 'C-Suite', 8: 'Partner',
-};
-
-function getFeedbackDirection(reviewerLevel: number, revieweeLevel: number): string {
-  if (reviewerLevel > revieweeLevel) return 'above';
-  if (reviewerLevel < revieweeLevel) return 'below';
-  return 'peer';
-}
 interface RankedEmployee { employee_id: string; name: string; subsidiary: string; avgScore: number; totalReviews: number; }
 
 const SCALE_OPTIONS = [
@@ -101,10 +100,15 @@ export default function EmployeeHub() {
   const [myScores, setMyScores] = useState<CategoryScore[]>([]);
   const [directionScores, setDirectionScores] = useState<DirectionScores>({ above: [], peer: [], below: [] });
   const [directionCounts, setDirectionCounts] = useState<{ above: number; peer: number; below: number }>({ above: 0, peer: 0, below: 0 });
-  const [totalReviews, setTotalReviews] = useState(0);
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [qualitativeFeedback, setQualitativeFeedback] = useState<{ startDoing: FeedbackItem[]; stopDoing: FeedbackItem[]; continueDoing: FeedbackItem[] }>({ startDoing: [], stopDoing: [], continueDoing: [] });
   const [aiDataContext, setAiDataContext] = useState('');
+  const [cohortScores, setCohortScores] = useState<CohortScore[]>([]);
+  const [cohortMeta, setCohortMeta] = useState<CohortMeta | null>(null);
+  const [cohortRanks, setCohortRanks] = useState<RankInfo[]>([]);
+  /** legacy multi-subsidiary survey vs aggregated BOOM peer 360 */
+  const [dashboardScoreSource, setDashboardScoreSource] = useState<'legacy_survey' | 'boom_peer_360' | 'none'>('none');
+  const [boom360DashMeta, setBoom360DashMeta] = useState<{ period: string; maxPeerResponses: number } | null>(null);
 
   // Growth Hub state
   const [selectedFocusArea, setSelectedFocusArea] = useState<string | null>(null);
@@ -118,6 +122,7 @@ export default function EmployeeHub() {
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
 
   const normalizedProfileEmail = profile?.email?.trim().toLowerCase() ?? '';
+  const normalizedAuthEmail = user?.email?.trim().toLowerCase() ?? '';
 
   const currentEmployee = useMemo(() => {
     if (profile?.employee_id) {
@@ -125,10 +130,16 @@ export default function EmployeeHub() {
       if (matchedById) return matchedById;
     }
 
-    if (!normalizedProfileEmail) return null;
+    const emailCandidates = [normalizedProfileEmail, normalizedAuthEmail].filter(Boolean);
+    if (!emailCandidates.length) return null;
 
-    return allEmployees.find(employee => (employee.email ?? '').trim().toLowerCase() === normalizedProfileEmail) ?? null;
-  }, [allEmployees, normalizedProfileEmail, profile?.employee_id]);
+    return (
+      allEmployees.find((employee) => {
+        const employeeEmail = (employee.email ?? '').trim().toLowerCase();
+        return emailCandidates.includes(employeeEmail);
+      }) ?? null
+    );
+  }, [allEmployees, normalizedProfileEmail, normalizedAuthEmail, profile?.employee_id]);
 
   // Load completions from database
   useEffect(() => {
@@ -176,7 +187,6 @@ export default function EmployeeHub() {
       setDirectionCounts({ above: 0, peer: 0, below: 0 });
       setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
       setAiDataContext('');
-      setTotalReviews(0);
       setDashboardLoading(false);
       return;
     }
@@ -187,6 +197,8 @@ export default function EmployeeHub() {
   const loadDashboardData = async (employeeId: string) => {
     if (!user) return;
     setDashboardLoading(true);
+    setBoom360DashMeta(null);
+    setDashboardScoreSource('none');
     try {
       const { data: myResponses } = await supabase
         .from('survey_responses')
@@ -277,7 +289,35 @@ export default function EmployeeHub() {
           peer: buildDirScores('peer'),
           below: buildDirScores('below'),
         });
-        setTotalReviews(myResponses.length);
+
+        if (cats.length === 0) {
+          const q = defaultQuarterPeriod();
+          const boom = await fetchMyAggregatedPeer360Scores(q);
+          if (boom?.scores.length) {
+            setMyScores(boom.scores);
+            setDashboardScoreSource('boom_peer_360');
+            setBoom360DashMeta({ period: q, maxPeerResponses: boom.maxPeerResponsesHint });
+            setDirectionScores({ above: [], peer: [], below: [] });
+            setDirectionCounts({ above: 0, peer: 0, below: 0 });
+            setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+            setAiDataContext(
+              `BOOM Executive Office peer 360 (${q}): anonymous aggregated averages by behaviour section. Peer depth (max across sections): ${boom.maxPeerResponsesHint}.`,
+            );
+            setCohortScores([]);
+            setCohortMeta(null);
+            setCohortRanks([]);
+          } else {
+            setDashboardScoreSource('none');
+            setBoom360DashMeta(null);
+            setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+            setAiDataContext('');
+            setCohortScores([]);
+            setCohortMeta(null);
+            setCohortRanks([]);
+          }
+        } else {
+          setDashboardScoreSource('legacy_survey');
+          setBoom360DashMeta(null);
 
         // Fetch qualitative (text) answers
         let allTextAnswers: any[] = [];
@@ -308,7 +348,7 @@ export default function EmployeeHub() {
           if (qText.includes('stop')) fb.stopDoing.push(item);
           else if (qText.includes('start')) fb.startDoing.push(item);
           else if (qText.includes('continue')) fb.continueDoing.push(item);
-          else fb.continueDoing.push(item); // default bucket
+          // else: skip — don't bucket unrelated open-ended into Continue
         });
         setQualitativeFeedback(fb);
 
@@ -332,34 +372,181 @@ export default function EmployeeHub() {
         ];
         setAiDataContext(contextParts.join('\n'));
 
-        // Load org averages in background (sample-based for speed)
-        supabase
-          .from('survey_answers')
-          .select('score, question_id')
-          .not('score', 'is', null)
-          .limit(5000)
-          .then(({ data: sampleAnswers }) => {
-            if (!sampleAnswers) return;
-            const orgCatScores: Record<string, number[]> = {};
-            (sampleAnswers as any[]).forEach(a => {
-              const cat = questionCatMap[a.question_id];
-              if (cat && a.score) {
-                if (!orgCatScores[cat]) orgCatScores[cat] = [];
-                orgCatScores[cat].push(a.score);
-              }
+        // === COHORT ANALYSIS: compute proper Department / Level / Subsidiary / Org averages ===
+        // (replaces the previous random 5,000-row sample which was statistically unsound)
+        void (async () => {
+          try {
+            const me = currentEmployee;
+            if (!me) return;
+
+            // 1) All responses with cohort metadata, excluding self
+            const { data: allResponses } = await supabase
+              .from('survey_responses')
+              .select('id, employee_id, subsidiary_id, reviewee_hierarchy_level')
+              .neq('employee_id', me.id);
+            if (!allResponses?.length) return;
+
+            // 2) Build employee lookup (department + subsidiary + level), excluding self
+            const empById: Record<string, Employee> = {};
+            allEmployees.forEach(e => { if (e.id !== me.id) empById[e.id] = e; });
+
+            // 3) Batch-fetch all answer scores for those responses
+            const respIds = allResponses.map(r => r.id);
+            const batch = 500;
+            let allAns: Array<{ response_id: string; question_id: string; score: number }> = [];
+            for (let i = 0; i < respIds.length; i += batch) {
+              const slice = respIds.slice(i, i + batch);
+              const { data } = await supabase
+                .from('survey_answers')
+                .select('response_id, question_id, score')
+                .in('response_id', slice)
+                .not('score', 'is', null);
+              if (data) allAns = allAns.concat(data as any);
+            }
+
+            // 4) Aggregate score arrays per category, per cohort
+            const catList = cats; // categories the user has data in
+            const blank = () => Object.fromEntries(catList.map(c => [c, [] as number[]])) as Record<string, number[]>;
+            const orgScores = blank();
+            const subsidiaryScores = blank();
+            const departmentScores = blank();
+            const levelScores = blank();
+
+            // Per-employee accumulator for ranking (avg of all category-means)
+            const empAns: Record<string, number[]> = {};
+
+            const respMap: Record<string, { employee_id: string; subsidiary_id: string; level: number | null }> = {};
+            allResponses.forEach(r => {
+              respMap[r.id] = {
+                employee_id: r.employee_id,
+                subsidiary_id: r.subsidiary_id,
+                level: r.reviewee_hierarchy_level,
+              };
             });
-            setMyScores(prev => prev.map(s => ({
-              ...s,
-              orgAvg: orgCatScores[s.category] ? avgArr(orgCatScores[s.category]) : 0,
-            })));
-          });
+
+            allAns.forEach(a => {
+              const r = respMap[a.response_id];
+              if (!r) return;
+              const cat = questionCatMap[a.question_id];
+              if (!cat || !catList.includes(cat)) return;
+
+              orgScores[cat].push(a.score);
+              if (r.subsidiary_id === me.subsidiary_id) subsidiaryScores[cat].push(a.score);
+
+              const emp = empById[r.employee_id];
+              if (emp) {
+                if (me.department && emp.department && emp.department.toLowerCase() === me.department.toLowerCase()) {
+                  departmentScores[cat].push(a.score);
+                }
+                if ((emp.hierarchy_level ?? 3) === (me.hierarchy_level ?? 3)) {
+                  levelScores[cat].push(a.score);
+                }
+              }
+
+              if (!empAns[r.employee_id]) empAns[r.employee_id] = [];
+              empAns[r.employee_id].push(a.score);
+            });
+
+            // 5) Build CohortScore rows (need at least 3 scores in a cohort to show, else 0 → '—')
+            const MIN_COHORT_N = 3;
+            const safeAvg = (arr: number[]) => arr.length >= MIN_COHORT_N ? parseFloat((arr.reduce((s, n) => s + n, 0) / arr.length).toFixed(2)) : 0;
+            const cohortRows: CohortScore[] = catList.map(c => ({
+              category: c,
+              you: avgArr(myCatScores[c] || []),
+              department: safeAvg(departmentScores[c] || []),
+              level: safeAvg(levelScores[c] || []),
+              subsidiary: safeAvg(subsidiaryScores[c] || []),
+              organisation: safeAvg(orgScores[c] || []),
+            }));
+            setCohortScores(cohortRows);
+
+            // 6) Cohort sizes (people with ≥1 review)
+            const peopleInCohort = (filter: (e: Employee) => boolean) => {
+              const ids = new Set<string>();
+              Object.keys(empAns).forEach(eid => {
+                const emp = empById[eid];
+                if (emp && filter(emp)) ids.add(eid);
+              });
+              return ids.size;
+            };
+            const meDept = me.department?.toLowerCase() || null;
+            const meLvl = me.hierarchy_level ?? 3;
+
+            const dashLowerSenior =
+              subsidiaries.find(s => s.id === me.subsidiary_id)?.hierarchy_lower_is_senior ?? false;
+            const meta: CohortMeta = {
+              departmentName: me.department,
+              subsidiaryName: subsidiaries.find(s => s.id === me.subsidiary_id)?.name ?? null,
+              levelLabel: displayHierarchyLabel(meLvl, dashLowerSenior),
+              departmentSize: peopleInCohort(e => !!meDept && (e.department?.toLowerCase() === meDept) && e.subsidiary_id === me.subsidiary_id),
+              levelSize: peopleInCohort(e => (e.hierarchy_level ?? 3) === meLvl),
+              subsidiarySize: peopleInCohort(e => e.subsidiary_id === me.subsidiary_id),
+              organisationSize: Object.keys(empAns).length,
+            };
+            setCohortMeta(meta);
+
+            // 7) Rankings — overall average per employee, plus self
+            const myOverallScore = avgArr(Object.values(myCatScores).flat());
+            const empAvg: Array<{ id: string; avg: number }> = Object.entries(empAns)
+              .filter(([, arr]) => arr.length >= MIN_COHORT_N)
+              .map(([id, arr]) => ({ id, avg: arr.reduce((s, n) => s + n, 0) / arr.length }));
+            empAvg.push({ id: me.id, avg: myOverallScore });
+
+            const rankIn = (filter: (e: Employee) => boolean, scope: RankInfo['scope']): RankInfo => {
+              const pool = empAvg.filter(({ id }) => id === me.id || (empById[id] && filter(empById[id])));
+              if (pool.length < 2) return { rank: 0, total: 0, percentile: 0, scope };
+              pool.sort((a, b) => b.avg - a.avg);
+              const idx = pool.findIndex(p => p.id === me.id);
+              const rank = idx + 1;
+              const percentile = Math.round(((pool.length - rank) / (pool.length - 1)) * 100);
+              return { rank, total: pool.length, percentile, scope };
+            };
+
+            setCohortRanks([
+              rankIn(e => !!meDept && (e.department?.toLowerCase() === meDept) && e.subsidiary_id === me.subsidiary_id, 'department'),
+              rankIn(e => (e.hierarchy_level ?? 3) === meLvl, 'level'),
+              rankIn(e => e.subsidiary_id === me.subsidiary_id, 'subsidiary'),
+              rankIn(() => true, 'organisation'),
+            ]);
+
+            // Also update legacy myScores.orgAvg so existing radar/bar charts use a real average
+            setMyScores(prev => prev.map(s => {
+              const row = cohortRows.find(c => c.category === s.category);
+              return row ? { ...s, orgAvg: row.organisation } : s;
+            }));
+          } catch (e) {
+            console.error('Cohort analysis error:', e);
+          }
+        })();
+        }
       } else {
-        setMyScores([]);
-        setDirectionScores({ above: [], peer: [], below: [] });
-        setDirectionCounts({ above: 0, peer: 0, below: 0 });
-        setTotalReviews(0);
-        setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
-        setAiDataContext('');
+        const q = defaultQuarterPeriod();
+        const boom = await fetchMyAggregatedPeer360Scores(q);
+        if (boom?.scores.length) {
+          setMyScores(boom.scores);
+          setDashboardScoreSource('boom_peer_360');
+          setBoom360DashMeta({ period: q, maxPeerResponses: boom.maxPeerResponsesHint });
+          setDirectionScores({ above: [], peer: [], below: [] });
+          setDirectionCounts({ above: 0, peer: 0, below: 0 });
+          setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+          setAiDataContext(
+            `BOOM Executive Office peer 360 (${q}): anonymous aggregated averages by behaviour section. Peer depth (max across sections): ${boom.maxPeerResponsesHint}.`,
+          );
+          setCohortScores([]);
+          setCohortMeta(null);
+          setCohortRanks([]);
+        } else {
+          setMyScores([]);
+          setDashboardScoreSource('none');
+          setBoom360DashMeta(null);
+          setDirectionScores({ above: [], peer: [], below: [] });
+          setDirectionCounts({ above: 0, peer: 0, below: 0 });
+          setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+          setAiDataContext('');
+          setCohortScores([]);
+          setCohortMeta(null);
+          setCohortRanks([]);
+        }
       }
     } catch (err) {
       console.error('Dashboard load error:', err);
@@ -378,70 +565,13 @@ export default function EmployeeHub() {
   const loadRankings = async () => {
     setRankingsLoading(true);
     try {
-      // Fetch employees and responses separately to avoid massive nested joins
-      const [empsRes, responsesRes] = await Promise.all([
-        supabase.from('employees').select('id, name, subsidiary_id'),
-        supabase.from('survey_responses').select('id, employee_id'),
-      ]);
-
-      if (!empsRes.data || !responsesRes.data) return;
-
-      // Get subsidiary names
-      const subMap: Record<string, string> = {};
-      subsidiaries.forEach(s => { subMap[s.id] = s.name; });
-
-      // Build a map of employee_id -> response_ids
-      const empResponseIds: Record<string, string[]> = {};
-      responsesRes.data.forEach((r: any) => {
-        if (!empResponseIds[r.employee_id]) empResponseIds[r.employee_id] = [];
-        empResponseIds[r.employee_id].push(r.id);
-      });
-
-      // Only fetch scores for employees that have responses
-      const allResponseIds = responsesRes.data.map((r: any) => r.id);
-      
-      // Batch fetch scores
-      const batchSize = 500;
-      let allScores: any[] = [];
-      for (let i = 0; i < allResponseIds.length; i += batchSize) {
-        const batch = allResponseIds.slice(i, i + batchSize);
-        const { data } = await supabase
-          .from('survey_answers')
-          .select('response_id, score')
-          .in('response_id', batch)
-          .not('score', 'is', null);
-        if (data) allScores = allScores.concat(data);
-      }
-
-      // Map response scores back to employees
-      const responseScoreMap: Record<string, number[]> = {};
-      allScores.forEach((a: any) => {
-        if (!responseScoreMap[a.response_id]) responseScoreMap[a.response_id] = [];
-        responseScoreMap[a.response_id].push(a.score);
-      });
-
-      const scoreMap: Record<string, { scores: number[]; count: number }> = {};
-      Object.entries(empResponseIds).forEach(([empId, rIds]) => {
-        scoreMap[empId] = { scores: [], count: rIds.length };
-        rIds.forEach(rId => {
-          if (responseScoreMap[rId]) scoreMap[empId].scores.push(...responseScoreMap[rId]);
-        });
-      });
-
-      const ranked: RankedEmployee[] = empsRes.data
-        .filter((e: any) => scoreMap[e.id]?.scores.length > 0)
-        .map((e: any) => ({
-          employee_id: e.id,
-          name: e.name,
-          subsidiary: subMap[e.subsidiary_id] || 'Unknown',
-          avgScore: parseFloat((scoreMap[e.id].scores.reduce((a: number, b: number) => a + b, 0) / scoreMap[e.id].scores.length).toFixed(2)),
-          totalReviews: scoreMap[e.id].count,
-        }))
-        .sort((a: RankedEmployee, b: RankedEmployee) => b.avgScore - a.avgScore);
-
+      const ranked = await fetchOrgPerformanceRankings();
       setRankings(ranked);
-    } catch (err) { console.error(err); }
-    finally { setRankingsLoading(false); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRankingsLoading(false);
+    }
   };
 
   // Realtime subscriptions for live data
@@ -453,6 +583,14 @@ export default function EmployeeHub() {
         if (activeTab === 'rankings') void loadRankings();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'survey_answers' }, () => {
+        if (activeTab === 'dashboard' && currentEmployee?.id) void loadDashboardData(currentEmployee.id);
+        if (activeTab === 'rankings') void loadRankings();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'assessment_responses' }, () => {
+        if (activeTab === 'dashboard' && currentEmployee?.id) void loadDashboardData(currentEmployee.id);
+        if (activeTab === 'rankings') void loadRankings();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assessment_answers' }, () => {
         if (activeTab === 'dashboard' && currentEmployee?.id) void loadDashboardData(currentEmployee.id);
         if (activeTab === 'rankings') void loadRankings();
       })
@@ -506,7 +644,11 @@ export default function EmployeeHub() {
     const reviewerEmp = currentEmployee;
     const reviewerLevel = reviewerEmp?.hierarchy_level ?? 3;
     const revieweeLevel = emp.hierarchy_level ?? 3;
-    const direction = getFeedbackDirection(reviewerLevel, revieweeLevel);
+    const direction = getSurveyFeedbackDirection(
+      reviewerLevel,
+      revieweeLevel,
+      mySubsidiaryLowerSenior,
+    );
 
     setCompletedEmployees(prev => {
       const next = new Set(prev);
@@ -579,6 +721,19 @@ export default function EmployeeHub() {
     return currentEmployee?.hierarchy_level ?? 3;
   }, [currentEmployee]);
 
+  /** EO pilot: lower hierarchy_level = more senior. Legacy survey: higher = more senior. */
+  const mySubsidiaryLowerSenior = useMemo(
+    () => subsidiaries.find(s => s.id === currentEmployee?.subsidiary_id)?.hierarchy_lower_is_senior ?? false,
+    [subsidiaries, currentEmployee?.subsidiary_id],
+  );
+
+  const surveyHierarchyLowerSenior = useMemo(() => {
+    if (selectedSubsidiary) {
+      return subsidiaries.find(s => s.id === selectedSubsidiary.id)?.hierarchy_lower_is_senior ?? false;
+    }
+    return mySubsidiaryLowerSenior;
+  }, [subsidiaries, selectedSubsidiary, mySubsidiaryLowerSenior]);
+
   // Subsidiary employee counts
   const subsidiaryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -606,13 +761,14 @@ export default function EmployeeHub() {
     filteredEmployees.forEach(emp => {
       if (emp.id === currentEmployee?.id) return;
       const level = emp.hierarchy_level ?? 3;
-      if (level > myHierarchyLevel) above.push(emp);
-      else if (level < myHierarchyLevel) below.push(emp);
+      const pool = assignHierarchyPool(level, myHierarchyLevel, surveyHierarchyLowerSenior);
+      if (pool === 'above') above.push(emp);
+      else if (pool === 'below') below.push(emp);
       else peers.push(emp);
     });
 
     return { above, peers, below };
-  }, [currentEmployee?.id, filteredEmployees, myHierarchyLevel]);
+  }, [currentEmployee?.id, filteredEmployees, myHierarchyLevel, surveyHierarchyLowerSenior]);
 
   // Pool counts across ALL employees (not just selected subsidiary)
   const globalPoolCounts = useMemo(() => {
@@ -620,12 +776,13 @@ export default function EmployeeHub() {
     allEmployees.forEach(emp => {
       if (emp.id === currentEmployee?.id) return;
       const level = emp.hierarchy_level ?? 3;
-      if (level > myHierarchyLevel) above++;
-      else if (level < myHierarchyLevel) below++;
+      const pool = assignHierarchyPool(level, myHierarchyLevel, mySubsidiaryLowerSenior);
+      if (pool === 'above') above++;
+      else if (pool === 'below') below++;
       else peers++;
     });
     return { above, peers, below, total: above + peers + below };
-  }, [allEmployees, currentEmployee?.id, myHierarchyLevel]);
+  }, [allEmployees, currentEmployee?.id, myHierarchyLevel, mySubsidiaryLowerSenior]);
 
   const overallScore = useMemo(() => {
     if (!myScores.length) return 0;
@@ -676,7 +833,13 @@ export default function EmployeeHub() {
         onLogout={handleLogout}
         items={[
           { key: 'dashboard', label: 'My Dashboard', icon: <BarChart3 className="w-4 h-4" />, active: activeTab === 'dashboard', onClick: () => setTab('dashboard') },
-          { key: 'growth', label: 'Growth Hub', icon: <Sparkles className="w-4 h-4" />, active: activeTab === 'growth', onClick: () => setTab('growth') },
+          {
+            key: 'growth',
+            label: 'Growth Hub',
+            icon: <img src="/favicon.png" alt="Growth Hub" className="w-4 h-4 rounded-sm object-contain" />,
+            active: activeTab === 'growth',
+            onClick: () => setTab('growth')
+          },
           { key: 'rankings', label: 'Rankings', icon: <Trophy className="w-4 h-4" />, active: activeTab === 'rankings', onClick: () => setTab('rankings') },
           { key: 'survey', label: 'Survey', icon: <ClipboardList className="w-4 h-4" />, active: activeTab === 'survey', onClick: () => setTab('survey') },
         ]}
@@ -725,6 +888,27 @@ export default function EmployeeHub() {
         <Tabs value={activeTab} onValueChange={setTab}>
           {/* ============ SURVEY TAB ============ */}
           <TabsContent value="survey" className="mt-4">
+            <BoomReviewHub
+              reviewerEmployeeId={currentEmployee?.id ?? null}
+              reviewerHierarchyLevel={currentEmployee?.hierarchy_level ?? profile?.hierarchy_level ?? null}
+              reviewerName={currentEmployee?.name ?? profile?.name ?? null}
+              reviewerRole={currentEmployee?.role ?? profile?.role ?? null}
+              reviewerDepartment={currentEmployee?.department ?? profile?.department ?? null}
+              reviewerEmail={profile?.email ?? user?.email ?? null}
+            />
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center" aria-hidden>
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex flex-col items-center gap-1 text-center">
+                <span className="bg-background px-3 text-xs uppercase tracking-widest text-muted-foreground">
+                  Organisation-wide survey
+                </span>
+                <span className="bg-background px-3 text-[10px] text-muted-foreground/90 max-w-md">
+                  Multi-subsidiary legacy flow — separate from your EO BOOM assignments above (different pools and questions).
+                </span>
+              </div>
+            </div>
             {/* Step Indicator */}
             {step !== 'submitted' && (
               <div className="mb-4">
@@ -749,7 +933,7 @@ export default function EmployeeHub() {
             )}
 
             {/* Progress Bar */}
-            {step === 'questions' && (
+            {step === 'questions' && categories.length > 0 && (
               <div className="mb-4">
                 <div className="flex justify-between text-[11px] text-muted-foreground mb-2 font-medium">
                   <span>Section {currentCategoryIndex + 1} of {categories.length} — {currentCategory?.name}</span>
@@ -810,7 +994,7 @@ export default function EmployeeHub() {
                       <h2 className="text-xl font-bold mb-1">Select Person to Review</h2>
                       <p className="text-muted-foreground text-sm">{selectedSubsidiary?.name}</p>
                       <p className="text-[11px] text-muted-foreground mt-1">
-                        Your level: <span className="font-semibold text-foreground">{HIERARCHY_LABELS[myHierarchyLevel] || `L${myHierarchyLevel}`}</span>
+                        Your level: <span className="font-semibold text-foreground">{displayHierarchyLabel(myHierarchyLevel, surveyHierarchyLowerSenior)}</span>
                       </p>
                     </div>
 
@@ -910,7 +1094,7 @@ export default function EmployeeHub() {
                                     ) : (
                                       <div className="flex items-center gap-1.5">
                                         <Badge variant="outline" className="text-[9px] px-1.5 py-0 hidden sm:inline-flex">
-                                          {HIERARCHY_LABELS[emp.hierarchy_level ?? 3] || `L${emp.hierarchy_level}`}
+                                          {displayHierarchyLabel(emp.hierarchy_level, surveyHierarchyLowerSenior)}
                                         </Badge>
                                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                       </div>
@@ -930,6 +1114,20 @@ export default function EmployeeHub() {
                         </>
                       )}
                     </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 3: Questions — empty catalog (run DB migration to seed survey_categories / survey_questions) */}
+              {step === 'questions' && categories.length === 0 && (
+                <motion.div key="questions-empty" {...pageTransition}>
+                  <div className="glass-panel p-6 sm:p-8 max-w-lg mx-auto text-center space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      The organisation-wide survey has no question bank loaded yet. Apply the latest database migrations (or ask an admin to seed legacy survey tables), then refresh.
+                    </p>
+                    <Button variant="outline" onClick={() => setStep('employee')} className="gap-1.5">
+                      <ChevronLeft className="w-4 h-4" /> Back to person
+                    </Button>
                   </div>
                 </motion.div>
               )}
@@ -1090,6 +1288,21 @@ export default function EmployeeHub() {
                   transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <AnonymityBanner />
+                  {boom360DashMeta && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="glass-panel p-4 border border-primary/20 bg-primary/5"
+                    >
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        <span className="font-semibold text-foreground">BOOM peer 360</span> (quarter{' '}
+                        <span className="font-mono">{boom360DashMeta.period}</span>): these scores are{' '}
+                        <strong>aggregated anonymous peer averages</strong> by behaviour section. The legacy multi-subsidiary
+                        survey &quot;feedback by source&quot; breakdown does not apply. Complete open 360 tasks under{' '}
+                        <strong>Survey</strong>; HR must release the quarter before averages appear here.
+                      </p>
+                    </motion.div>
+                  )}
                   {/* Your Level & Pool Summary */}
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5">
                     <div className="flex items-center justify-between mb-3">
@@ -1099,7 +1312,11 @@ export default function EmployeeHub() {
                         </div>
                         <div>
                           <h3 className="text-sm font-bold">Your Appraisal Pool</h3>
-                          <p className="text-[10px] text-muted-foreground">Level: {HIERARCHY_LABELS[myHierarchyLevel] || `L${myHierarchyLevel}`} — {globalPoolCounts.total} people can review you</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Level: {displayHierarchyLabel(myHierarchyLevel, mySubsidiaryLowerSenior)} — {globalPoolCounts.total}{' '}
+                            people may be in your 360 network. BOOM quarterly forms (executive, peer 360, monthly self) are
+                            assigned separately on the Survey tab.
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1121,46 +1338,83 @@ export default function EmployeeHub() {
                   </motion.div>
 
                   {/* Stats row */}
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Star className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground">Overall</p>
-                          <p className="text-xl font-bold">{overallScore}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
-                        </div>
-                      </div>
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                          <BarChart3 className="w-3.5 h-3.5 text-accent" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground">Org Avg</p>
-                          <p className="text-xl font-bold">{orgOverall}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
-                        </div>
-                      </div>
-                    </motion.div>
-                    {/* Direction counts */}
-                    {[
-                      { label: 'From Above', count: directionCounts.above, icon: '↓', color: 'text-blue-500 bg-blue-500/10' },
-                      { label: 'From Peers', count: directionCounts.peer, icon: '↔', color: 'text-emerald-500 bg-emerald-500/10' },
-                      { label: 'From Below', count: directionCounts.below, icon: '↑', color: 'text-amber-500 bg-amber-500/10' },
-                    ].map((d, i) => (
-                      <motion.div key={d.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="glass-panel p-4">
+                  {boom360DashMeta ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${d.color}`}>{d.icon}</div>
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Star className="w-3.5 h-3.5 text-primary" />
+                          </div>
                           <div>
-                            <p className="text-[10px] text-muted-foreground">{d.label}</p>
-                            <p className="text-xl font-bold">{d.count}</p>
+                            <p className="text-[10px] text-muted-foreground">Overall (360 avg.)</p>
+                            <p className="text-xl font-bold">{overallScore}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
                           </div>
                         </div>
                       </motion.div>
-                    ))}
-                  </div>
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                            <BarChart3 className="w-3.5 h-3.5 text-accent" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">BOOM quarter</p>
+                            <p className="text-lg font-bold font-mono">{boom360DashMeta.period}</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                            <Users className="w-3.5 h-3.5 text-emerald-600" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">Peer depth (max section)</p>
+                            <p className="text-xl font-bold">{boom360DashMeta.maxPeerResponses}</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Star className="w-3.5 h-3.5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">Overall</p>
+                            <p className="text-xl font-bold">{overallScore}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
+                          </div>
+                        </div>
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                            <BarChart3 className="w-3.5 h-3.5 text-accent" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">Org Avg</p>
+                            <p className="text-xl font-bold">{orgOverall}<span className="text-xs font-normal text-muted-foreground">/5</span></p>
+                          </div>
+                        </div>
+                      </motion.div>
+                      {[
+                        { label: 'From Above', count: directionCounts.above, icon: '↓', color: 'text-blue-500 bg-blue-500/10' },
+                        { label: 'From Peers', count: directionCounts.peer, icon: '↔', color: 'text-emerald-500 bg-emerald-500/10' },
+                        { label: 'From Below', count: directionCounts.below, icon: '↑', color: 'text-amber-500 bg-amber-500/10' },
+                      ].map((d, i) => (
+                        <motion.div key={d.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="glass-panel p-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${d.color}`}>{d.icon}</div>
+                            <div>
+                              <p className="text-[10px] text-muted-foreground">{d.label}</p>
+                              <p className="text-xl font-bold">{d.count}</p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
 
                   {myScores.length > 0 ? (
                     <>
@@ -1170,96 +1424,119 @@ export default function EmployeeHub() {
                       {/* Overall charts */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-6">
-                          <h2 className="text-sm font-semibold mb-4">Overall Competency Overview</h2>
+                          <h2 className="text-sm font-semibold mb-4">
+                            {dashboardScoreSource === 'boom_peer_360' ? 'BOOM peer 360 — behaviour sections' : 'Overall Competency Overview'}
+                          </h2>
                           <ResponsiveContainer width="100%" height={280}>
                             <RadarChart data={myScores}>
                               <PolarGrid stroke="hsl(var(--border))" />
                               <PolarAngleAxis dataKey="category" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                               <Radar name="You" dataKey="myScore" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
-                              <Radar name="Org Avg" dataKey="orgAvg" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.05} strokeWidth={1} strokeDasharray="4 4" />
+                              {dashboardScoreSource !== 'boom_peer_360' && (
+                                <Radar name="Org Avg" dataKey="orgAvg" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground))" fillOpacity={0.05} strokeWidth={1} strokeDasharray="4 4" />
+                              )}
                             </RadarChart>
                           </ResponsiveContainer>
                           <div className="flex gap-4 justify-center mt-2 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-primary rounded" /> You</span>
-                            <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-muted-foreground rounded" /> Org Average</span>
+                            {dashboardScoreSource !== 'boom_peer_360' && (
+                              <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-muted-foreground rounded" /> Org Average</span>
+                            )}
                           </div>
                         </motion.div>
 
                         <DetailedCategoryBreakdown scores={myScores} />
                       </div>
 
-                      {/* Segmented Feedback by Direction */}
-                      <div>
-                        <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                          <Users className="w-4 h-4 text-primary" />
-                          Feedback by Source
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {[
-                            { key: 'above' as const, label: 'From Leadership Above', icon: '↓', color: 'border-blue-500/30', accent: 'hsl(210, 80%, 55%)', desc: 'Scores from people above your level' },
-                            { key: 'peer' as const, label: 'From Peers', icon: '↔', color: 'border-emerald-500/30', accent: 'hsl(160, 60%, 45%)', desc: 'Scores from people at your level' },
-                            { key: 'below' as const, label: 'From Reports Below', icon: '↑', color: 'border-amber-500/30', accent: 'hsl(40, 80%, 50%)', desc: 'Scores from people below your level' },
-                          ].map(({ key, label, icon, color, accent, desc }) => {
-                            const scores = directionScores[key];
-                            const avg = scores.length
-                              ? parseFloat((scores.reduce((s, c) => s + c.myScore, 0) / scores.length).toFixed(2))
-                              : 0;
-                            return (
-                              <motion.div
-                                key={key}
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`glass-panel p-5 border-l-4 ${color}`}
-                              >
-                                <div className="flex items-center gap-2 mb-3">
-                                  <span className="text-lg">{icon}</span>
-                                  <div>
-                                    <h3 className="text-xs font-bold">{label}</h3>
-                                    <p className="text-[10px] text-muted-foreground">{desc}</p>
-                                  </div>
-                                </div>
-                                {scores.length > 0 ? (
-                                  <>
-                                    <div className="text-center mb-3">
-                                      <span className="text-2xl font-bold">{avg}</span>
-                                      <span className="text-xs text-muted-foreground">/5</span>
-                                      <p className="text-[10px] text-muted-foreground mt-0.5">{directionCounts[key]} review{directionCounts[key] !== 1 ? 's' : ''}</p>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                      {scores.map(s => (
-                                        <div key={s.category} className="flex items-center gap-2">
-                                          <span className="text-[10px] text-muted-foreground w-20 truncate">{s.category}</span>
-                                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                                            <div className="h-full rounded-full" style={{ width: `${(s.myScore / 5) * 100}%`, backgroundColor: accent }} />
-                                          </div>
-                                          <span className="text-[10px] font-semibold w-6 text-right">{s.myScore}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </>
-                                ) : (
-                                  <div className="text-center py-4">
-                                    <p className="text-xs text-muted-foreground">No reviews from this source yet</p>
-                                  </div>
-                                )}
-                              </motion.div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                      {/* Cohort Comparisons: department / level / subsidiary / org */}
+                      {cohortMeta && cohortScores.length > 0 && (
+                        <PerformanceContext
+                          scores={cohortScores}
+                          meta={cohortMeta}
+                          yourOverall={overallScore}
+                          ranks={cohortRanks}
+                        />
+                      )}
 
-                      {/* Qualitative Feedback Section */}
-                      <QualitativeFeedback
-                        startDoing={qualitativeFeedback.startDoing}
-                        stopDoing={qualitativeFeedback.stopDoing}
-                        continueDoing={qualitativeFeedback.continueDoing}
-                      />
+                      {dashboardScoreSource === 'legacy_survey' && (
+                        <>
+                          <div>
+                            <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                              <Users className="w-4 h-4 text-primary" />
+                              Feedback by Source
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {[
+                                { key: 'above' as const, label: 'From Leadership Above', icon: '↓', color: 'border-blue-500/30', accent: 'hsl(210, 80%, 55%)', desc: 'Scores from people above your level' },
+                                { key: 'peer' as const, label: 'From Peers', icon: '↔', color: 'border-emerald-500/30', accent: 'hsl(160, 60%, 45%)', desc: 'Scores from people at your level' },
+                                { key: 'below' as const, label: 'From Reports Below', icon: '↑', color: 'border-amber-500/30', accent: 'hsl(40, 80%, 50%)', desc: 'Scores from people below your level' },
+                              ].map(({ key, label, icon, color, accent, desc }) => {
+                                const scores = directionScores[key];
+                                const avg = scores.length
+                                  ? parseFloat((scores.reduce((s, c) => s + c.myScore, 0) / scores.length).toFixed(2))
+                                  : 0;
+                                return (
+                                  <motion.div
+                                    key={key}
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`glass-panel p-5 border-l-4 ${color}`}
+                                  >
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <span className="text-lg">{icon}</span>
+                                      <div>
+                                        <h3 className="text-xs font-bold">{label}</h3>
+                                        <p className="text-[10px] text-muted-foreground">{desc}</p>
+                                      </div>
+                                    </div>
+                                    {scores.length > 0 ? (
+                                      <>
+                                        <div className="text-center mb-3">
+                                          <span className="text-2xl font-bold">{avg}</span>
+                                          <span className="text-xs text-muted-foreground">/5</span>
+                                          <p className="text-[10px] text-muted-foreground mt-0.5">{directionCounts[key]} review{directionCounts[key] !== 1 ? 's' : ''}</p>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                          {scores.map(s => (
+                                            <div key={s.category} className="flex items-center gap-2">
+                                              <span className="text-[10px] text-muted-foreground w-20 truncate">{s.category}</span>
+                                              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full" style={{ width: `${(s.myScore / 5) * 100}%`, backgroundColor: accent }} />
+                                              </div>
+                                              <span className="text-[10px] font-semibold w-6 text-right">{s.myScore}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <div className="text-center py-4">
+                                        <p className="text-xs text-muted-foreground">No reviews from this source yet</p>
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <QualitativeFeedback
+                            startDoing={qualitativeFeedback.startDoing}
+                            stopDoing={qualitativeFeedback.stopDoing}
+                            continueDoing={qualitativeFeedback.continueDoing}
+                          />
+                        </>
+                      )}
                     </>
                   ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center">
                       <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-                      <h2 className="text-lg font-semibold mb-2">No Results Yet</h2>
-                      <p className="text-muted-foreground text-sm">Your colleagues haven't submitted reviews for you yet. Check back later.</p>
+                      <h2 className="text-lg font-semibold mb-2">No dashboard scores yet</h2>
+                      <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                        If you use the <strong>legacy organisation-wide survey</strong>, scores appear when colleagues submit
+                        reviews about you. For the <strong>Executive Office BOOM</strong> programme, open{' '}
+                        <strong>Survey</strong> — complete peer 360 tasks; your aggregated 360 chart appears here after HR
+                        releases <span className="font-mono">{defaultQuarterPeriod()}</span> and enough peers have rated you.
+                      </p>
                     </motion.div>
                   )}
                 </motion.div>
@@ -1276,16 +1553,20 @@ export default function EmployeeHub() {
                 </div>
               ) : !user ? null : myScores.length === 0 ? (
                 <div className="glass-panel p-12 text-center">
-                  <Sparkles className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+                  <img src="/favicon.png" alt="Growth Hub" className="w-10 h-10 mx-auto mb-4 rounded-xl object-contain" />
                   <h2 className="text-lg font-semibold mb-2">Growth Hub Unlocks With Feedback</h2>
-                  <p className="text-muted-foreground text-sm">Once you have reviews, we'll generate personalised resources and help you build a development plan.</p>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                    We use your <strong>dashboard competency scores</strong> (legacy survey and/or released BOOM peer 360).
+                    Complete open reviews on the <strong>Survey</strong> tab; once averages show on <strong>My Dashboard</strong>,
+                    pick a focus area below for resources and your IDP.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-5 bg-secondary/35">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                        <Sparkles className="w-5 h-5 text-primary" />
+                        <img src="/favicon.png" alt="Growth Hub" className="w-5 h-5 rounded-sm object-contain" />
                       </div>
                       <div>
                         <h2 className="text-base font-bold">Your Growth Hub</h2>
@@ -1364,7 +1645,10 @@ export default function EmployeeHub() {
                 >
                   <div className="text-center mb-6">
                     <h1 className="text-xl font-bold mb-1">Performance Rankings</h1>
-                    <p className="text-muted-foreground text-sm">Top performers based on peer review scores.</p>
+                    <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+                      Legacy survey averages combined with BOOM <strong>peer 360</strong> Likert scores (submitted reviews
+                      only). Executive EPA self-ratings are excluded.
+                    </p>
                   </div>
 
                   {/* Top 3 podium */}

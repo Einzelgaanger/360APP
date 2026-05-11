@@ -208,7 +208,7 @@ export default function Survey() {
       )}
 
       {/* Progress Bar (during questions) */}
-      {step === 'questions' && (
+      {step === 'questions' && categories.length > 0 && (
         <div className="platform-canvas pt-4 pb-1">
           <div className="flex justify-between text-[11px] text-muted-foreground mb-2 font-medium">
             <span>Section {currentCategoryIndex + 1} of {categories.length} — {currentCategory?.name}</span>
@@ -276,7 +276,7 @@ export default function Survey() {
                         <div key={i} className="h-14 rounded-2xl bg-muted skeleton-pulse-fast" />
                       ))}
                     </div>
-                  ) : employees.map(emp => {
+                  ) : (employees.map(emp => {
                     const isCompleted = completedEmployees.has(emp.id);
                     return (
                       <button
@@ -310,9 +310,21 @@ export default function Survey() {
                         )}
                       </button>
                     );
-                  })
-                  )}
+                  }))}
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 'questions' && categories.length === 0 && (
+            <motion.div key="questions-empty" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
+              <div className="glass-panel p-6 sm:p-8 max-w-lg mx-auto text-center space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  The organisation-wide survey has no question bank loaded yet. Apply the latest database migrations (or ask an admin to seed legacy survey tables), then refresh.
+                </p>
+                <Button variant="outline" onClick={() => setStep('employee')} className="gap-1.5">
+                  <ChevronLeft className="w-4 h-4" /> Back to person
+                </Button>
               </div>
             </motion.div>
           )}

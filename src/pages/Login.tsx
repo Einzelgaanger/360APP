@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +18,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [submitTick, setSubmitTick] = useState(0);
-  const { login } = useAuth();
+  const { login: legacyLogin } = useAuth();
+  const { login: employeeLogin, refreshProfile } = useEmployeeAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,9 +28,55 @@ export default function Login() {
     setSubmitTick((t) => t + 1);
     setLoading(true);
     try {
-      const success = await login(email, password);
-      if (success) navigate('/dashboard');
-      else setError('Invalid credentials. Please try again.');
+      const emailNorm = email.trim().toLowerCase();
+      const legacyEmail = import.meta.env.VITE_LEGACY_ADMIN_EMAIL?.trim().toLowerCase();
+      const legacyPassword = import.meta.env.VITE_LEGACY_ADMIN_PASSWORD;
+
+      const matchesLegacyDemo =
+        !!legacyEmail &&
+        !!legacyPassword &&
+        emailNorm === legacyEmail &&
+        password === legacyPassword;
+
+      if (matchesLegacyDemo) {
+        const legacyOk = await legacyLogin(email, password);
+        if (legacyOk) {
+          navigate('/dashboard');
+          return;
+        }
+      }
+
+      const { error: signInErr } = await employeeLogin(email, password);
+      if (signInErr) {
+        setError('Invalid credentials. Please try again.');
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setError('Unable to verify session. Please try again.');
+        return;
+      }
+
+      const { data: adminRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (!adminRole) {
+        await supabase.auth.signOut();
+        setError(
+          'Your employee account signed in, but it does not have administrator access. Ask a platform owner to grant the admin role for your user.',
+        );
+        return;
+      }
+
+      await refreshProfile();
+      navigate('/dashboard');
     } catch {
       setError('An error occurred. Please try again.');
     } finally {
@@ -139,7 +188,9 @@ export default function Login() {
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[11px] text-muted-foreground">Use your administrative company account.</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Use the same email and password as the employee portal if your account has admin access, or the configured legacy admin credentials.
+                  </p>
                   <Link to="/find-account" className="text-[11px] font-medium text-primary hover:underline">
                     Need help?
                   </Link>
