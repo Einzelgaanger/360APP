@@ -13,9 +13,9 @@ if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     .filter(Boolean)
     .join(' and ');
   throw new Error(
-    `[Supabase] Missing ${missing}. Create a .env file in the project root (copy from .env.example). ` +
-      'Set VITE_SUPABASE_URL to https://<project-ref>.supabase.co and paste the anon public key from ' +
-      'Supabase Dashboard → Project Settings → API. Restart the dev server after saving .env.'
+    `[Supabase] Missing ${missing}. Use project sgttsotrvemmgmujcuay: ` +
+      'https://sgttsotrvemmgmujcuay.supabase.co and the anon key from Dashboard → Project Settings → API. ' +
+      'Copy .env.example to .env; set the same VITE_* at production build time.'
   );
 }
 

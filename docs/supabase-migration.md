@@ -40,13 +40,15 @@ psql "postgresql://postgres:NEW_DB_PASSWORD@db.YOUR_NEW_PROJECT_REF.supabase.co:
   -f old_data.sql
 ```
 
-## 5) Reconnect app env to new Supabase
+## 5) Reconnect app env to the canonical project
+
+This app uses **one** Supabase project for local and production: `sgttsotrvemmgmujcuay`.
 
 Set `.env` values:
 
 ```env
-VITE_SUPABASE_URL=https://YOUR_NEW_PROJECT_REF.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_NEW_SUPABASE_ANON_KEY
+VITE_SUPABASE_URL=https://sgttsotrvemmgmujcuay.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<anon public key from Dashboard → API>
 VITE_ENABLE_APP_AI=false
 ```
 

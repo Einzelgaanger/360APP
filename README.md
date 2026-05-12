@@ -13,8 +13,8 @@ npm run dev
 
 Copy `.env.example` to `.env` and set:
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_URL` — must be `https://sgttsotrvemmgmujcuay.supabase.co` (same project as `supabase/config.toml`; set the same vars on your host at **build** time for production)
+- `VITE_SUPABASE_PUBLISHABLE_KEY` — that project’s anon key
 - `VITE_ENABLE_APP_AI` (defaults to `false`)
 
 ## Database migration
