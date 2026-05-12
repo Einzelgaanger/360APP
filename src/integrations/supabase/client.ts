@@ -2,22 +2,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim();
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+const DEFAULT_SUPABASE_URL = 'https://sgttsotrvemmgmujcuay.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndHRzb3RydmVtbWdtdWpjdWF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczODM1NzUsImV4cCI6MjA5Mjk1OTU3NX0.Aq4z0ZXy646Q3RJ3nIKcV5DyPqHYzQ38RiIE-aRawx8';
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  const missing = [
-    !SUPABASE_URL && 'VITE_SUPABASE_URL',
-    !SUPABASE_PUBLISHABLE_KEY && 'VITE_SUPABASE_PUBLISHABLE_KEY',
-  ]
-    .filter(Boolean)
-    .join(' and ');
-  throw new Error(
-    `[Supabase] Missing ${missing}. Use project sgttsotrvemmgmujcuay: ` +
-      'https://sgttsotrvemmgmujcuay.supabase.co and the anon key from Dashboard → Project Settings → API. ' +
-      'Copy .env.example to .env; set the same VITE_* at production build time.'
-  );
-}
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL?.trim() || DEFAULT_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || DEFAULT_SUPABASE_ANON_KEY;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -27,5 +19,5 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
 });

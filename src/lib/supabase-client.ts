@@ -1,25 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim();
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+/** Default project (supabase/config.toml). Anon key is public (client bundle); override with VITE_* for another env. */
+const DEFAULT_SUPABASE_URL = 'https://sgttsotrvemmgmujcuay.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndHRzb3RydmVtbWdtdWpjdWF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczODM1NzUsImV4cCI6MjA5Mjk1OTU3NX0.Aq4z0ZXy646Q3RJ3nIKcV5DyPqHYzQ38RiIE-aRawx8';
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  const missing = [
-    !SUPABASE_URL && 'VITE_SUPABASE_URL',
-    !SUPABASE_PUBLISHABLE_KEY && 'VITE_SUPABASE_PUBLISHABLE_KEY',
-  ]
-    .filter(Boolean)
-    .join(' and ');
-  throw new Error(
-    `[Supabase] Missing ${missing}. Local and production must use the same project: ` +
-      'https://sgttsotrvemmgmujcuay.supabase.co — anon key from Dashboard → Project Settings → API. ' +
-      'Copy .env.example to .env for dev; set the same VITE_* at build time for production (Render/Vercel/etc.).'
-  );
-}
+const supabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL?.trim() || DEFAULT_SUPABASE_URL;
+const supabasePublishableKey =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || DEFAULT_SUPABASE_ANON_KEY;
 
-export const supabaseUrl = SUPABASE_URL;
-export const supabasePublishableKey = SUPABASE_PUBLISHABLE_KEY;
+export { supabaseUrl, supabasePublishableKey };
 
 export const supabase = createClient<Database>(supabaseUrl, supabasePublishableKey, {
   auth: {
