@@ -4,9 +4,9 @@
  */
 export function boomHierarchyLabel(level: number | null | undefined): string {
   if (level === null || level === undefined) return 'Level not set';
-  if (level <= 0) return 'Group CEO';
-  if (level === 1) return 'Executive leadership';
-  if (level === 2) return 'Manager';
+  if (level <= 0) return 'L0 · Top leadership';
+  if (level === 1) return 'L1 · Functional lead';
+  if (level === 2) return 'L2 · Team';
   return 'Team member';
 }
 

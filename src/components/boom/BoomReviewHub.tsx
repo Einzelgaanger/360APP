@@ -9,7 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ClipboardList, Loader2, Sparkles, TrendingUp, UserCircle, Mail } from 'lucide-react';
+import { ClipboardList, Loader2, Sparkles, TrendingUp, UserCircle, Mail, MessageSquare, Users, LayoutDashboard } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import BoomCommentsPanel from './BoomCommentsPanel';
+import BoomDirectoryPanel from './BoomDirectoryPanel';
+import BoomInsightsPanel from './BoomInsightsPanel';
 import { toast } from 'sonner';
 import { boomFormPurpose, boomHierarchyLabel, boomPeerFormHint } from '@/lib/boomRoleLabels';
 import {
@@ -74,6 +78,7 @@ interface BoomReviewHubProps {
   reviewerRole?: string | null;
   reviewerDepartment?: string | null;
   reviewerEmail?: string | null;
+  isPlatformAdmin?: boolean;
 }
 
 export default function BoomReviewHub({
@@ -83,8 +88,12 @@ export default function BoomReviewHub({
   reviewerRole,
   reviewerDepartment,
   reviewerEmail,
+  isPlatformAdmin = false,
 }: BoomReviewHubProps) {
   const [periodQuarter, setPeriodQuarter] = useState(defaultQuarterPeriod);
+  const [givesComments, setGivesComments] = useState(false);
+  const [receivesComments, setReceivesComments] = useState(false);
+  const [boomTab, setBoomTab] = useState('tasks');
   const [periodMonth, setPeriodMonth] = useState(defaultMonthPeriod);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<AssignmentRow[]>([]);
@@ -147,6 +156,21 @@ export default function BoomReviewHub({
   useEffect(() => {
     void loadAssignments();
   }, [loadAssignments]);
+
+  useEffect(() => {
+    if (!reviewerEmployeeId) return;
+    void supabase
+      .from('employees')
+      .select('appraisal_gives_comments, appraisal_receives_comments, hierarchy_level')
+      .eq('id', reviewerEmployeeId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setGivesComments(!!data.appraisal_gives_comments);
+          setReceivesComments(!!data.appraisal_receives_comments);
+        }
+      });
+  }, [reviewerEmployeeId]);
 
   useEffect(() => {
     void loadAssessorTasks();
@@ -292,61 +316,78 @@ export default function BoomReviewHub({
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <h3 className="text-lg font-bold">Assignments</h3>
-          </div>
-          <p className="text-xs text-muted-foreground max-w-xl">
-            Quarterly reviews use the quarter selector; your monthly self-assessment uses the month selector. Everyone sees
-            a different list based on role and reporting lines.
-          </p>
+      <div className="flex flex-wrap gap-3 items-end">
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Quarter</label>
+          <Select value={periodQuarter} onValueChange={setPeriodQuarter}>
+            <SelectTrigger className="w-[140px] h-9 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {quarterOptions().map((q) => (
+                <SelectItem key={q} value={q} className="text-xs">
+                  {q}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Quarter</label>
-            <Select value={periodQuarter} onValueChange={setPeriodQuarter}>
-              <SelectTrigger className="w-[140px] h-9 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {quarterOptions().map((q) => (
-                  <SelectItem key={q} value={q} className="text-xs">
-                    {q}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Month (self)</label>
-            <Select value={periodMonth} onValueChange={setPeriodMonth}>
-              <SelectTrigger className="w-[140px] h-9 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {monthOptions().map((m) => (
-                  <SelectItem key={m} value={m} className="text-xs">
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 mt-auto"
-            onClick={() => {
-              void loadAssignments();
-              void loadAssessorTasks();
-            }}
-          >
-            Refresh
-          </Button>
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Month (self)</label>
+          <Select value={periodMonth} onValueChange={setPeriodMonth}>
+            <SelectTrigger className="w-[140px] h-9 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions().map((m) => (
+                <SelectItem key={m} value={m} className="text-xs">
+                  {m}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9"
+          onClick={() => {
+            void loadAssignments();
+            void loadAssessorTasks();
+            void load360();
+          }}
+        >
+          Refresh
+        </Button>
       </div>
+
+      <Tabs value={boomTab} onValueChange={setBoomTab} className="space-y-4">
+        <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
+          <TabsTrigger value="tasks" className="text-xs gap-1">
+            <ClipboardList className="w-3 h-3" /> Tasks
+          </TabsTrigger>
+          <TabsTrigger value="feedback" className="text-xs gap-1">
+            <TrendingUp className="w-3 h-3" /> My feedback
+          </TabsTrigger>
+          <TabsTrigger value="comments" className="text-xs gap-1">
+            <MessageSquare className="w-3 h-3" /> Comments
+          </TabsTrigger>
+          {(isPlatformAdmin || (reviewerHierarchyLevel !== null && reviewerHierarchyLevel <= 1)) && (
+            <TabsTrigger value="directory" className="text-xs gap-1">
+              <Users className="w-3 h-3" /> Directory
+            </TabsTrigger>
+          )}
+          {(isPlatformAdmin || reviewerHierarchyLevel === 0) && (
+            <TabsTrigger value="insights" className="text-xs gap-1">
+              <LayoutDashboard className="w-3 h-3" /> Insights
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="tasks" className="mt-0 space-y-6">
+      <p className="text-xs text-muted-foreground max-w-xl">
+        Monthly self, performance self (green roles), and 360 peers follow the EO org chart.
+      </p>
 
       {assessorTasks.length > 0 && (
         <div className="glass-panel p-5 shadow-sm border-primary/15">
@@ -467,7 +508,9 @@ export default function BoomReviewHub({
         </div>
       )}
 
-      {/* Aggregated 360 (when threshold met server-side) */}
+        </TabsContent>
+
+        <TabsContent value="feedback" className="mt-0">
       <div className="glass-panel p-5 border-accent/10">
         <div className="flex items-center gap-2 mb-3">
           <TrendingUp className="w-4 h-4 text-accent" />
@@ -509,6 +552,31 @@ export default function BoomReviewHub({
           </div>
         )}
       </div>
+        </TabsContent>
+
+        <TabsContent value="comments" className="mt-0">
+          <BoomCommentsPanel
+            reviewerEmployeeId={reviewerEmployeeId}
+            periodQuarter={periodQuarter}
+            givesComments={givesComments}
+            receivesComments={receivesComments}
+          />
+        </TabsContent>
+
+        <TabsContent value="directory" className="mt-0">
+          <BoomDirectoryPanel
+            viewerHierarchyLevel={reviewerHierarchyLevel}
+            isAdmin={isPlatformAdmin}
+          />
+        </TabsContent>
+
+        <TabsContent value="insights" className="mt-0">
+          <BoomInsightsPanel
+            viewerHierarchyLevel={reviewerHierarchyLevel}
+            isAdmin={isPlatformAdmin}
+          />
+        </TabsContent>
+      </Tabs>
 
       {runner && (
         <AssessmentRunner

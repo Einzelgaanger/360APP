@@ -12,7 +12,9 @@
     "start": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed:demo-auth": "node scripts/seed-demo-auth-users.mjs"
+    "seed:demo-auth": "node scripts/seed-demo-auth-users.mjs",
+    "apply:eo-org": "node scripts/apply-eo-org-structure.mjs",
+    "check:eo-roster": "node scripts/check-eo-roster.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

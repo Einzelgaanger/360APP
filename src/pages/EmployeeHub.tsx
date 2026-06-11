@@ -895,6 +895,7 @@ export default function EmployeeHub() {
               reviewerRole={currentEmployee?.role ?? profile?.role ?? null}
               reviewerDepartment={currentEmployee?.department ?? profile?.department ?? null}
               reviewerEmail={profile?.email ?? user?.email ?? null}
+              isPlatformAdmin={isAdmin}
             />
             <div className="relative my-8">
               <div className="absolute inset-0 flex items-center" aria-hidden>
