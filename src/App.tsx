@@ -19,6 +19,7 @@ import AppraisalAdmin from "./pages/AppraisalAdmin";
 import NotFound from "./pages/NotFound";
 import ProfileCompletionGate from "@/components/ProfileCompletionGate";
 import { AppBootstrapSkeleton } from "@/components/shell/LoadingShells";
+import { EO_PILOT_ONLY } from "@/lib/eoPilot";
 
 const queryClient = new QueryClient();
 
@@ -40,7 +41,7 @@ function AdminGate() {
   const { isAuthenticated: isLegacyAdmin } = useAuth();
   const { isAuthenticated: isEmployee, isAdmin, isLoading } = useEmployeeAuth();
   if (isLoading) return <AppBootstrapSkeleton />;
-  if (isLegacyAdmin || (isEmployee && isAdmin)) return <Navigate to="/dashboard" replace />;
+  if (isLegacyAdmin || (isEmployee && isAdmin)) return <Navigate to={EO_PILOT_ONLY ? "/appraisal" : "/dashboard"} replace />;
   return <Login />;
 }
 
@@ -53,8 +54,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={isEmployee ? <Navigate to="/hub?tab=dashboard" /> : <Onboarding />} />
-      <Route path="/login" element={isEmployee ? <Navigate to="/hub?tab=dashboard" /> : <EmployeeLogin />} />
+      <Route path="/" element={isEmployee ? <Navigate to="/hub?tab=survey" replace /> : <Onboarding />} />
+      <Route path="/login" element={isEmployee ? <Navigate to="/hub?tab=survey" replace /> : <EmployeeLogin />} />
       <Route path="/landing" element={<Index />} />
       <Route path="/find-account" element={<FindAccount />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -62,11 +63,20 @@ function AppRoutes() {
       {/* Legacy routes redirect to hub */}
       <Route path="/survey" element={<Navigate to="/hub?tab=survey" replace />} />
       <Route path="/my-dashboard" element={<Navigate to="/hub?tab=dashboard" replace />} />
-      <Route path="/wall-of-fame" element={<Navigate to="/hub?tab=rankings" replace />} />
+      <Route path="/wall-of-fame" element={<Navigate to={EO_PILOT_ONLY ? "/hub?tab=survey" : "/hub?tab=rankings"} replace />} />
       <Route path="/admin" element={<AdminGate />} />
-      <Route path="/dashboard" element={<ProtectedAdminRoute><Dashboard /></ProtectedAdminRoute>} />
+      <Route
+        path="/dashboard"
+        element={
+          EO_PILOT_ONLY ? (
+            <ProtectedAdminRoute><Navigate to="/appraisal" replace /></ProtectedAdminRoute>
+          ) : (
+            <ProtectedAdminRoute><Dashboard /></ProtectedAdminRoute>
+          )
+        }
+      />
       <Route path="/appraisal" element={<ProtectedAdminRoute><AppraisalAdmin /></ProtectedAdminRoute>} />
-      <Route path="/demo" element={<DemoDashboard />} />
+      <Route path="/demo" element={EO_PILOT_ONLY ? <Navigate to="/login" replace /> : <DemoDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

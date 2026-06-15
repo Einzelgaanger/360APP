@@ -21,6 +21,7 @@ import { AppraisalAdminSkeleton } from '@/components/shell/LoadingShells';
 import AdminMobileTabBar from '@/components/AdminMobileTabBar';
 import { ENABLE_APP_AI } from '@/lib/featureFlags';
 import { defaultQuarterPeriod, quarterOptions } from '@/lib/boomPeriods';
+import { EO_PILOT_ONLY } from '@/lib/eoPilot';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -93,7 +94,7 @@ export default function AppraisalAdmin() {
   const [expandedResponse, setExpandedResponse] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [adminTab, setAdminTab] = useState('overview');
+  const [adminTab, setAdminTab] = useState(EO_PILOT_ONLY ? 'boom' : 'overview');
   const [boomResponses, setBoomResponses] = useState<BoomResponseRow[]>([]);
   const [boomAnswers, setBoomAnswers] = useState<BoomAnswerRow[]>([]);
   const [boomForms, setBoomForms] = useState<BoomFormRow[]>([]);
@@ -651,11 +652,15 @@ ${feedbackSample || '• No text feedback yet'}`;
           </div>
         ) : (
           <Tabs value={adminTab} onValueChange={setAdminTab}>
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 min-h-11 h-auto gap-1 py-1">
-              <TabsTrigger value="overview" className="text-xs gap-1.5"><BarChart3 className="w-3 h-3" /> Overview</TabsTrigger>
-              <TabsTrigger value="people" className="text-xs gap-1.5"><Users className="w-3 h-3" /> People</TabsTrigger>
-              <TabsTrigger value="trends" className="text-xs gap-1.5"><TrendingUp className="w-3 h-3" /> Trends</TabsTrigger>
-              <TabsTrigger value="feed" className="text-xs gap-1.5"><Clock className="w-3 h-3" /> Live Feed</TabsTrigger>
+            <TabsList className={`grid w-full ${EO_PILOT_ONLY ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'} min-h-11 h-auto gap-1 py-1`}>
+              {!EO_PILOT_ONLY && (
+                <>
+                  <TabsTrigger value="overview" className="text-xs gap-1.5"><BarChart3 className="w-3 h-3" /> Overview</TabsTrigger>
+                  <TabsTrigger value="people" className="text-xs gap-1.5"><Users className="w-3 h-3" /> People</TabsTrigger>
+                  <TabsTrigger value="trends" className="text-xs gap-1.5"><TrendingUp className="w-3 h-3" /> Trends</TabsTrigger>
+                  <TabsTrigger value="feed" className="text-xs gap-1.5"><Clock className="w-3 h-3" /> Live Feed</TabsTrigger>
+                </>
+              )}
               <TabsTrigger value="boom" className="text-xs gap-1.5"><Layers className="w-3 h-3" /> BOOM</TabsTrigger>
             </TabsList>
 

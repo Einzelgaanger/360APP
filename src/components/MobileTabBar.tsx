@@ -1,4 +1,5 @@
-import { ClipboardList, BarChart3, Trophy, User } from 'lucide-react';
+import { ClipboardList, BarChart3, User } from 'lucide-react';
+import { EO_PILOT_ONLY } from '@/lib/eoPilot';
 
 export type MobileTab = 'survey' | 'dashboard' | 'growth' | 'rankings' | 'profile';
 
@@ -7,26 +8,28 @@ interface MobileTabBarProps {
   onChange: (tab: MobileTab) => void;
 }
 
-const TABS: { key: MobileTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { key: 'survey',    label: 'Survey',    icon: ClipboardList },
-  { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-  { key: 'growth',    label: 'Growth',    icon: BarChart3 },
-  { key: 'rankings',  label: 'Rankings',  icon: Trophy },
-  { key: 'profile',   label: 'Profile',   icon: User },
+const ALL_TABS: { key: MobileTab; label: string; icon: React.ComponentType<{ className?: string }>; pilot?: boolean }[] = [
+  { key: 'survey', label: 'Appraisal', icon: ClipboardList, pilot: true },
+  { key: 'dashboard', label: 'Dashboard', icon: BarChart3, pilot: true },
+  { key: 'growth', label: 'Growth', icon: BarChart3, pilot: true },
+  { key: 'rankings', label: 'Rankings', icon: ClipboardList, pilot: false },
+  { key: 'profile', label: 'Profile', icon: User, pilot: true },
 ];
 
+const TABS = EO_PILOT_ONLY ? ALL_TABS.filter((t) => t.pilot) : ALL_TABS;
+
 /**
- * WhatsApp-style fixed bottom tab bar � mobile only (hidden on lg+).
- * Editorial: hairline top border, paper background, ink text, green active state.
+ * WhatsApp-style fixed bottom tab bar — mobile only (hidden on lg+).
  */
 export default function MobileTabBar({ active, onChange }: MobileTabBarProps) {
+  const cols = TABS.length;
   return (
     <nav
       aria-label="Primary"
       className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-border bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/85"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className="grid grid-cols-5">
+      <ul className={`grid grid-cols-${cols}`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {TABS.map(({ key, label, icon: Icon }) => {
           const isActive = active === key;
           return (

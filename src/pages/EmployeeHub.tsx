@@ -44,6 +44,7 @@ import {
 } from '@/lib/hierarchyConvention';
 import { defaultQuarterPeriod } from '@/lib/boomPeriods';
 import { fetchMyAggregatedPeer360Scores, fetchOrgPerformanceRankings } from '@/lib/boomDashboard360';
+import { EO_PILOT_ONLY, EO_SUBSIDIARY_ID } from '@/lib/eoPilot';
 
 interface FeedbackItem {
   text: string;
@@ -798,6 +799,12 @@ export default function EmployeeHub() {
     setSearchParams({ tab });
   };
 
+  useEffect(() => {
+    if (EO_PILOT_ONLY && activeTab === 'rankings') {
+      setTab('survey');
+    }
+  }, [activeTab]);
+
   const handleLogout = async () => { await logout(); navigate('/'); };
 
   if (loading) {
@@ -832,6 +839,7 @@ export default function EmployeeHub() {
         ]}
         onLogout={handleLogout}
         items={[
+          { key: 'survey', label: 'Appraisal', icon: <ClipboardList className="w-4 h-4" />, active: activeTab === 'survey', onClick: () => setTab('survey') },
           { key: 'dashboard', label: 'My Dashboard', icon: <BarChart3 className="w-4 h-4" />, active: activeTab === 'dashboard', onClick: () => setTab('dashboard') },
           {
             key: 'growth',
@@ -840,14 +848,15 @@ export default function EmployeeHub() {
             active: activeTab === 'growth',
             onClick: () => setTab('growth')
           },
-          { key: 'rankings', label: 'Rankings', icon: <Trophy className="w-4 h-4" />, active: activeTab === 'rankings', onClick: () => setTab('rankings') },
-          { key: 'survey', label: 'Survey', icon: <ClipboardList className="w-4 h-4" />, active: activeTab === 'survey', onClick: () => setTab('survey') },
+          ...(!EO_PILOT_ONLY
+            ? [{ key: 'rankings', label: 'Rankings', icon: <Trophy className="w-4 h-4" />, active: activeTab === 'rankings', onClick: () => setTab('rankings') }]
+            : []),
         ]}
         actions={
           <>
             {isAdmin && (
               <Button variant="outline" size="sm" asChild className="w-full gap-2 border-primary/30 text-primary">
-                <Link to="/admin"><Shield className="w-4 h-4" /> Admin</Link>
+                <Link to="/appraisal"><Shield className="w-4 h-4" /> Admin</Link>
               </Button>
             )}
             <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-muted-foreground px-1">
@@ -867,15 +876,16 @@ export default function EmployeeHub() {
           <div className="flex items-center gap-2.5 min-w-0">
             <img src={vggLogo} alt="VGG" className="h-6 w-auto flex-shrink-0" />
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground truncate">
-              ◉ {activeTab === 'dashboard' ? 'My Dashboard'
+              ◉ {activeTab === 'survey' ? 'Appraisal'
+                  : activeTab === 'dashboard' ? 'My Dashboard'
                   : activeTab === 'growth' ? 'Growth Hub'
                   : activeTab === 'rankings' ? 'Rankings'
                   : activeTab === 'profile' ? 'Profile'
-                  : 'Survey'}
+                  : 'Appraisal'}
             </span>
           </div>
           {isAdmin && (
-            <Link to="/admin" aria-label="Admin" className="text-muted-foreground hover:text-primary">
+            <Link to="/appraisal" aria-label="Admin" className="text-muted-foreground hover:text-primary">
               <Shield className="w-4 h-4" />
             </Link>
           )}
@@ -897,383 +907,6 @@ export default function EmployeeHub() {
               reviewerEmail={profile?.email ?? user?.email ?? null}
               isPlatformAdmin={isAdmin}
             />
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center" aria-hidden>
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex flex-col items-center gap-1 text-center">
-                <span className="bg-background px-3 text-xs uppercase tracking-widest text-muted-foreground">
-                  Organisation-wide survey
-                </span>
-                <span className="bg-background px-3 text-[10px] text-muted-foreground/90 max-w-md">
-                  Multi-subsidiary legacy flow — separate from your EO BOOM assignments above (different pools and questions).
-                </span>
-              </div>
-            </div>
-            {/* Step Indicator */}
-            {step !== 'submitted' && (
-              <div className="mb-4">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  {['Company', 'Person', 'Questions'].map((label, i) => (
-                    <div key={label} className="flex items-center gap-1.5 sm:gap-2 flex-1">
-                      <div className={`w-8 h-8 rounded-xl text-xs font-bold flex items-center justify-center transition-all duration-300 shadow-sm ${
-                        i + 1 < stepNumber ? 'bg-primary text-primary-foreground shadow-primary/20'
-                        : i + 1 === stepNumber ? 'bg-primary text-primary-foreground shadow-primary/20'
-                        : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {i + 1 < stepNumber ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
-                      </div>
-                      <span className={`text-xs hidden sm:block font-medium ${i + 1 <= stepNumber ? 'text-foreground' : 'text-muted-foreground'}`}>
-                        {label}
-                      </span>
-                      {i < 2 && <div className={`flex-1 h-0.5 rounded-full ${i + 1 < stepNumber ? 'bg-primary' : 'bg-border'}`} />}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Progress Bar */}
-            {step === 'questions' && categories.length > 0 && (
-              <div className="mb-4">
-                <div className="flex justify-between text-[11px] text-muted-foreground mb-2 font-medium">
-                  <span>Section {currentCategoryIndex + 1} of {categories.length} — {currentCategory?.name}</span>
-                  <span className="text-primary font-bold">{Math.round(progress)}%</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.4, ease: 'easeOut' }} />
-                </div>
-              </div>
-            )}
-
-            <AnimatePresence mode="wait">
-              {/* Step 1: Subsidiary */}
-              {step === 'subsidiary' && (
-                <motion.div key="subsidiary" {...pageTransition}>
-                  <div className="glass-panel p-6 sm:p-8">
-                    <div className="mb-6">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                        <Building2 className="w-6 h-6 text-primary" />
-                      </div>
-                      <h2 className="text-xl font-bold mb-1">Select Company</h2>
-                      <p className="text-muted-foreground text-sm">Choose the subsidiary of the person you would like to review.</p>
-                    </div>
-                    <div className="grid gap-2.5">
-                      {subsidiaries.map(sub => (
-                        <button
-                          key={sub.id}
-                          onClick={() => handleSelectSubsidiary(sub)}
-                          className="flex items-center justify-between p-4 rounded-2xl border-2 border-border bg-background hover:bg-muted/50 hover:border-primary/30 hover:shadow-md transition-all duration-200 text-left group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="font-semibold text-sm">{sub.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
-                              {subsidiaryCounts[sub.id] || 0} people
-                            </Badge>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 2: Employee with department badges */}
-              {step === 'employee' && (
-                <motion.div key="employee" {...pageTransition}>
-                  <div className="glass-panel p-6 sm:p-8">
-                    <button onClick={() => setStep('subsidiary')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-5 transition-colors font-medium">
-                      <ChevronLeft className="w-4 h-4" /> Back
-                    </button>
-                    <div className="mb-4">
-                      <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center mb-4">
-                        <User className="w-6 h-6 text-accent" />
-                      </div>
-                      <h2 className="text-xl font-bold mb-1">Select Person to Review</h2>
-                      <p className="text-muted-foreground text-sm">{selectedSubsidiary?.name}</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        Your level: <span className="font-semibold text-foreground">{displayHierarchyLabel(myHierarchyLevel, surveyHierarchyLowerSenior)}</span>
-                      </p>
-                    </div>
-
-                    {/* Pool badges */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {[
-                        { label: 'Above You', count: hierarchyPools.above.length, icon: <ArrowUp className="w-3 h-3" />, color: 'text-blue-600 bg-blue-500/10 border-blue-500/30' },
-                        { label: 'Peers', count: hierarchyPools.peers.length, icon: <ArrowLeftRight className="w-3 h-3" />, color: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/30' },
-                        { label: 'Below You', count: hierarchyPools.below.length, icon: <ArrowDown className="w-3 h-3" />, color: 'text-amber-600 bg-amber-500/10 border-amber-500/30' },
-                      ].map(p => (
-                        <Badge key={p.label} variant="outline" className={`text-[10px] gap-1 ${p.color}`}>
-                          {p.icon} {p.label} <span className="font-bold">{p.count}</span>
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* Search */}
-                    <div className="relative mb-4">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search by name, email, or department..."
-                        value={employeeSearch}
-                        onChange={e => setEmployeeSearch(e.target.value)}
-                        className="pl-10 h-10"
-                      />
-                      {employeeSearch && (
-                        <button onClick={() => setEmployeeSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                          <X className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="max-h-[55vh] overflow-y-auto scrollbar-thin pr-1 space-y-5">
-                      {employeesLoading ? (
-                        <div className="space-y-4 py-2">
-                          <p className="text-xs font-medium text-muted-foreground">Loading people…</p>
-                          {[0, 1, 2].map((i) => (
-                            <div key={i} className="space-y-2 skeleton-pulse-fast">
-                              <div className="h-4 w-40 rounded-md bg-muted" />
-                              <div className="h-14 w-full rounded-xl bg-muted" />
-                              <div className="h-14 w-full rounded-xl bg-muted" />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <>
-                      {([
-                        { key: 'above' as const, label: 'Above You', sublabel: 'Leadership & Senior Colleagues', icon: <ArrowUp className="w-3.5 h-3.5" />, color: 'text-blue-600', bg: 'bg-blue-500/10', border: 'border-l-blue-500' },
-                        { key: 'peers' as const, label: 'Your Peers', sublabel: 'Same hierarchy level as you', icon: <ArrowLeftRight className="w-3.5 h-3.5" />, color: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-l-emerald-500' },
-                        { key: 'below' as const, label: 'Below You', sublabel: 'Team members & junior colleagues', icon: <ArrowDown className="w-3.5 h-3.5" />, color: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-l-amber-500' },
-                      ] as const).map(pool => {
-                        const poolEmps = hierarchyPools[pool.key];
-                        if (poolEmps.length === 0) return null;
-                        return (
-                          <div key={pool.key} className={`border-l-2 ${pool.border} pl-3`}>
-                            <div className="flex items-center gap-2 mb-2 sticky top-0 bg-card/95 backdrop-blur-sm py-1 z-10">
-                              <span className={`${pool.color} ${pool.bg} w-6 h-6 rounded-md flex items-center justify-center`}>{pool.icon}</span>
-                              <div>
-                                <h3 className="text-xs font-bold">{pool.label}</h3>
-                                <p className="text-[10px] text-muted-foreground">{pool.sublabel}</p>
-                              </div>
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-auto">{poolEmps.length}</Badge>
-                            </div>
-                            <div className="grid gap-1.5">
-                              {poolEmps.map(emp => {
-                                const isCompleted = completedEmployees.has(emp.id);
-                                return (
-                                  <button
-                                    key={emp.id}
-                                    onClick={() => !isCompleted && handleSelectEmployee(emp)}
-                                    disabled={isCompleted}
-                                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 text-left group ${
-                                      isCompleted
-                                        ? 'border-primary/15 bg-primary/[0.03] cursor-not-allowed opacity-60'
-                                        : 'border-border bg-background hover:bg-muted/50 hover:border-primary/30 hover:shadow-sm'
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold ${
-                                        isCompleted ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                                      }`}>
-                                        {emp.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                                      </div>
-                                      <div>
-                                        <span className={`font-medium text-sm block ${isCompleted ? 'text-muted-foreground line-through' : ''}`}>{emp.name}</span>
-                                        <div className="flex items-center gap-1.5">
-                                          {emp.role && <span className="text-xs text-muted-foreground">{emp.role}</span>}
-                                          {emp.department && <span className="text-[10px] text-muted-foreground/60">• {emp.department}</span>}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    {isCompleted ? (
-                                      <div className="flex items-center gap-1.5 text-primary">
-                                        <span className="text-[10px] font-semibold">Reviewed</span>
-                                        <CheckCircle2 className="w-3.5 h-3.5" />
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center gap-1.5">
-                                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 hidden sm:inline-flex">
-                                          {displayHierarchyLabel(emp.hierarchy_level, surveyHierarchyLowerSenior)}
-                                        </Badge>
-                                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                      </div>
-                                    )}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {!employeesLoading && filteredEmployees.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground text-sm">
-                          No employees match your search.
-                        </div>
-                      )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 3: Questions — empty catalog (run DB migration to seed survey_categories / survey_questions) */}
-              {step === 'questions' && categories.length === 0 && (
-                <motion.div key="questions-empty" {...pageTransition}>
-                  <div className="glass-panel p-6 sm:p-8 max-w-lg mx-auto text-center space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      The organisation-wide survey has no question bank loaded yet. Apply the latest database migrations (or ask an admin to seed legacy survey tables), then refresh.
-                    </p>
-                    <Button variant="outline" onClick={() => setStep('employee')} className="gap-1.5">
-                      <ChevronLeft className="w-4 h-4" /> Back to person
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 3: Questions */}
-              {step === 'questions' && currentCategory && (
-                <motion.div key={`cat-${currentCategoryIndex}`} {...pageTransition}>
-                  <div className="glass-panel p-6 sm:p-8">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <ClipboardList className="w-5 h-5 text-primary" />
-                        </div>
-                        <h2 className="text-lg font-bold">{currentCategory.name}</h2>
-                      </div>
-                      <span className="text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-xl font-bold">
-                        {currentCategoryIndex + 1} / {categories.length}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-6 ml-[52px]">
-                      Reviewing: <span className="text-foreground font-semibold">{selectedEmployee?.name}</span>
-                      {selectedEmployee?.role && <span className="text-muted-foreground"> — {selectedEmployee.role}</span>}
-                    </p>
-
-                    {/* Scale Legend */}
-                    {currentCategory.sort_order < 8 && (
-                      <div className="flex flex-wrap gap-x-5 gap-y-2 mb-8 p-4 rounded-2xl bg-muted/40 border border-border/60 text-xs text-muted-foreground">
-                        {SCALE_OPTIONS.map(s => (
-                          <span key={s.value} className="flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary text-center leading-6 font-bold text-xs">{s.value}</span>
-                            <span className="font-medium">{s.label}</span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="space-y-8">
-                      {currentQuestions.map((q, qi) => (
-                        <motion.div
-                          key={q.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: qi * 0.05 }}
-                          className="p-4 rounded-2xl bg-muted/20 border border-border/40"
-                        >
-                          <p className="text-sm leading-relaxed mb-4 font-medium">
-                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-primary/10 text-primary text-xs font-bold mr-2">{qi + 1}</span>
-                            {q.question_text}
-                          </p>
-                          {q.question_type === 'scored' ? (
-                            <div className="flex gap-1.5 sm:gap-2">
-                              {SCALE_OPTIONS.map(s => (
-                                <button
-                                  key={s.value}
-                                  onClick={() => setAnswers(prev => ({ ...prev, [q.id]: s.value }))}
-                                  className={`flex-1 min-w-0 py-2.5 sm:py-3 px-1 rounded-xl border-2 text-center transition-all duration-200 ${
-                                    answers[q.id] === s.value
-                                      ? 'bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20 -translate-y-0.5'
-                                      : 'border-border bg-background text-muted-foreground hover:bg-muted/50 hover:border-primary/30'
-                                  }`}
-                                >
-                                  <div className="text-sm font-bold">{s.value}</div>
-                                  <div className="text-[10px] mt-0.5 hidden sm:block opacity-80 font-medium">{s.label}</div>
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <Textarea
-                              placeholder="Share your thoughts..."
-                              value={(answers[q.id] as string) || ''}
-                              onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
-                              className="bg-background border-2 border-border rounded-xl min-h-[100px] text-sm resize-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all duration-200"
-                            />
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between mt-8 pt-6 border-t border-border/60">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          if (currentCategoryIndex === 0) setStep('employee');
-                          else setCurrentCategoryIndex(prev => prev - 1);
-                        }}
-                        className="gap-1.5"
-                      >
-                        <ChevronLeft className="w-4 h-4" /> Previous
-                      </Button>
-                      {currentCategoryIndex < categories.length - 1 ? (
-                        <Button
-                          onClick={() => setCurrentCategoryIndex(prev => prev + 1)}
-                          disabled={currentCategory.sort_order < 8 && !isCurrentCategoryComplete()}
-                          className="gap-1.5"
-                        >
-                          Next Section <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => void handleSubmit()}
-                          disabled={answeredScoredQuestions < totalScoredQuestions}
-                          className="gap-1.5"
-                        >
-                          <Send className="w-4 h-4" />
-                          Submit Response
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 4: Submitted */}
-              {step === 'submitted' && (
-                <motion.div key="submitted" {...pageTransition}>
-                  <div className="glass-panel p-10 sm:p-14 text-center max-w-md mx-auto">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 200, delay: 0.15 }}
-                      className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6"
-                    >
-                      <CheckCircle2 className="w-10 h-10 text-primary" />
-                    </motion.div>
-                    <h2 className="text-2xl font-bold mb-3">Thank You!</h2>
-                    <p className="text-muted-foreground text-sm mb-8 leading-relaxed">
-                      Your anonymous feedback has been recorded successfully.
-                    </p>
-                    <Button
-                      size="lg"
-                      onClick={() => {
-                        setStep('subsidiary');
-                        setSelectedSubsidiary(null);
-                        setSelectedEmployee(null);
-                        setAnswers({});
-                        setCurrentCategoryIndex(0);
-                      }}
-                      className="gap-2"
-                    >
-                      Review Another Person <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </TabsContent>
 
           {/* ============ DASHBOARD TAB ============ */}
@@ -1633,7 +1266,7 @@ export default function EmployeeHub() {
             </motion.div>
           </TabsContent>
 
-          {/* ============ RANKINGS TAB ============ */}
+          {!EO_PILOT_ONLY && (
           <TabsContent value="rankings" className="mt-4">
             <motion.div {...pageTransition}>
               {rankingsLoading ? (
@@ -1730,6 +1363,7 @@ export default function EmployeeHub() {
               )}
             </motion.div>
           </TabsContent>
+          )}
 
           {/* ============ PROFILE TAB (mobile-only entry from bottom bar) ============ */}
           <TabsContent value="profile" className="mt-4 lg:hidden">
@@ -1746,7 +1380,7 @@ export default function EmployeeHub() {
               </div>
               {isAdmin && (
                 <Button variant="outline" asChild className="w-full gap-2 border-primary/30 text-primary">
-                  <Link to="/admin"><Shield className="w-4 h-4" /> Admin Console</Link>
+                  <Link to="/appraisal"><Shield className="w-4 h-4" /> Admin Console</Link>
                 </Button>
               )}
               <Button variant="outline" onClick={handleLogout} className="w-full">Sign Out</Button>
