@@ -129,7 +129,7 @@ export default function BoomInsightsPanel({ viewerHierarchyLevel, isAdmin }: Boo
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {quarterOptions.map((q) => (
+              {quarterOptions().map((q) => (
                 <SelectItem key={q} value={q} className="text-xs">
                   {q}
                 </SelectItem>

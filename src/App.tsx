@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import DemoDashboard from "./pages/DemoDashboard";
 import EmployeeHub from "./pages/EmployeeHub";
 import AppraisalAdmin from "./pages/AppraisalAdmin";
+import OmotolaRoutingConfigurator, { OmotolaRouteGate } from "./pages/OmotolaRoutingConfigurator";
 import NotFound from "./pages/NotFound";
 import ProfileCompletionGate from "@/components/ProfileCompletionGate";
 import { AppBootstrapSkeleton } from "@/components/shell/LoadingShells";
@@ -76,6 +77,16 @@ function AppRoutes() {
         }
       />
       <Route path="/appraisal" element={<ProtectedAdminRoute><AppraisalAdmin /></ProtectedAdminRoute>} />
+      <Route
+        path="/omotola"
+        element={
+          <ProtectedEmployeeRoute>
+            <OmotolaRouteGate>
+              <OmotolaRoutingConfigurator />
+            </OmotolaRouteGate>
+          </ProtectedEmployeeRoute>
+        }
+      />
       <Route path="/demo" element={EO_PILOT_ONLY ? <Navigate to="/login" replace /> : <DemoDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
