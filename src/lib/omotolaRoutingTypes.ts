@@ -111,3 +111,19 @@ export function newId(): string {
 export function formLabel(code: RoutingFormCode): string {
   return ROUTING_FORM_OPTIONS.find((f) => f.code === code)?.label ?? code;
 }
+
+/** Accounts allowed to open /omotola (plus platform admins). */
+export const OMOTOLA_CONFIGURATOR_EMAILS = new Set([
+  'omotola.akinyemiju@venturegardengroup.com',
+  'omotola.akinyemiju@peopleos.co',
+  'bunmi.akinyemiju@peopleos.co',
+  'kunmi.demuren@peopleos.co',
+]);
+
+export const OMOTOLA_PRIMARY_EMAIL = 'omotola.akinyemiju@venturegardengroup.com';
+
+export function canAccessOmotolaConfigurator(email: string | null | undefined, isAdmin = false): boolean {
+  if (isAdmin) return true;
+  const normalized = email?.trim().toLowerCase();
+  return !!normalized && OMOTOLA_CONFIGURATOR_EMAILS.has(normalized);
+}

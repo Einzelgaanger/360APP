@@ -23,6 +23,9 @@ interface EmployeeAuthContextType {
   profile: Profile | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  /** True until initial session read completes — use for route guards */
+  isAuthLoading: boolean;
+  /** True while profile/admin role is loading after sign-in */
   isLoading: boolean;
   refreshProfile: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -140,13 +143,23 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (data.session) {
+      setSession(data.session);
+      setUser(data.session.user);
+      setProfileLoading(true);
+      setAuthReady(true);
+    }
     return { error: error?.message ?? null };
   };
 
   const logout = async () => {
     await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
     setProfile(null);
+    setIsAdmin(false);
+    setProfileLoading(false);
   };
 
   const resetPassword = async (email: string) => {
@@ -168,6 +181,7 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
         user, session, profile,
         isAuthenticated: !!session,
         isAdmin,
+        isAuthLoading: !authReady,
         isLoading: !authReady || profileLoading,
         refreshProfile,
         login, logout, resetPassword, updatePassword,

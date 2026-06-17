@@ -16,7 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import DemoDashboard from "./pages/DemoDashboard";
 import EmployeeHub from "./pages/EmployeeHub";
 import AppraisalAdmin from "./pages/AppraisalAdmin";
-import OmotolaRoutingConfigurator, { OmotolaRouteGate } from "./pages/OmotolaRoutingConfigurator";
+import OmotolaRoutingConfigurator from "./pages/OmotolaRoutingConfigurator";
 import NotFound from "./pages/NotFound";
 import ProfileCompletionGate from "@/components/ProfileCompletionGate";
 import { AppBootstrapSkeleton } from "@/components/shell/LoadingShells";
@@ -39,9 +39,9 @@ function ProtectedEmployeeRoute({
   children: React.ReactNode;
   requireProfile?: boolean;
 }) {
-  const { isAuthenticated, isLoading } = useEmployeeAuth();
+  const { isAuthenticated, isAuthLoading } = useEmployeeAuth();
   const location = useLocation();
-  if (isLoading) return <AppBootstrapSkeleton />;
+  if (isAuthLoading) return <AppBootstrapSkeleton />;
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -64,17 +64,24 @@ function AdminGate() {
   return <Login />;
 }
 
+function HomeRoute() {
+  const { isAuthenticated: isEmployee, isAuthLoading } = useEmployeeAuth();
+  if (isAuthLoading) return <AppBootstrapSkeleton />;
+  return isEmployee ? <Navigate to="/hub?tab=survey" replace /> : <Onboarding />;
+}
+
+function LoginRoute() {
+  const { isAuthenticated: isEmployee, isAuthLoading } = useEmployeeAuth();
+  if (isAuthLoading) return <AppBootstrapSkeleton />;
+  return isEmployee ? <EmployeeLoginRedirect /> : <EmployeeLogin />;
+}
+
 function AppRoutes() {
-  const { isAuthenticated: isEmployee, isLoading } = useEmployeeAuth();
-
-  if (isLoading) {
-    return <AppBootstrapSkeleton />;
-  }
-
   return (
     <Routes>
-      <Route path="/" element={isEmployee ? <Navigate to="/hub?tab=survey" replace /> : <Onboarding />} />
-      <Route path="/login" element={isEmployee ? <EmployeeLoginRedirect /> : <EmployeeLogin />} />
+      <Route path="/omotola" element={<OmotolaRoutingConfigurator />} />
+      <Route path="/" element={<HomeRoute />} />
+      <Route path="/login" element={<LoginRoute />} />
       <Route path="/landing" element={<Index />} />
       <Route path="/find-account" element={<FindAccount />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -95,16 +102,6 @@ function AppRoutes() {
         }
       />
       <Route path="/appraisal" element={<ProtectedAdminRoute><AppraisalAdmin /></ProtectedAdminRoute>} />
-      <Route
-        path="/omotola"
-        element={
-          <ProtectedEmployeeRoute requireProfile={false}>
-            <OmotolaRouteGate>
-              <OmotolaRoutingConfigurator />
-            </OmotolaRouteGate>
-          </ProtectedEmployeeRoute>
-        }
-      />
       <Route path="/demo" element={EO_PILOT_ONLY ? <Navigate to="/login" replace /> : <DemoDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

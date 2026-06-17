@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +32,14 @@ export default function EmployeeLogin() {
     try {
       const { error } = await login(email, password);
       if (error) setError(error);
-      else navigate(afterLogin, { replace: true });
+      else {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setError('Sign-in succeeded but the session was not saved. Check that cookies/storage are allowed and try again.');
+          return;
+        }
+        window.location.assign(afterLogin);
+      }
     } catch {
       setError('An error occurred. Please try again.');
     } finally {
