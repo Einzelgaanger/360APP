@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { Button } from '@/components/ui/button';
@@ -42,21 +42,39 @@ import {
 
 const CONFIGURATOR_EMAILS = new Set([
   'omotola.akinyemiju@venturegardengroup.com',
+  'omotola.akinyemiju@peopleos.co',
   'bunmi.akinyemiju@peopleos.co',
+  'kunmi.demuren@peopleos.co',
 ]);
 
-function loadWorkbook(): RoutingWorkbook | null {
-  try {
-    const raw = localStorage.getItem(ROUTING_STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as RoutingWorkbook;
-  } catch {
-    return null;
-  }
-}
-
-function saveWorkbook(wb: RoutingWorkbook) {
-  localStorage.setItem(ROUTING_STORAGE_KEY, JSON.stringify(wb));
+function OmotolaAccessDenied({ email }: { email: string }) {
+  const { logout } = useEmployeeAuth();
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
+      <div className="glass-panel max-w-md p-6 space-y-4 text-center">
+        <h1 className="text-lg font-bold">Routing designer — access only</h1>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          This page is for Omotola (and platform admins) to define appraisal relationships. You are signed in as:
+        </p>
+        <p className="text-xs font-mono bg-muted px-3 py-2 rounded-lg break-all">{email || 'unknown'}</p>
+        <div className="flex flex-col gap-2 pt-2">
+          <Button asChild variant="default" size="sm">
+            <Link to="/hub?tab=survey">Go to Appraisal hub</Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              await logout();
+              window.location.href = '/login';
+            }}
+          >
+            Sign out and use Omotola&apos;s account
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function OmotolaRouteGate({ children }: { children: React.ReactNode }) {
@@ -70,9 +88,23 @@ export function OmotolaRouteGate({ children }: { children: React.ReactNode }) {
   }
   const email = profile?.email?.trim().toLowerCase() ?? '';
   if (!isAdmin && !CONFIGURATOR_EMAILS.has(email)) {
-    return <Navigate to="/hub?tab=survey" replace />;
+    return <OmotolaAccessDenied email={email} />;
   }
   return <>{children}</>;
+}
+
+function loadWorkbook(): RoutingWorkbook | null {
+  try {
+    const raw = localStorage.getItem(ROUTING_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as RoutingWorkbook;
+  } catch {
+    return null;
+  }
+}
+
+function saveWorkbook(wb: RoutingWorkbook) {
+  localStorage.setItem(ROUTING_STORAGE_KEY, JSON.stringify(wb));
 }
 
 export default function OmotolaRoutingConfigurator() {

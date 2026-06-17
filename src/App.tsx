@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { EmployeeAuthProvider, useEmployeeAuth } from "@/contexts/EmployeeAuthContext";
@@ -32,10 +32,28 @@ function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
   return <Navigate to="/admin" replace />;
 }
 
-function ProtectedEmployeeRoute({ children }: { children: React.ReactNode }) {
+function ProtectedEmployeeRoute({
+  children,
+  requireProfile = true,
+}: {
+  children: React.ReactNode;
+  requireProfile?: boolean;
+}) {
   const { isAuthenticated, isLoading } = useEmployeeAuth();
+  const location = useLocation();
   if (isLoading) return <AppBootstrapSkeleton />;
-  return isAuthenticated ? <ProfileCompletionGate>{children}</ProfileCompletionGate> : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  if (!requireProfile) return <>{children}</>;
+  return <ProfileCompletionGate>{children}</ProfileCompletionGate>;
+}
+
+function EmployeeLoginRedirect() {
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname: string; search?: string } } | null)?.from;
+  const target = from ? `${from.pathname}${from.search ?? ''}` : '/hub?tab=survey';
+  return <Navigate to={target} replace />;
 }
 
 function AdminGate() {
@@ -56,7 +74,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={isEmployee ? <Navigate to="/hub?tab=survey" replace /> : <Onboarding />} />
-      <Route path="/login" element={isEmployee ? <Navigate to="/hub?tab=survey" replace /> : <EmployeeLogin />} />
+      <Route path="/login" element={isEmployee ? <EmployeeLoginRedirect /> : <EmployeeLogin />} />
       <Route path="/landing" element={<Index />} />
       <Route path="/find-account" element={<FindAccount />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -80,7 +98,7 @@ function AppRoutes() {
       <Route
         path="/omotola"
         element={
-          <ProtectedEmployeeRoute>
+          <ProtectedEmployeeRoute requireProfile={false}>
             <OmotolaRouteGate>
               <OmotolaRoutingConfigurator />
             </OmotolaRouteGate>

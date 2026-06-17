@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 
@@ -18,6 +18,10 @@ export default function EmployeeLogin() {
   const [submitTick, setSubmitTick] = useState(0);
   const { login } = useEmployeeAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo =
+    (location.state as { from?: { pathname: string; search?: string } } | null)?.from;
+  const afterLogin = returnTo ? `${returnTo.pathname}${returnTo.search ?? ''}` : '/hub?tab=survey';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +31,7 @@ export default function EmployeeLogin() {
     try {
       const { error } = await login(email, password);
       if (error) setError(error);
-      else navigate('/hub?tab=dashboard');
+      else navigate(afterLogin, { replace: true });
     } catch {
       setError('An error occurred. Please try again.');
     } finally {

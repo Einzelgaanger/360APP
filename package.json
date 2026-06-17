@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "vite preview --host 0.0.0.0",
+    "start": "node scripts/serve-spa.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:demo-auth": "node scripts/seed-demo-auth-users.mjs",
