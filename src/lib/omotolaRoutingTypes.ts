@@ -26,7 +26,7 @@ export const ROUTING_FORM_OPTIONS: {
   },
   {
     code: 'peer_360',
-    label: '360° peer review',
+    label: '360 Peer review',
     cadence: 'Quarterly',
     description: 'Scored anonymous peer review of another person.',
   },

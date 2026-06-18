@@ -7,6 +7,18 @@ export type Boom360CategoryScore = {
   orgAvg: number;
 };
 
+export type Boom360DashboardState = {
+  released: boolean;
+  peerCount: number;
+  minPeersRequired: number;
+  scores: Boom360CategoryScore[];
+  qualitative: {
+    startDoing: { text: string; direction: string }[];
+    stopDoing: { text: string; direction: string }[];
+    continueDoing: { text: string; direction: string }[];
+  };
+};
+
 export type RankedEmployeeScore = {
   employee_id: string;
   name: string;
@@ -43,6 +55,46 @@ export async function fetchMyAggregatedPeer360Scores(
   }));
   const maxR = Math.max(...(boom360 as { response_count: number }[]).map((r) => r.response_count), 0);
   return { scores, maxPeerResponsesHint: maxR };
+}
+
+/** Full anonymous 360 dashboard payload (scores + narrative) for My Dashboard. */
+export async function fetchMy360Dashboard(
+  period: string = defaultQuarterPeriod(),
+): Promise<Boom360DashboardState | null> {
+  const { data, error } = await supabase.rpc('get_my_360_dashboard', { _period: period });
+  if (error || !data || typeof data !== 'object') return null;
+
+  const row = data as {
+    released?: boolean;
+    peer_count?: number;
+    min_peers_required?: number;
+    sections?: { section: string; avg_score: number; response_count: number }[];
+    start_doing?: { text: string; direction?: string }[];
+    stop_doing?: { text: string; direction?: string }[];
+    continue_doing?: { text: string; direction?: string }[];
+  };
+
+  const sections = row.sections ?? [];
+  const scores = sections.map((s) => ({
+    category: s.section?.trim() || '360 feedback',
+    myScore: Number(s.avg_score),
+    orgAvg: 0,
+  }));
+
+  const mapItems = (arr: { text: string; direction?: string }[] | undefined) =>
+    (arr ?? []).map((x) => ({ text: x.text, direction: x.direction ?? 'peer' }));
+
+  return {
+    released: !!row.released,
+    peerCount: row.peer_count ?? 0,
+    minPeersRequired: row.min_peers_required ?? 3,
+    scores,
+    qualitative: {
+      startDoing: mapItems(row.start_doing),
+      stopDoing: mapItems(row.stop_doing),
+      continueDoing: mapItems(row.continue_doing),
+    },
+  };
 }
 
 /**

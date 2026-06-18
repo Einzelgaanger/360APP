@@ -71,19 +71,17 @@ Inside **Appraisal**, you may see up to five sub-tabs depending on your role:
 
 **Your tasks**
 
-1. **Tasks:** Monthly self + performance self + 360 reviews of other L0 and all L1 leads.
+1. **Tasks:** Monthly self + **360 reviews of every other active EO colleague** (full roster — not yourself).
 2. **My feedback:** Your own anonymous 360 aggregates.
 3. **Comments** (Kunmi & Demola only): Narrative feedback to people below you.
-4. **Directory:** View all L2 — open anyone to see self-assessment status + masked 360.
+4. **Directory:** View all L2 — open anyone to see self-assessment status and masked 360.
 5. **Insights:** Org heatmaps — L1 inbound to L0, L2 peer patterns, L1/L2 breakdowns.
 
 **Bunmi (admin) only**
 
-- Open **Admin** (top right) → **BOOM** tab.
-- **Release 360 results** for a quarter when HR is ready (L2 then see their own aggregates).
-- Export BOOM responses for records.
-
-**You do not** 360 review L2 directly — only via L1 as designed.
+- **No Executive Performance self-assessment** — you do not rate yourself on the EPA form.
+- After **Uche, Gisele, Omotola, and Deyi** submit their **Executive Performance self-assessment**, open **Executive Performance Assessment (GCEO assessor)** in Tasks to read their narratives, score against behavioural anchors, and add commentary.
+- Open **Admin** (top right) → **BOOM** tab → **Release 360 results** when HR is ready.
 
 ---
 
@@ -91,27 +89,41 @@ Inside **Appraisal**, you may see up to five sub-tabs depending on your role:
 
 | Person | Email | Pod | Flags |
 |--------|-------|-----|-------|
-| Omotola Akinyemiju | `omotola.akinyemiju@venturegardengroup.com` | General ops lead | Blue only |
+| Omotola Akinyemiju | `omotola.akinyemiju@venturegardengroup.com` | General ops lead | Executive self + Blue |
 | Uche Ukonu | `uche.ukonu@venturegardengroup.com` | Central ops lead | Green + Orange + Blue |
 | Gisele Ishema Karekezi | `gisele.karakezi@venturegardengroup.com` | Brand & comms lead | Green + Orange + Blue |
 | Deyi Dipeolu | `deyi.dipeolu@venturegardengroup.com` | Portfolio (cross-cutting) | Green + Orange + Blue |
 
 **Your tasks**
 
-1. **Tasks:** Monthly self + (if green) performance self + 360s per your pod rules:
-   - **Omotola:** Other L1 + shared ops (Adeyinka, Favour, Ayomide).
-   - **Uche:** Other L1 + shared ops + central ops + technical.
-   - **Gisele:** Other L1 + comms + shared ops + central ops.
-   - **Deyi:** Other L1 + **all** L2 teams.
-   - All L1 also 360 the **three L0** leaders.
-2. **Comments** (Uche, Gisele, Deyi — orange): Write constructive narrative feedback to your blue L2 reports.
-3. **Directory:** Browse all L2; drill into monthly/performance status and anonymous 360 by section.
+1. **Tasks:** Monthly self + **Executive Performance self-assessment** (about yourself — same private pattern as monthly self) + **360 reviews** of every other active EO colleague.
+2. **EA quarterly manager review** (Uche, Omotola, Gisele only — not Deyi): rate your configured direct reports — see matrix below.
+3. **Comments** (Uche, Gisele, Deyi — orange): Write constructive narrative feedback to your blue L2 reports.
+4. **Directory:** Browse all L2; drill into monthly/performance status and anonymous 360 by section.
 
-**Omotola:** No quarterly performance self form (blue only). You still do monthly self and 360s.
+**Executive Performance self-assessment** applies only to **Uche, Gisele, Omotola, and Deyi**. After you submit, **Bunmi** receives your responses in his GCEO assessor workflow.
+
+**EA quarterly — who you review**
+
+| Line manager | Reviews | Form |
+|--------------|---------|------|
+| **Bunmi** | Uche, Gisele, Omotola, **Deyi** | **Executive Performance Assessment (GCEO assessor)** — reads your self-assessment, then scores and comments |
+| Uche | Chukwuka, Melissa, Baluku, Regina, Favour, Ekemudeme (Udeme), Adeyinka, Ayomide | EA quarterly manager review |
+| Omotola | Oluwatobiloba, Gideon, Brenda, Chukwuka, Melissa, Baluku, Regina, Favour, Ekemudeme, Adeyinka, Dorathy, Tobi, Ayomide | EA quarterly manager review |
+| Gisele | Oluwatobiloba, Gideon, Brenda | EA quarterly manager review |
+| Ayomide (L2) | Dorathy, Tobi | EA quarterly manager review |
 
 ---
 
-### L2 — Team members
+### L2 — Team members (below Omotola, Uche, Gisele, Deyi)
+
+**Your hub shows one tab — Tasks — with:**
+
+1. **Monthly self-assessment** — private reflection about yourself (one per month).
+2. **360° peer reviews** — rate every other active EO colleague (anonymous to them).
+3. **EA quarterly manager review** — only if you are a configured line manager (e.g. Ayomide rates Dorathy and Tobi).
+
+You do **not** see executive performance forms, EPA assessor sheets, narrative Comments, Directory, or Insights unless you are L0/L1 leadership.
 
 | Person | Email | Pod | Manager |
 |--------|-------|-----|---------|
@@ -131,13 +143,8 @@ Inside **Appraisal**, you may see up to five sub-tabs depending on your role:
 
 **Your tasks**
 
-1. **Tasks:** Monthly self + 360 reviews of:
-   - Your **primary L1 manager** (upward),
-   - **All other L2 colleagues** (peer),
-   - **Direct reports** if you have any (e.g. Dorathy & Tobi → Ayomide).
-2. **You never** 360 Bunmi, Kunmi, or Demola directly.
-3. **Comments → Receive:** Read narrative feedback from leaders (anonymous in display).
-4. **My feedback:** Your 360 averages appear **after HR releases** the quarter.
+1. Open **Tasks** and work through **Monthly self-assessment** (you) then **360° peer reviews** (every colleague except yourself).
+2. After HR releases a quarter, leaders can share aggregate feedback with you — you will not see a separate “My feedback” tab in the app.
 
 ---
 

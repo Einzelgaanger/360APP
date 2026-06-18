@@ -71,6 +71,16 @@ const PEER_360_SCALE = [
   { value: 1, label: 'Rarely — clear gap' },
 ];
 
+/** EA quarterly manager evaluation — performance rubric (not Likert agreement). */
+const EA_QUARTERLY_SCALE = [
+  { value: 6, label: 'Exceptional Performance' },
+  { value: 5, label: 'Exceeded Expectation' },
+  { value: 4, label: 'Met all Expectation' },
+  { value: 3, label: 'Met some Expectations' },
+  { value: 2, label: 'Unsatisfactory performance' },
+  { value: 1, label: 'Did not perform/unrated' },
+];
+
 function wordCount(s: string): number {
   return s.trim().split(/\s+/).filter(Boolean).length;
 }
@@ -352,7 +362,12 @@ export default function AssessmentRunner({
 
   const readOnly = responseStatus === 'submitted';
 
-  const activeScale = formCode === 'peer_360' ? PEER_360_SCALE : SCALE;
+  const activeScale =
+    formCode === 'peer_360'
+      ? PEER_360_SCALE
+      : formCode === 'ea_quarterly'
+        ? EA_QUARTERLY_SCALE
+        : SCALE;
 
   const totalVisible = visibleQuestions.length;
   const answeredCount = useMemo(() => {

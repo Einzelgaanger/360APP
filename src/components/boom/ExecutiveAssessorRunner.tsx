@@ -13,6 +13,11 @@ import {
 import { Loader2, Send, Save, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import {
+  EPA_ASSESSOR_SCALE,
+  epaAnchorForSortOrder,
+  epaQuestionNumFromSortOrder,
+} from '@/lib/epaAssessorAnchors';
 
 type QuestionRow = {
   id: string;
@@ -52,6 +57,8 @@ export interface ExecutiveAssessorRunnerProps {
   period: string;
   reviewerEmployeeId: string;
   reviewerHierarchyLevel: number | null;
+  /** GCEO assessor layer (EPA v2) vs legacy assessor UI */
+  variant?: 'default' | 'gceo';
   onCompleted?: () => void;
 }
 
@@ -63,6 +70,7 @@ export default function ExecutiveAssessorRunner({
   period,
   reviewerEmployeeId,
   reviewerHierarchyLevel,
+  variant = 'gceo',
   onCompleted,
 }: ExecutiveAssessorRunnerProps) {
   const [loading, setLoading] = useState(true);
@@ -74,6 +82,9 @@ export default function ExecutiveAssessorRunner({
   const [assessorReviewId, setAssessorReviewId] = useState<string | null>(null);
   const [reviewStatus, setReviewStatus] = useState<string>('draft');
   const [draftScores, setDraftScores] = useState<Record<string, number>>({});
+  const [draftCommentary, setDraftCommentary] = useState<Record<string, string>>({});
+
+  const activeScale = variant === 'gceo' ? EPA_ASSESSOR_SCALE : SCALE;
 
   const visibleQuestions = useMemo(() => {
     const level = reviewerHierarchyLevel ?? 99;
@@ -176,17 +187,20 @@ export default function ExecutiveAssessorRunner({
 
       const { data: ratings, error: rte } = await supabase
         .from('assessment_assessor_ratings')
-        .select('question_id, score')
+        .select('question_id, score, commentary')
         .eq('assessor_review_id', rev.id);
       if (rte) {
         toast.error('Could not load your scores');
         return;
       }
       const sc: Record<string, number> = {};
+      const cm: Record<string, string> = {};
       (ratings ?? []).forEach((r) => {
         sc[r.question_id] = r.score;
+        if (r.commentary) cm[r.question_id] = r.commentary;
       });
       setDraftScores(sc);
+      setDraftCommentary(cm);
     } finally {
       setLoading(false);
     }
@@ -198,13 +212,16 @@ export default function ExecutiveAssessorRunner({
 
   const readOnly = reviewStatus === 'submitted';
 
-  const persistRatings = async (rows: { question_id: string; score: number }[]) => {
+  const persistRatings = async (
+    rows: { question_id: string; score: number; commentary?: string | null }[],
+  ) => {
     if (!assessorReviewId || !rows.length) return;
     const { error } = await supabase.from('assessment_assessor_ratings').upsert(
       rows.map((r) => ({
         assessor_review_id: assessorReviewId,
         question_id: r.question_id,
         score: r.score,
+        commentary: r.commentary?.trim() || null,
       })),
       { onConflict: 'assessor_review_id,question_id' },
     );
@@ -216,9 +233,15 @@ export default function ExecutiveAssessorRunner({
     const rows = scoredQuestions
       .map((q) => {
         const s = draftScores[q.id];
-        return s !== undefined ? { question_id: q.id, score: s } : null;
+        return s !== undefined
+          ? {
+              question_id: q.id,
+              score: s,
+              commentary: draftCommentary[q.id] ?? null,
+            }
+          : null;
       })
-      .filter((x): x is { question_id: string; score: number } => x !== null);
+      .filter((x): x is { question_id: string; score: number; commentary: string | null } => x !== null);
     if (!rows.length) {
       toast.message('No scores to save yet');
       return;
@@ -256,6 +279,7 @@ export default function ExecutiveAssessorRunner({
       const rows = scoredQuestions.map((q) => ({
         question_id: q.id,
         score: draftScores[q.id]!,
+        commentary: draftCommentary[q.id] ?? null,
       }));
       await persistRatings(rows);
       const { error } = await supabase
@@ -296,7 +320,11 @@ export default function ExecutiveAssessorRunner({
       >
         <DialogHeader className="p-6 pb-4 border-b border-border bg-muted/30">
           <div className="flex flex-wrap items-start justify-between gap-2 pr-8">
-            <DialogTitle className="text-lg">EPA assessor scores</DialogTitle>
+            <DialogTitle className="text-lg">
+              {variant === 'gceo'
+                ? 'Executive Performance Assessment — GCEO assessor'
+                : 'EPA assessor scores'}
+            </DialogTitle>
             <Badge variant="outline" className="text-[10px] font-normal shrink-0">
               Independent rating
             </Badge>
@@ -309,8 +337,18 @@ export default function ExecutiveAssessorRunner({
                 <span className="text-muted-foreground">· {period}</span>
               </span>
               <p className="text-[11px] mt-2 leading-relaxed">
-                Narratives below are the executive’s submission (read only). Enter your 1–5 scores on each scored item;
-                they are stored separately from the self assessment.
+                {variant === 'gceo' ? (
+                  <>
+                    BOOM-EPA v2 assessor layer. Read the executive&apos;s narratives (white sections), then use the
+                    behavioural anchors below to score each item. Your scores and commentary are stored separately and
+                    are not shown to the reviewee.
+                  </>
+                ) : (
+                  <>
+                    Narratives below are the executive’s submission (read only). Enter your 1–5 scores on each scored
+                    item; they are stored separately from the self assessment.
+                  </>
+                )}
               </p>
             </div>
           </DialogDescription>
@@ -335,10 +373,9 @@ export default function ExecutiveAssessorRunner({
               {!readOnly && (
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
                   <span className="font-medium text-foreground/80">Scale:</span>
-                  {SCALE.slice(0, 3).map((s) => (
+                  {activeScale.slice(0, 3).map((s) => (
                     <span key={s.value}>
-                      <strong className="text-foreground">{s.value}</strong>{' '}
-                      {s.label.includes('—') ? s.label.split('—')[0].trim() : s.label.split(' / ')[0]}
+                      <strong className="text-foreground">{s.value}</strong> {s.short ?? s.label}
                     </span>
                   ))}
                   <span>…</span>
@@ -364,12 +401,41 @@ export default function ExecutiveAssessorRunner({
                   {sec.qs.map((q) => {
                     const self = selfByQuestion[q.id];
                     if (q.question_type === 'scored') {
+                      const writtenQ = sec.qs.find(
+                        (w) => w.question_type === 'written' && w.sort_order === q.sort_order + 1,
+                      );
+                      const narrative = writtenQ ? (selfByQuestion[writtenQ.id]?.text ?? '').trim() : '';
+                      const anchor =
+                        variant === 'gceo' ? epaAnchorForSortOrder(q.sort_order) : undefined;
+                      const qNum =
+                        variant === 'gceo' ? epaQuestionNumFromSortOrder(q.sort_order) : null;
                       return (
                         <div
                           key={q.id}
                           className="rounded-2xl border border-border/70 bg-card/50 p-4 space-y-3"
                         >
+                          {qNum != null && (
+                            <Badge variant="outline" className="text-[9px] font-mono">
+                              Q{qNum}
+                            </Badge>
+                          )}
                           <p className="text-sm font-medium leading-relaxed">{q.question_text}</p>
+                          {writtenQ && (
+                            <p className="text-sm text-foreground/90 leading-relaxed border-l-2 border-border pl-3">
+                              {writtenQ.question_text}
+                            </p>
+                          )}
+                          {narrative ? (
+                            <Textarea
+                              readOnly
+                              value={narrative}
+                              className="min-h-[100px] text-sm bg-background/50"
+                            />
+                          ) : (
+                            <p className="text-[11px] text-amber-700 bg-amber-500/10 rounded-lg px-3 py-2">
+                              Executive narrative not submitted yet for this question.
+                            </p>
+                          )}
                           {q.helper_text && (
                             <p className="text-[11px] text-muted-foreground">{q.helper_text}</p>
                           )}
@@ -377,10 +443,45 @@ export default function ExecutiveAssessorRunner({
                             <p className="text-[11px] text-muted-foreground">
                               Executive self-rating:{' '}
                               <strong className="text-foreground">{self.score}</strong>
+                              {draftScores[q.id] != null && (
+                                <>
+                                  {' '}
+                                  · Gap:{' '}
+                                  <strong
+                                    className={
+                                      draftScores[q.id]! - self.score < 0
+                                        ? 'text-amber-700'
+                                        : 'text-foreground'
+                                    }
+                                  >
+                                    {(draftScores[q.id]! - self.score).toFixed(0)}
+                                  </strong>
+                                </>
+                              )}
                             </p>
                           )}
+                          {anchor && (
+                            <div className="rounded-xl border-2 border-emerald-600/30 bg-emerald-500/5 p-3 space-y-2">
+                              <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+                                Assessor view — behavioural anchors
+                              </p>
+                              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                {anchor.measuring}
+                              </p>
+                              <div className="space-y-1.5">
+                                {anchor.anchors.map((a) => (
+                                  <p key={a.score} className="text-[10px] leading-snug">
+                                    <strong>
+                                      {a.score} — {a.label}:
+                                    </strong>{' '}
+                                    {a.lookFor}
+                                  </p>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           <div className="flex flex-wrap gap-2">
-                            {SCALE.map((s) => (
+                            {activeScale.map((s) => (
                               <button
                                 key={s.value}
                                 type="button"
@@ -398,16 +499,33 @@ export default function ExecutiveAssessorRunner({
                               >
                                 <span className="font-bold">{s.value}</span>
                                 <span className="hidden sm:block text-[8px] opacity-80 leading-tight max-w-[4.5rem] line-clamp-2">
-                                  {s.label.includes('—') ? s.label.split('—')[0].trim() : s.label.split(' / ')[0]}
+                                  {'short' in s && s.short ? s.short : s.label}
                                 </span>
                               </button>
                             ))}
                           </div>
                           <p className="text-[10px] uppercase tracking-wide text-muted-foreground pt-1">
-                            Your assessor score
+                            GCEO assessor rating
                           </p>
+                          {variant === 'gceo' && (
+                            <Textarea
+                              placeholder="GCEO commentary — engage with what the executive wrote; note inflation or underestimation."
+                              value={draftCommentary[q.id] ?? ''}
+                              readOnly={readOnly}
+                              onChange={(e) =>
+                                setDraftCommentary((prev) => ({ ...prev, [q.id]: e.target.value }))
+                              }
+                              className="min-h-[72px] text-sm"
+                            />
+                          )}
                         </div>
                       );
+                    }
+                    if (q.question_type === 'written') {
+                      const prevScored = sec.qs.find(
+                        (s) => s.question_type === 'scored' && s.sort_order === q.sort_order - 1,
+                      );
+                      if (prevScored) return null;
                     }
                     const narrative = (self?.text ?? '').trim();
                     if (!narrative) return null;

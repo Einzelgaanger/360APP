@@ -14,7 +14,7 @@ import vggLogo from '@/assets/vgg-logo.webp';
 import {
   CheckCircle2, ChevronRight, ChevronLeft,
   Building2, User, ClipboardList, Send, Loader2, Shield,
-  BarChart3, Trophy, Star, Users, Search, X, ArrowUp, ArrowDown, ArrowLeftRight, Sparkles,
+  BarChart3, Trophy, Star, Users, Search, X, ArrowUp, ArrowDown, ArrowLeftRight, Sparkles, MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -43,7 +43,7 @@ import {
   assignHierarchyPool,
 } from '@/lib/hierarchyConvention';
 import { defaultQuarterPeriod } from '@/lib/boomPeriods';
-import { fetchMyAggregatedPeer360Scores, fetchOrgPerformanceRankings } from '@/lib/boomDashboard360';
+import { fetchMyAggregatedPeer360Scores, fetchMy360Dashboard, fetchOrgPerformanceRankings } from '@/lib/boomDashboard360';
 import { EO_PILOT_ONLY, EO_SUBSIDIARY_ID } from '@/lib/eoPilot';
 
 interface FeedbackItem {
@@ -110,6 +110,11 @@ export default function EmployeeHub() {
   /** legacy multi-subsidiary survey vs aggregated BOOM peer 360 */
   const [dashboardScoreSource, setDashboardScoreSource] = useState<'legacy_survey' | 'boom_peer_360' | 'none'>('none');
   const [boom360DashMeta, setBoom360DashMeta] = useState<{ period: string; maxPeerResponses: number } | null>(null);
+  const [boom360Pending, setBoom360Pending] = useState<{
+    released: boolean;
+    peerCount: number;
+    minRequired: number;
+  } | null>(null);
 
   // Growth Hub state
   const [selectedFocusArea, setSelectedFocusArea] = useState<string | null>(null);
@@ -199,8 +204,48 @@ export default function EmployeeHub() {
     if (!user) return;
     setDashboardLoading(true);
     setBoom360DashMeta(null);
+    setBoom360Pending(null);
     setDashboardScoreSource('none');
     try {
+      const q = defaultQuarterPeriod();
+
+      if (EO_PILOT_ONLY) {
+        const dash = await fetchMy360Dashboard(q);
+        if (dash) {
+          setBoom360Pending({
+            released: dash.released,
+            peerCount: dash.peerCount,
+            minRequired: dash.minPeersRequired,
+          });
+          setBoom360DashMeta({ period: q, maxPeerResponses: dash.peerCount });
+          setDirectionScores({ above: [], peer: [], below: [] });
+          setDirectionCounts({ above: 0, peer: 0, below: 0 });
+          setCohortScores([]);
+          setCohortMeta(null);
+          setCohortRanks([]);
+
+          if (dash.released && dash.scores.length > 0) {
+            setMyScores(dash.scores);
+            setDashboardScoreSource('boom_peer_360');
+            setQualitativeFeedback({
+              startDoing: dash.qualitative.startDoing,
+              stopDoing: dash.qualitative.stopDoing,
+              continueDoing: dash.qualitative.continueDoing,
+            });
+            setAiDataContext(
+              `BOOM Executive Office peer 360 (${q}): anonymous aggregated averages by behaviour section. ${dash.peerCount} peer reviews received.`,
+            );
+            return;
+          }
+
+          setMyScores([]);
+          setDashboardScoreSource('boom_peer_360');
+          setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+          setAiDataContext('');
+          return;
+        }
+      }
+
       const { data: myResponses } = await supabase
         .from('survey_responses')
         .select('id, feedback_direction')
@@ -1082,6 +1127,26 @@ export default function EmployeeHub() {
                         <DetailedCategoryBreakdown scores={myScores} />
                       </div>
 
+                      {dashboardScoreSource === 'boom_peer_360' &&
+                        (qualitativeFeedback.startDoing.length > 0 ||
+                          qualitativeFeedback.stopDoing.length > 0 ||
+                          qualitativeFeedback.continueDoing.length > 0) && (
+                          <div>
+                            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                              <MessageSquare className="w-4 h-4 text-primary" />
+                              Anonymous peer themes
+                            </h2>
+                            <p className="text-[11px] text-muted-foreground mb-4">
+                              Written 360 comments are shown without reviewer names to protect anonymity.
+                            </p>
+                            <QualitativeFeedback
+                              startDoing={qualitativeFeedback.startDoing}
+                              stopDoing={qualitativeFeedback.stopDoing}
+                              continueDoing={qualitativeFeedback.continueDoing}
+                            />
+                          </div>
+                        )}
+
                       {/* Cohort Comparisons: department / level / subsidiary / org */}
                       {cohortMeta && cohortScores.length > 0 && (
                         <PerformanceContext
@@ -1161,6 +1226,30 @@ export default function EmployeeHub() {
                         </>
                       )}
                     </>
+                  ) : boom360Pending ? (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center space-y-3">
+                      <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                      <h2 className="text-lg font-semibold">Your anonymous 360 feedback</h2>
+                      {!boom360Pending.released ? (
+                        <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                          HR has not <strong>released</strong> peer 360 results for{' '}
+                          <span className="font-mono">{defaultQuarterPeriod()}</span> yet. Individual reviewers stay
+                          anonymous; only aggregated scores and themes will appear here after release.
+                        </p>
+                      ) : boom360Pending.peerCount < boom360Pending.minRequired ? (
+                        <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                          Results are released, but you need at least{' '}
+                          <strong>{boom360Pending.minRequired}</strong> peer reviews for anonymity. You have{' '}
+                          <strong>{boom360Pending.peerCount}</strong> so far — ask colleagues to complete their 360
+                          tasks under <strong>Survey</strong>.
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                          Peer reviews are in, but scored sections are not ready yet. Check back shortly or complete any
+                          open 360 tasks on the <strong>Survey</strong> tab.
+                        </p>
+                      )}
+                    </motion.div>
                   ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center">
                       <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-4" />

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,13 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ClipboardList, Loader2, Sparkles, TrendingUp, UserCircle, Mail, MessageSquare, Users, LayoutDashboard } from 'lucide-react';
+import { ClipboardList, Loader2, Sparkles, TrendingUp, UserCircle, Mail, MessageSquare, Users, LayoutDashboard, MessagesSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BoomCommentsPanel from './BoomCommentsPanel';
 import BoomDirectoryPanel from './BoomDirectoryPanel';
 import BoomInsightsPanel from './BoomInsightsPanel';
+import BoomDiscussionsPanel from './BoomDiscussionsPanel';
 import { toast } from 'sonner';
-import { boomFormPurpose, boomHierarchyLabel, boomPeerFormHint } from '@/lib/boomRoleLabels';
+import { boomFormPurpose, boomHierarchyLabel, boomPeerFormHint, boomTasksIntro } from '@/lib/boomRoleLabels';
+import { isEoTeamMember } from '@/lib/eoPilot';
 import {
   defaultMonthPeriod,
   defaultQuarterPeriod,
@@ -57,17 +60,22 @@ export type AssessorTaskRow = {
 
 const FORM_LABELS: Record<string, string> = {
   executive: 'Executive assessment',
-  peer_360: '360° peer review',
+  peer_360: '360 Peer review',
   monthly_self: 'Monthly self-assessment',
   ea_quarterly: 'EA quarterly (manager)',
+  epa_gceo_assessor: 'Executive Performance Assessment (GCEO)',
 };
 
 /** Stable card order so every role sees the same structure */
-const FORM_ORDER = ['executive', 'ea_quarterly', 'peer_360', 'monthly_self'];
+const FORM_ORDER = ['executive', 'epa_gceo_assessor', 'ea_quarterly', 'peer_360', 'monthly_self'];
+const TEAM_MEMBER_FORM_ORDER = ['monthly_self', 'ea_quarterly', 'peer_360'];
+/** L2+ team members never receive executive self-assessment via assignments */
+const TEAM_MEMBER_BLOCKED_FORMS = new Set(['executive']);
 
 function statusBadge(status: string) {
   if (status === 'submitted') return <Badge className="text-[10px] bg-emerald-600">Done</Badge>;
   if (status === 'draft') return <Badge variant="secondary" className="text-[10px]">In progress</Badge>;
+  if (status === 'waiting_self') return <Badge variant="outline" className="text-[10px]">Awaiting self</Badge>;
   return <Badge variant="outline" className="text-[10px]">To do</Badge>;
 }
 
@@ -90,13 +98,18 @@ export default function BoomReviewHub({
   reviewerEmail,
   isPlatformAdmin = false,
 }: BoomReviewHubProps) {
+  const [searchParams] = useSearchParams();
+  const initialBoomTab = searchParams.get('boomTab');
   const [periodQuarter, setPeriodQuarter] = useState(defaultQuarterPeriod);
   const [givesComments, setGivesComments] = useState(false);
   const [receivesComments, setReceivesComments] = useState(false);
-  const [boomTab, setBoomTab] = useState('tasks');
+  const [boomTab, setBoomTab] = useState(
+    () => (initialBoomTab === 'discussions' ? 'discussions' : 'tasks'),
+  );
   const [periodMonth, setPeriodMonth] = useState(defaultMonthPeriod);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<AssignmentRow[]>([]);
+  const teamMemberView = isEoTeamMember(reviewerHierarchyLevel);
   const [results360, setResults360] = useState<
     { question_id: string; question_text: string; section: string; avg_score: number; response_count: number }[]
   >([]);
@@ -140,7 +153,7 @@ export default function BoomReviewHub({
   }, [reviewerEmployeeId, periodQuarter, periodMonth]);
 
   const loadAssessorTasks = useCallback(async () => {
-    if (!reviewerEmployeeId) return;
+    if (!reviewerEmployeeId || teamMemberView) return;
     try {
       const { data, error } = await supabase.rpc('get_epa_assessor_tasks', { _period: periodQuarter });
       if (error) {
@@ -151,7 +164,13 @@ export default function BoomReviewHub({
     } catch {
       setAssessorTasks([]);
     }
-  }, [reviewerEmployeeId, periodQuarter]);
+  }, [reviewerEmployeeId, periodQuarter, teamMemberView]);
+
+  useEffect(() => {
+    if (teamMemberView && boomTab !== 'tasks' && boomTab !== 'discussions' && boomTab !== 'feedback') {
+      setBoomTab('tasks');
+    }
+  }, [teamMemberView, boomTab]);
 
   useEffect(() => {
     void loadAssignments();
@@ -215,12 +234,26 @@ export default function BoomReviewHub({
   }, [rows]);
 
   const sortedFormGroups = useMemo(() => {
-    return [...grouped.entries()].sort((a, b) => {
-      const ia = FORM_ORDER.indexOf(a[0]);
-      const ib = FORM_ORDER.indexOf(b[0]);
+    const order = teamMemberView ? TEAM_MEMBER_FORM_ORDER : FORM_ORDER;
+    const entries = teamMemberView
+      ? [...grouped.entries()].filter(([code]) => !TEAM_MEMBER_BLOCKED_FORMS.has(code))
+      : [...grouped.entries()];
+    return entries.sort((a, b) => {
+      const ia = order.indexOf(a[0]);
+      const ib = order.indexOf(b[0]);
       return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
     });
-  }, [grouped]);
+  }, [grouped, teamMemberView]);
+
+  const epaGceoRevieweeIds = useMemo(
+    () => new Set(rows.filter((r) => r.form_code === 'epa_gceo_assessor').map((r) => r.reviewee_id)),
+    [rows],
+  );
+
+  const filteredAssessorTasks = useMemo(
+    () => assessorTasks.filter((t) => !epaGceoRevieweeIds.has(t.reviewee_id)),
+    [assessorTasks, epaGceoRevieweeIds],
+  );
 
   const assignmentStats = useMemo(() => {
     let todo = 0;
@@ -234,7 +267,32 @@ export default function BoomReviewHub({
     return { todo, draft, done, total: rows.length };
   }, [rows]);
 
-  const openRunner = (a: AssignmentRow) => {
+  const openRunner = async (a: AssignmentRow) => {
+    if (a.form_code === 'epa_gceo_assessor') {
+      if (a.status === 'waiting_self') {
+        toast.message(`${a.reviewee_name} has not submitted their Executive Performance self-assessment yet.`);
+        return;
+      }
+      const { data, error } = await supabase.rpc('resolve_epa_self_response', {
+        _reviewee: a.reviewee_id,
+        _period: periodQuarter,
+      });
+      if (error) {
+        toast.error(error.message || 'Could not load executive self assessment');
+        return;
+      }
+      const row = (data as { self_response_id: string; self_status: string }[] | null)?.[0];
+      if (!row?.self_response_id) {
+        toast.message(`${a.reviewee_name} has not started their Executive Performance self-assessment for ${periodQuarter}.`);
+        return;
+      }
+      setAssessorRunner({
+        selfResponseId: row.self_response_id,
+        revieweeName: a.reviewee_name,
+      });
+      setAssessorRunnerOpen(true);
+      return;
+    }
     const period = a.form_code === 'monthly_self' ? periodMonth : periodQuarter;
     setRunner({
       formCode: a.form_code,
@@ -366,12 +424,17 @@ export default function BoomReviewHub({
           <TabsTrigger value="tasks" className="text-xs gap-1">
             <ClipboardList className="w-3 h-3" /> Tasks
           </TabsTrigger>
+          <TabsTrigger value="discussions" className="text-xs gap-1">
+            <MessagesSquare className="w-3 h-3" /> Discussions
+          </TabsTrigger>
           <TabsTrigger value="feedback" className="text-xs gap-1">
-            <TrendingUp className="w-3 h-3" /> My feedback
+            <TrendingUp className="w-3 h-3" /> My 360 feedback
           </TabsTrigger>
-          <TabsTrigger value="comments" className="text-xs gap-1">
-            <MessageSquare className="w-3 h-3" /> Comments
-          </TabsTrigger>
+          {!teamMemberView && (
+            <TabsTrigger value="comments" className="text-xs gap-1">
+              <MessageSquare className="w-3 h-3" /> Comments
+            </TabsTrigger>
+          )}
           {(isPlatformAdmin || (reviewerHierarchyLevel !== null && reviewerHierarchyLevel <= 1)) && (
             <TabsTrigger value="directory" className="text-xs gap-1">
               <Users className="w-3 h-3" /> Directory
@@ -386,16 +449,16 @@ export default function BoomReviewHub({
 
         <TabsContent value="tasks" className="mt-0 space-y-6">
       <p className="text-xs text-muted-foreground max-w-xl">
-        Monthly self, performance self (green roles), and 360 peers follow the EO org chart.
+        {boomTasksIntro(reviewerHierarchyLevel)}
       </p>
 
-      {assessorTasks.length > 0 && (
+      {!teamMemberView && filteredAssessorTasks.length > 0 && (
         <div className="glass-panel p-5 shadow-sm border-primary/15">
           <div className="mb-4 space-y-1">
             <div className="flex items-center gap-2">
               <ClipboardList className="w-4 h-4 text-primary" />
               <h4 className="text-sm font-semibold">EPA assessor tasks</h4>
-              <span className="text-[10px] text-muted-foreground">({assessorTasks.length})</span>
+              <span className="text-[10px] text-muted-foreground">({filteredAssessorTasks.length})</span>
             </div>
             <p className="text-[11px] text-muted-foreground pl-6 leading-snug">
               Independent 1–5 ratings on executives who have submitted their quarterly executive self assessment for{' '}
@@ -413,7 +476,7 @@ export default function BoomReviewHub({
                 </tr>
               </thead>
               <tbody>
-                {assessorTasks.map((t) => (
+                {filteredAssessorTasks.map((t) => (
                   <tr key={t.self_response_id} className="border-b border-border/40 last:border-0">
                     <td className="py-2.5 pr-3 font-medium">{t.reviewee_name}</td>
                     <td className="py-2.5 pr-3 hidden sm:table-cell text-muted-foreground text-xs">
@@ -446,8 +509,9 @@ export default function BoomReviewHub({
         <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-2 text-sm text-muted-foreground">
           <p>No assignments for these periods.</p>
           <p className="text-xs leading-relaxed">
-            That often means this quarter/month has no open tasks for your role, or periods need changing. Executives,
-            managers, and team members each receive different forms.
+            {teamMemberView
+              ? 'You should see a monthly self-assessment and 360 peer reviews for each colleague. Try changing the month or quarter above, or refresh.'
+              : 'That often means this quarter/month has no open tasks for your role, or periods need changing. Executives, managers, and team members each receive different forms.'}
           </p>
         </div>
       ) : (
@@ -494,8 +558,14 @@ export default function BoomReviewHub({
                         </td>
                         <td className="py-2.5 pr-3">{statusBadge(a.status)}</td>
                         <td className="py-2.5 text-right">
-                          <Button size="sm" variant={a.status === 'submitted' ? 'outline' : 'default'} className="h-8 text-xs" onClick={() => openRunner(a)}>
-                            {a.status === 'submitted' ? 'View' : a.status === 'draft' ? 'Continue' : 'Start'}
+                          <Button size="sm" variant={a.status === 'submitted' ? 'outline' : 'default'} className="h-8 text-xs" onClick={() => void openRunner(a)}>
+                            {a.form_code === 'epa_gceo_assessor' && a.status === 'waiting_self'
+                              ? 'Awaiting self'
+                              : a.status === 'submitted'
+                                ? 'View'
+                                : a.status === 'draft'
+                                  ? 'Continue'
+                                  : 'Start'}
                           </Button>
                         </td>
                       </tr>
@@ -510,6 +580,15 @@ export default function BoomReviewHub({
 
         </TabsContent>
 
+        <TabsContent value="discussions" className="mt-0">
+          <BoomDiscussionsPanel
+            reviewerEmployeeId={reviewerEmployeeId}
+            reviewerEmail={reviewerEmail}
+            periodQuarter={periodQuarter}
+            periodMonth={periodMonth}
+          />
+        </TabsContent>
+
         <TabsContent value="feedback" className="mt-0">
       <div className="glass-panel p-5 border-accent/10">
         <div className="flex items-center gap-2 mb-3">
@@ -519,6 +598,9 @@ export default function BoomReviewHub({
             {periodQuarter}
           </Badge>
         </div>
+        <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
+          Anonymous aggregated peer scores by behaviour section. Individual reviewers are never shown.
+        </p>
         {loading360 ? (
           <p className="text-xs text-muted-foreground flex items-center gap-2">
             <Loader2 className="w-3 h-3 animate-spin" /> Loading…
@@ -554,6 +636,7 @@ export default function BoomReviewHub({
       </div>
         </TabsContent>
 
+        {!teamMemberView && (
         <TabsContent value="comments" className="mt-0">
           <BoomCommentsPanel
             reviewerEmployeeId={reviewerEmployeeId}
@@ -562,6 +645,7 @@ export default function BoomReviewHub({
             receivesComments={receivesComments}
           />
         </TabsContent>
+        )}
 
         <TabsContent value="directory" className="mt-0">
           <BoomDirectoryPanel
@@ -610,7 +694,9 @@ export default function BoomReviewHub({
           period={periodQuarter}
           reviewerEmployeeId={reviewerEmployeeId}
           reviewerHierarchyLevel={reviewerHierarchyLevel}
+          variant="gceo"
           onCompleted={() => {
+            void loadAssignments();
             void loadAssessorTasks();
           }}
         />

@@ -1,0 +1,537 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, MessageCircle, Send, Users } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import {
+  DISCUSSION_FORM_LABELS,
+  discussionThreadTitle,
+  isBoomOversightViewer,
+} from '@/lib/boomDiscussionLabels';
+
+type InboxRow = {
+  discussion_id: string;
+  form_code: string;
+  period: string;
+  subject_id: string;
+  subject_name: string;
+  facilitator_id: string;
+  facilitator_name: string;
+  source_response_id: string | null;
+  message_count: number;
+  last_message_at: string | null;
+  viewer_role: 'subject' | 'facilitator';
+};
+
+type ThreadMessage = {
+  id: string;
+  author_id: string;
+  author_name: string;
+  body: string;
+  created_at: string;
+  is_me: boolean;
+};
+
+type ResultItem = {
+  section?: string;
+  question?: string;
+  question_type?: string;
+  score?: number | null;
+  text_answer?: string | null;
+  no_opportunity?: boolean;
+};
+
+type Peer360Results = {
+  sections?: { section: string; avg_score: number; response_count: number }[];
+  peer_feedback?: {
+    peer_label: string;
+    answers: ResultItem[];
+  }[];
+  subject_view?: boolean;
+  message?: string;
+};
+
+type ThreadData = {
+  discussion_id: string;
+  form_code: string;
+  period: string;
+  subject_id: string;
+  subject_name: string;
+  facilitator_id: string;
+  facilitator_name: string;
+  viewer_role: 'subject' | 'facilitator';
+  results: ResultItem[] | Peer360Results;
+  messages: ThreadMessage[];
+};
+
+type OversightRow = {
+  employee_id: string;
+  employee_name: string;
+  employee_role: string | null;
+  peer_response_count: number;
+  discussion_id: string | null;
+};
+
+interface BoomDiscussionsPanelProps {
+  reviewerEmployeeId: string | null;
+  reviewerEmail?: string | null;
+  periodQuarter: string;
+  periodMonth: string;
+}
+
+function formatTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function ResultsPanel({ formCode, results, viewerRole }: { formCode: string; results: ThreadData['results']; viewerRole: string }) {
+  if (formCode === 'peer_360') {
+    const r = results as Peer360Results;
+    if (r?.subject_view && viewerRole === 'subject') {
+      return (
+        <p className="text-xs text-muted-foreground leading-relaxed p-3 rounded-lg bg-muted/30">
+          {r.message}
+        </p>
+      );
+    }
+    const sections = r?.sections ?? [];
+    const peers = r?.peer_feedback ?? [];
+    return (
+      <div className="space-y-4 text-xs">
+        {sections.length > 0 && (
+          <div>
+            <p className="font-semibold text-foreground mb-2">Section averages</p>
+            <ul className="space-y-1.5">
+              {sections.map((s) => (
+                <li key={s.section} className="flex justify-between gap-2 rounded-lg bg-muted/30 px-3 py-2">
+                  <span className="text-muted-foreground">{s.section}</span>
+                  <span className="font-mono font-medium">{s.avg_score} <span className="text-muted-foreground font-normal">({s.response_count})</span></span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {peers.length > 0 && (
+          <div>
+            <p className="font-semibold text-foreground mb-2">Peer feedback (anonymous labels)</p>
+            <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
+              {peers.map((p) => (
+                <div key={p.peer_label} className="rounded-xl border border-border/60 p-3 space-y-2">
+                  <Badge variant="secondary" className="text-[10px]">{p.peer_label}</Badge>
+                  {p.answers.map((a, i) => (
+                    <div key={i} className="space-y-0.5">
+                      {a.score != null && (
+                        <p className="text-[10px] text-muted-foreground">{a.section} · score {a.score}</p>
+                      )}
+                      {a.text_answer && (
+                        <p className="text-foreground/90 leading-relaxed">{a.text_answer}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {sections.length === 0 && peers.length === 0 && (
+          <p className="text-muted-foreground">No peer 360 submissions yet for this period.</p>
+        )}
+      </div>
+    );
+  }
+
+  const items = (results as ResultItem[]) ?? [];
+  if (!items.length) {
+    return <p className="text-xs text-muted-foreground">No assessment answers to display.</p>;
+  }
+
+  const bySection = new Map<string, ResultItem[]>();
+  for (const item of items) {
+    const sec = item.section ?? 'General';
+    if (!bySection.has(sec)) bySection.set(sec, []);
+    bySection.get(sec)!.push(item);
+  }
+
+  return (
+    <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1 text-xs">
+      {[...bySection.entries()].map(([section, qs]) => (
+        <div key={section}>
+          <p className="font-semibold text-primary mb-2">{section}</p>
+          <ul className="space-y-3">
+            {qs.map((q, i) => (
+              <li key={i} className="rounded-lg bg-muted/25 p-3 space-y-1">
+                <p className="text-foreground/90 leading-relaxed">{q.question}</p>
+                {q.question_type === 'scored' && (
+                  <p className="font-medium">
+                    {q.no_opportunity ? 'N/O' : q.score != null ? `Score: ${q.score}` : '—'}
+                  </p>
+                )}
+                {q.text_answer && (
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{q.text_answer}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function BoomDiscussionsPanel({
+  reviewerEmployeeId,
+  reviewerEmail,
+  periodQuarter,
+  periodMonth,
+}: BoomDiscussionsPanelProps) {
+  const oversight = isBoomOversightViewer(reviewerEmail);
+  const [loading, setLoading] = useState(false);
+  const [inbox, setInbox] = useState<InboxRow[]>([]);
+  const [oversightRoster, setOversightRoster] = useState<OversightRow[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [thread, setThread] = useState<ThreadData | null>(null);
+  const [threadLoading, setThreadLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [view, setView] = useState<'inbox' | 'peer360'>('inbox');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const loadInbox = useCallback(async () => {
+    if (!reviewerEmployeeId) return;
+    const { data, error } = await supabase.rpc('get_boom_discussion_inbox', {
+      _period_quarter: periodQuarter,
+      _period_month: periodMonth,
+    });
+    if (error) {
+      toast.error(error.message);
+      setInbox([]);
+      return;
+    }
+    setInbox((data ?? []) as InboxRow[]);
+  }, [reviewerEmployeeId, periodQuarter, periodMonth]);
+
+  const loadOversightRoster = useCallback(async () => {
+    if (!reviewerEmployeeId || !oversight) return;
+    const { data, error } = await supabase.rpc('get_boom_peer360_oversight_roster', {
+      _period: periodQuarter,
+    });
+    if (error) {
+      setOversightRoster([]);
+      return;
+    }
+    setOversightRoster((data ?? []) as OversightRow[]);
+  }, [reviewerEmployeeId, oversight, periodQuarter]);
+
+  const loadThread = useCallback(async (discussionId: string) => {
+    setThreadLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('get_boom_discussion_thread', {
+        _discussion_id: discussionId,
+      });
+      if (error) throw error;
+      const t = data as ThreadData;
+      if (!t?.discussion_id) {
+        toast.error('Could not load discussion');
+        setThread(null);
+        return;
+      }
+      setThread(t);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not load discussion');
+      setThread(null);
+    } finally {
+      setThreadLoading(false);
+    }
+  }, []);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([loadInbox(), loadOversightRoster()]);
+    setLoading(false);
+  }, [loadInbox, loadOversightRoster]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    if (selectedId) void loadThread(selectedId);
+    else setThread(null);
+  }, [selectedId, loadThread]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [thread?.messages]);
+
+  const groupedInbox = useMemo(() => {
+    const m = new Map<string, InboxRow[]>();
+    for (const row of inbox) {
+      if (!m.has(row.form_code)) m.set(row.form_code, []);
+      m.get(row.form_code)!.push(row);
+    }
+    return m;
+  }, [inbox]);
+
+  const openPeerDiscussion = async (subjectId: string) => {
+    const { data, error } = await supabase.rpc('open_boom_peer360_discussion', {
+      _subject_id: subjectId,
+      _period: periodQuarter,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const id = data as string;
+    setView('inbox');
+    setSelectedId(id);
+    await loadInbox();
+  };
+
+  const sendMessage = async () => {
+    if (!selectedId || !message.trim()) return;
+    setSending(true);
+    try {
+      const { error } = await supabase.rpc('post_boom_discussion_message', {
+        _discussion_id: selectedId,
+        _body: message.trim(),
+      });
+      if (error) throw error;
+      setMessage('');
+      await loadThread(selectedId);
+      await loadInbox();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not send message');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!reviewerEmployeeId) return null;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
+        After assessments are submitted, routed discussions appear here. Each facilitator has a separate thread with the
+        person who owns the results — e.g. a team member may have up to three monthly self threads (line manager, Bunmi,
+        Omotola). Peer 360 oversight is available to Bunmi and Omotola only.
+      </p>
+
+      {oversight && (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={view === 'inbox' ? 'default' : 'outline'}
+            className="text-xs h-8"
+            onClick={() => setView('inbox')}
+          >
+            My discussions
+          </Button>
+          <Button
+            size="sm"
+            variant={view === 'peer360' ? 'default' : 'outline'}
+            className="text-xs h-8 gap-1"
+            onClick={() => setView('peer360')}
+          >
+            <Users className="w-3 h-3" /> 360 Peer review roster
+          </Button>
+        </div>
+      )}
+
+      {loading ? (
+        <p className="text-xs text-muted-foreground flex items-center gap-2 py-6">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading discussions…
+        </p>
+      ) : view === 'peer360' && oversight ? (
+        <div className="glass-panel p-5 space-y-4">
+          <h4 className="text-sm font-semibold">360 Peer review — all colleagues</h4>
+          <p className="text-[11px] text-muted-foreground">
+            Select a person to view peer feedback submitted about them and open a discussion for {periodQuarter}.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-[11px] text-muted-foreground">
+                  <th className="pb-2 pr-3 font-medium">Person</th>
+                  <th className="pb-2 pr-3 font-medium hidden sm:table-cell">Role</th>
+                  <th className="pb-2 pr-3 font-medium">Peer reviews in</th>
+                  <th className="pb-2 font-medium text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {oversightRoster.map((row) => (
+                  <tr key={row.employee_id} className="border-b border-border/40 last:border-0">
+                    <td className="py-2.5 pr-3 font-medium">{row.employee_name}</td>
+                    <td className="py-2.5 pr-3 hidden sm:table-cell text-muted-foreground text-xs">{row.employee_role ?? '—'}</td>
+                    <td className="py-2.5 pr-3 text-xs">{row.peer_response_count}</td>
+                    <td className="py-2.5 text-right">
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => void openPeerDiscussion(row.employee_id)}
+                      >
+                        {row.discussion_id ? 'Open chat' : 'View & discuss'}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[minmax(240px,320px)_1fr] min-h-[420px]">
+          <div className="glass-panel p-4 space-y-3 overflow-y-auto max-h-[70vh]">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4 text-primary" />
+              <h4 className="text-sm font-semibold">Discussions</h4>
+            </div>
+            {inbox.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No discussions yet for the selected periods. They appear when assessments are submitted and routed.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {[...groupedInbox.entries()].map(([code, rows]) => (
+                  <div key={code}>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">
+                      {DISCUSSION_FORM_LABELS[code] ?? code}
+                    </p>
+                    <ul className="space-y-1">
+                      {rows.map((row) => {
+                        const title =
+                          row.viewer_role === 'subject'
+                            ? row.facilitator_name
+                            : row.subject_name;
+                        return (
+                          <li key={row.discussion_id}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedId(row.discussion_id)}
+                              className={cn(
+                                'w-full text-left rounded-xl border px-3 py-2.5 transition-colors text-xs',
+                                selectedId === row.discussion_id
+                                  ? 'border-primary bg-primary/10'
+                                  : 'border-border/60 hover:border-primary/40',
+                              )}
+                            >
+                              <p className="font-medium truncate">{title}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {row.period}
+                                {row.message_count > 0 && ` · ${row.message_count} msg`}
+                              </p>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="glass-panel p-4 flex flex-col min-h-[360px]">
+            {!selectedId ? (
+              <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground">
+                Select a discussion to view results and chat.
+              </div>
+            ) : threadLoading ? (
+              <div className="flex-1 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading thread…
+              </div>
+            ) : thread ? (
+              <>
+                <div className="border-b border-border pb-3 mb-3">
+                  <h4 className="text-sm font-semibold">
+                    {discussionThreadTitle(
+                      thread.form_code,
+                      thread.viewer_role,
+                      thread.subject_name,
+                      thread.facilitator_name,
+                    )}
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {DISCUSSION_FORM_LABELS[thread.form_code]} · {thread.period}
+                  </p>
+                </div>
+
+                <div className="grid gap-4 flex-1 lg:grid-cols-2 min-h-0 overflow-hidden">
+                  <div className="overflow-y-auto min-h-0 pr-1">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Submitted results</p>
+                    <ResultsPanel
+                      formCode={thread.form_code}
+                      results={thread.results}
+                      viewerRole={thread.viewer_role}
+                    />
+                  </div>
+
+                  <div className="flex flex-col min-h-[200px] border-t lg:border-t-0 lg:border-l border-border pt-4 lg:pt-0 lg:pl-4">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Discussion</p>
+                    <div className="flex-1 overflow-y-auto space-y-2 mb-3 min-h-[120px]">
+                      {thread.messages.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic">No messages yet — start the conversation.</p>
+                      ) : (
+                        thread.messages.map((m) => (
+                          <div
+                            key={m.id}
+                            className={cn(
+                              'rounded-xl px-3 py-2 text-xs max-w-[95%]',
+                              m.is_me ? 'bg-primary text-primary-foreground ml-auto' : 'bg-muted/50',
+                            )}
+                          >
+                            <p className="text-[10px] opacity-80 mb-0.5">{m.is_me ? 'You' : m.author_name}</p>
+                            <p className="whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                            <p className="text-[9px] opacity-60 mt-1">{formatTime(m.created_at)}</p>
+                          </div>
+                        ))
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+                    <div className="flex gap-2">
+                      <Textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Write a message…"
+                        rows={2}
+                        className="text-sm min-h-[60px] resize-none"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            void sendMessage();
+                          }
+                        }}
+                      />
+                      <Button
+                        size="icon"
+                        className="shrink-0 h-auto"
+                        disabled={sending || !message.trim()}
+                        onClick={() => void sendMessage()}
+                      >
+                        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => void refresh()}>
+        Refresh discussions
+      </Button>
+    </div>
+  );
+}
