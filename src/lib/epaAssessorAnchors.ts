@@ -1,10 +1,10 @@
 /** BOOM-EPA v2.0 — GCEO / assessor rating scale (May 2026). */
 export const EPA_ASSESSOR_SCALE = [
   { value: 5, label: 'Exceptional', short: 'Exceptional' },
-  { value: 4, label: 'Exceeds standard', short: 'Exceeds' },
-  { value: 3, label: 'Meets standard', short: 'Meets' },
+  { value: 4, label: 'Exceeds Standard', short: 'Exceeds' },
+  { value: 3, label: 'Meets Standard', short: 'Meets' },
   { value: 2, label: 'Developing', short: 'Developing' },
-  { value: 1, label: 'Significant gap', short: 'Gap' },
+  { value: 1, label: 'Significant Gap', short: 'Gap' },
 ] as const;
 
 export type EpaAnchorRow = {

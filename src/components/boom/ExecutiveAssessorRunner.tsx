@@ -18,6 +18,7 @@ import {
   epaAnchorForSortOrder,
   epaQuestionNumFromSortOrder,
 } from '@/lib/epaAssessorAnchors';
+import BoomRatingScaleTable from './BoomRatingScaleTable';
 
 type QuestionRow = {
   id: string;
@@ -362,6 +363,9 @@ export default function ExecutiveAssessorRunner({
           <p className="p-6 text-sm text-muted-foreground">Form unavailable.</p>
         ) : (
           <div className="p-6 space-y-8">
+            {variant === 'gceo' && (
+              <BoomRatingScaleTable title="Rating scale — applies to all GCEO assessor ratings" />
+            )}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
               <p className="text-[11px] text-muted-foreground">
                 <span className="font-medium text-foreground">{answeredScored}</span> / {scoredQuestions.length}{' '}
@@ -505,11 +509,11 @@ export default function ExecutiveAssessorRunner({
                             ))}
                           </div>
                           <p className="text-[10px] uppercase tracking-wide text-muted-foreground pt-1">
-                            GCEO assessor rating
+                            GCEO comment and rating
                           </p>
                           {variant === 'gceo' && (
                             <Textarea
-                              placeholder="GCEO commentary — engage with what the executive wrote; note inflation or underestimation."
+                              placeholder="GCEO comment — engage with what the executive wrote; note inflation or underestimation."
                               value={draftCommentary[q.id] ?? ''}
                               readOnly={readOnly}
                               onChange={(e) =>

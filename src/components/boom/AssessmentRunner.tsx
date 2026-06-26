@@ -14,6 +14,8 @@ import {
 import { Loader2, Send, Save, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { BOOM_RATING_SCALE } from '@/lib/boomRatingScale';
+import BoomRatingScaleTable from './BoomRatingScaleTable';
 
 type QuestionRow = {
   id: string;
@@ -54,7 +56,8 @@ export interface AssessmentRunnerProps {
   onCompleted?: () => void;
 }
 
-const SCALE = [
+/** Legacy Likert — monthly self only. */
+const MONTHLY_LIKERT_SCALE = [
   { value: 5, label: 'Strongly agree / Most likely' },
   { value: 4, label: 'Agree / Likely' },
   { value: 3, label: 'Neutral' },
@@ -62,24 +65,11 @@ const SCALE = [
   { value: 1, label: 'Strongly disagree / Least likely' },
 ];
 
-/** May 2026 EO 360 peer form — behavioural anchors (document-aligned labels). */
-const PEER_360_SCALE = [
-  { value: 5, label: 'Exceptional — sets the standard' },
-  { value: 4, label: 'Strong — consistently above expectation' },
-  { value: 3, label: 'Meets standard — solid, reliable' },
-  { value: 2, label: 'Developing — noticeable gaps' },
-  { value: 1, label: 'Rarely — clear gap' },
-];
-
-/** EA quarterly manager evaluation — performance rubric (not Likert agreement). */
-const EA_QUARTERLY_SCALE = [
-  { value: 6, label: 'Exceptional Performance' },
-  { value: 5, label: 'Exceeded Expectation' },
-  { value: 4, label: 'Met all Expectation' },
-  { value: 3, label: 'Met some Expectations' },
-  { value: 2, label: 'Unsatisfactory performance' },
-  { value: 1, label: 'Did not perform/unrated' },
-];
+const BOOM_SCALE_BUTTONS = BOOM_RATING_SCALE.map((r) => ({
+  value: r.value,
+  label: r.label,
+  short: r.short,
+}));
 
 function wordCount(s: string): number {
   return s.trim().split(/\s+/).filter(Boolean).length;
@@ -278,7 +268,14 @@ export default function AssessmentRunner({
       if (q.question_type === 'scored') {
         const no = !!d.no_opportunity;
         const score = no ? null : d.score ?? null;
-        out.push({ question_id: q.id, score, text_answer: null, no_opportunity: no });
+        const contextComment =
+          formCode === 'peer_360' ? (d.text ?? '').trim() || null : null;
+        out.push({
+          question_id: q.id,
+          score,
+          text_answer: contextComment,
+          no_opportunity: no,
+        });
       } else {
         const text = (d.text ?? '').trim() || null;
         out.push({ question_id: q.id, score: null, text_answer: text, no_opportunity: false });
@@ -362,12 +359,8 @@ export default function AssessmentRunner({
 
   const readOnly = responseStatus === 'submitted';
 
-  const activeScale =
-    formCode === 'peer_360'
-      ? PEER_360_SCALE
-      : formCode === 'ea_quarterly'
-        ? EA_QUARTERLY_SCALE
-        : SCALE;
+  const usesBoomScale = formCode === 'executive' || formCode === 'ea_quarterly' || formCode === 'peer_360';
+  const activeScale = usesBoomScale ? BOOM_SCALE_BUTTONS : MONTHLY_LIKERT_SCALE;
 
   const totalVisible = visibleQuestions.length;
   const answeredCount = useMemo(() => {
@@ -430,6 +423,9 @@ export default function AssessmentRunner({
           <p className="p-6 text-sm text-muted-foreground">Form unavailable.</p>
         ) : (
           <div className="p-6 space-y-8">
+            {usesBoomScale && (
+              <BoomRatingScaleTable showPctRange={formCode === 'ea_quarterly'} />
+            )}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
               <p className="text-[11px] text-muted-foreground">
                 <span className="font-medium text-foreground">{answeredCount}</span> / {totalVisible} prompts answered
@@ -502,7 +498,7 @@ export default function AssessmentRunner({
                               >
                                 <span className="font-bold">{s.value}</span>
                                 <span className="hidden sm:block text-[8px] opacity-80 leading-tight max-w-[4.5rem] line-clamp-2">
-                                  {s.label.includes('—') ? s.label.split('—')[0].trim() : s.label.split(' / ')[0]}
+                                  {'short' in s && s.short ? s.short : s.label.split(' / ')[0]}
                                 </span>
                               </button>
                             ))}
@@ -522,6 +518,15 @@ export default function AssessmentRunner({
                               />
                               Not applicable / no opportunity to observe
                             </label>
+                          )}
+                          {formCode === 'peer_360' && !draft[q.id]?.no_opportunity && (
+                            <Textarea
+                              disabled={readOnly}
+                              value={draft[q.id]?.text ?? ''}
+                              onChange={(e) => setField(q.id, { text: e.target.value })}
+                              className="min-h-[72px] text-sm"
+                              placeholder="Optional comment — add context for this rating (anonymous to reviewee)."
+                            />
                           )}
                         </>
                       )}
