@@ -71,7 +71,7 @@ Inside **Appraisal**, you may see up to five sub-tabs depending on your role:
 
 **Your tasks**
 
-1. **Tasks:** Monthly self + **360 reviews of every other active EO colleague** (full roster — not yourself).
+1. **Tasks:** **360 reviews of every other active EO colleague** (full roster — not yourself). Kunmi and Demola also complete **monthly self**; **Bunmi does not**.
 2. **My feedback:** Your own anonymous 360 aggregates.
 3. **Comments** (Kunmi & Demola only): Narrative feedback to people below you.
 4. **Directory:** View all L2 — open anyone to see self-assessment status and masked 360.
@@ -79,7 +79,8 @@ Inside **Appraisal**, you may see up to five sub-tabs depending on your role:
 
 **Bunmi (admin) only**
 
-- **No Executive Performance self-assessment** — you do not rate yourself on the EPA form.
+- **No monthly self-assessment** and **no Executive Performance self-assessment** — you assess others, not yourself.
+- **EA quarterly manager review** for **Uche, Gisele, and Omotola** (available each quarter without waiting).
 - After **Uche, Gisele, Omotola, and Deyi** submit their **Executive Performance self-assessment**, open **Executive Performance Assessment (GCEO assessor)** in Tasks to read their narratives, score against behavioural anchors, and add commentary.
 - Open **Admin** (top right) → **BOOM** tab → **Release 360 results** when HR is ready.
 
@@ -96,10 +97,11 @@ Inside **Appraisal**, you may see up to five sub-tabs depending on your role:
 
 **Your tasks**
 
-1. **Tasks:** Monthly self + **Executive Performance self-assessment** (about yourself — same private pattern as monthly self) + **360 reviews** of every other active EO colleague.
-2. **EA quarterly manager review** (Uche, Omotola, Gisele only — not Deyi): rate your configured direct reports — see matrix below.
-3. **Comments** (Uche, Gisele, Deyi — orange): Write constructive narrative feedback to your blue L2 reports.
-4. **Directory:** Browse all L2; drill into monthly/performance status and anonymous 360 by section.
+1. **Tasks:** Monthly self + **360 reviews** of every other active EO colleague.
+2. **EA quarterly manager review** for **Uche, Gisele, and Omotola** — rate each as their line manager (available immediately each quarter).
+3. **Executive Performance (GCEO assessor)** for **Uche, Gisele, Omotola, and Deyi** — opens after each person submits their executive self-assessment.
+4. **Comments** (Uche, Gisele, Deyi — orange): Write constructive narrative feedback to your blue L2 reports.
+5. **Directory:** Browse all L2; drill into monthly/performance status and anonymous 360 by section.
 
 **Executive Performance self-assessment** applies only to **Uche, Gisele, Omotola, and Deyi**. After you submit, **Bunmi** receives your responses in his GCEO assessor workflow.
 
@@ -107,7 +109,8 @@ Inside **Appraisal**, you may see up to five sub-tabs depending on your role:
 
 | Line manager | Reviews | Form |
 |--------------|---------|------|
-| **Bunmi** | Uche, Gisele, Omotola, **Deyi** | **Executive Performance Assessment (GCEO assessor)** — reads your self-assessment, then scores and comments |
+| **Bunmi** | **Uche, Gisele, Omotola** | **EA quarterly manager review** (line-manager rating) |
+| **Bunmi** | Uche, Gisele, Omotola, **Deyi** | **Executive Performance Assessment (GCEO assessor)** — after they submit executive self |
 | Uche | Chukwuka, Melissa, Baluku, Regina, Favour, Ekemudeme (Udeme), Adeyinka, Ayomide | EA quarterly manager review |
 | Omotola | Oluwatobiloba, Gideon, Brenda, Chukwuka, Melissa, Baluku, Regina, Favour, Ekemudeme, Adeyinka, Dorathy, Tobi, Ayomide | EA quarterly manager review |
 | Gisele | Oluwatobiloba, Gideon, Brenda | EA quarterly manager review |

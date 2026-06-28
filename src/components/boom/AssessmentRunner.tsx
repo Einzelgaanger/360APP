@@ -75,6 +75,20 @@ function wordCount(s: string): number {
   return s.trim().split(/\s+/).filter(Boolean).length;
 }
 
+/** Executive form pairs: narrative (written) then self-rating (scored). */
+function sortExecutiveSectionQuestions(qs: QuestionRow[]): QuestionRow[] {
+  return [...qs].sort((a, b) => {
+    const pairA = Math.floor((a.sort_order - 1) / 2);
+    const pairB = Math.floor((b.sort_order - 1) / 2);
+    if (pairA !== pairB) return pairA - pairB;
+    const typeRank = (q: QuestionRow) =>
+      q.question_type === 'written' || q.question_type === 'value_example' ? 0 : 1;
+    const byType = typeRank(a) - typeRank(b);
+    if (byType !== 0) return byType;
+    return a.sort_order - b.sort_order;
+  });
+}
+
 export default function AssessmentRunner({
   open,
   onOpenChange,
@@ -140,8 +154,16 @@ export default function AssessmentRunner({
       if (!map.has(o)) map.set(o, { title: q.section, order: o, qs: [] });
       map.get(o)!.qs.push(q);
     }
-    return [...map.values()].sort((a, b) => a.order - b.order);
-  }, [questionsForDisplay]);
+    return [...map.values()]
+      .sort((a, b) => a.order - b.order)
+      .map((sec) => ({
+        ...sec,
+        qs:
+          formCode === 'executive'
+            ? sortExecutiveSectionQuestions(sec.qs)
+            : sec.qs,
+      }));
+  }, [questionsForDisplay, formCode]);
 
   const load = useCallback(async () => {
     if (!open || !reviewerEmployeeId || !revieweeId || !formCode) return;
