@@ -233,6 +233,24 @@ export default function BoomReviewHub({
     return m;
   }, [rows]);
 
+  const showCommentsTab = givesComments || receivesComments;
+
+  const hasOwnMonthlySelf = useMemo(
+    () =>
+      !!reviewerEmployeeId &&
+      rows.some((r) => r.form_code === 'monthly_self' && r.reviewee_id === reviewerEmployeeId),
+    [rows, reviewerEmployeeId],
+  );
+
+  /** Month picker filters own monthly self (Tasks) or L2 monthly threads (Discussions). */
+  const showMonthFilter = hasOwnMonthlySelf || boomTab === 'discussions';
+
+  useEffect(() => {
+    if (!showCommentsTab && boomTab === 'comments') {
+      setBoomTab('tasks');
+    }
+  }, [showCommentsTab, boomTab]);
+
   const sortedFormGroups = useMemo(() => {
     const order = teamMemberView ? TEAM_MEMBER_FORM_ORDER : FORM_ORDER;
     const entries = teamMemberView
@@ -390,8 +408,11 @@ export default function BoomReviewHub({
             </SelectContent>
           </Select>
         </div>
+        {showMonthFilter && (
         <div className="space-y-1">
-          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Month (self)</label>
+          <label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            {hasOwnMonthlySelf ? 'Month (self)' : 'Month (monthly discussions)'}
+          </label>
           <Select value={periodMonth} onValueChange={setPeriodMonth}>
             <SelectTrigger className="w-[140px] h-9 text-xs">
               <SelectValue />
@@ -405,6 +426,7 @@ export default function BoomReviewHub({
             </SelectContent>
           </Select>
         </div>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -430,7 +452,7 @@ export default function BoomReviewHub({
           <TabsTrigger value="feedback" className="text-xs gap-1">
             <TrendingUp className="w-3 h-3" /> My 360 feedback
           </TabsTrigger>
-          {!teamMemberView && (
+          {!teamMemberView && showCommentsTab && (
             <TabsTrigger value="comments" className="text-xs gap-1">
               <MessageSquare className="w-3 h-3" /> Comments
             </TabsTrigger>
@@ -636,7 +658,7 @@ export default function BoomReviewHub({
       </div>
         </TabsContent>
 
-        {!teamMemberView && (
+        {!teamMemberView && showCommentsTab && (
         <TabsContent value="comments" className="mt-0">
           <BoomCommentsPanel
             reviewerEmployeeId={reviewerEmployeeId}
