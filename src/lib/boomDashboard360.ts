@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { defaultQuarterPeriod } from '@/lib/boomPeriods';
+import { filterQualitativeItems, isMeaningfulQualitativeAnswer } from '@/lib/qualitativeFeedback';
 
 export type Boom360CategoryScore = {
   category: string;
@@ -85,7 +86,9 @@ export async function fetchMy360Dashboard(
   }));
 
   const mapItems = (arr: { text: string; direction?: string }[] | undefined) =>
-    (arr ?? []).map((x) => ({ text: x.text, direction: x.direction ?? 'peer' }));
+    filterQualitativeItems(
+      (arr ?? []).map((x) => ({ text: x.text, direction: x.direction ?? 'peer' })),
+    );
 
   return {
     released: !!row.released,
@@ -97,7 +100,9 @@ export async function fetchMy360Dashboard(
       stopDoing: mapItems(row.stop_doing),
       continueDoing: mapItems(row.continue_doing),
     },
-    themes: (row.themes ?? []).map((x) => ({ text: x.text })).filter((x) => x.text?.trim()),
+    themes: (row.themes ?? [])
+      .map((x) => ({ text: x.text }))
+      .filter((x) => isMeaningfulQualitativeAnswer(x.text)),
   };
 }
 
@@ -140,7 +145,9 @@ export async function fetchGrowthHubPulse(
   if (!sections.length) return null;
 
   const mapItems = (arr: { text: string; direction?: string }[] | undefined) =>
-    (arr ?? []).map((x) => ({ text: x.text, direction: x.direction ?? 'peer' }));
+    filterQualitativeItems(
+      (arr ?? []).map((x) => ({ text: x.text, direction: x.direction ?? 'peer' })),
+    );
 
   return {
     mode: row.mode === 'team_pulse' ? 'team_pulse' : 'self',
@@ -157,7 +164,9 @@ export async function fetchGrowthHubPulse(
       stopDoing: mapItems(row.stop_doing),
       continueDoing: mapItems(row.continue_doing),
     },
-    themes: (row.themes ?? []).map((x) => ({ text: x.text })).filter((x) => x.text?.trim()),
+    themes: (row.themes ?? [])
+      .map((x) => ({ text: x.text }))
+      .filter((x) => isMeaningfulQualitativeAnswer(x.text)),
   };
 }
 

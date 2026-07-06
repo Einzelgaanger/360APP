@@ -45,6 +45,7 @@ import {
 import { defaultQuarterPeriod } from '@/lib/boomPeriods';
 import { fetchMyAggregatedPeer360Scores, fetchMy360Dashboard, fetchOrgPerformanceRankings, fetchGrowthHubPulse, buildBoomGrowthAiContext, type GrowthHubPulseMode } from '@/lib/boomDashboard360';
 import { EO_PILOT_ONLY, EO_SUBSIDIARY_ID } from '@/lib/eoPilot';
+import { isMeaningfulQualitativeAnswer } from '@/lib/qualitativeFeedback';
 
 interface FeedbackItem {
   text: string;
@@ -427,7 +428,7 @@ export default function EmployeeHub() {
 
         const fb = { startDoing: [] as FeedbackItem[], stopDoing: [] as FeedbackItem[], continueDoing: [] as FeedbackItem[] };
         allTextAnswers.forEach(a => {
-          if (!a.text_answer?.trim()) return;
+          if (!isMeaningfulQualitativeAnswer(a.text_answer)) return;
           const dir = directionMap[a.response_id] || 'peer';
           // ANONYMITY: drop direction label when <3 reviewers in that group so
           // a single comment can't be tied back to one person.
