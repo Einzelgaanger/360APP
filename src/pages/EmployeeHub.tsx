@@ -43,7 +43,7 @@ import {
   assignHierarchyPool,
 } from '@/lib/hierarchyConvention';
 import { defaultQuarterPeriod } from '@/lib/boomPeriods';
-import { fetchMyAggregatedPeer360Scores, fetchMy360Dashboard, fetchOrgPerformanceRankings } from '@/lib/boomDashboard360';
+import { fetchMyAggregatedPeer360Scores, fetchMy360Dashboard, fetchOrgPerformanceRankings, fetchGrowthHubPulse, buildBoomGrowthAiContext, type GrowthHubPulseMode } from '@/lib/boomDashboard360';
 import { EO_PILOT_ONLY, EO_SUBSIDIARY_ID } from '@/lib/eoPilot';
 
 interface FeedbackItem {
@@ -115,6 +115,9 @@ export default function EmployeeHub() {
     peerCount: number;
     minRequired: number;
   } | null>(null);
+  /** self = personal 360; team_pulse = L0/L1 aggregated L2 pulse for Growth Hub */
+  const [growthHubMode, setGrowthHubMode] = useState<GrowthHubPulseMode | null>(null);
+  const [pulseLabel, setPulseLabel] = useState<string | null>(null);
 
   // Growth Hub state
   const [selectedFocusArea, setSelectedFocusArea] = useState<string | null>(null);
@@ -210,8 +213,32 @@ export default function EmployeeHub() {
       const q = defaultQuarterPeriod();
 
       if (EO_PILOT_ONLY) {
+        const pulse = await fetchGrowthHubPulse(q);
+        if (pulse) {
+          setGrowthHubMode(pulse.mode);
+          setPulseLabel(pulse.pulseLabel);
+          setMyScores(pulse.scores);
+          setDashboardScoreSource('boom_peer_360');
+          setBoom360DashMeta({ period: q, maxPeerResponses: pulse.peerCount });
+          setBoom360Pending(null);
+          setDirectionScores({ above: [], peer: [], below: [] });
+          setDirectionCounts({ above: 0, peer: 0, below: 0 });
+          setCohortScores([]);
+          setCohortMeta(null);
+          setCohortRanks([]);
+          setQualitativeFeedback({
+            startDoing: pulse.qualitative.startDoing,
+            stopDoing: pulse.qualitative.stopDoing,
+            continueDoing: pulse.qualitative.continueDoing,
+          });
+          setAiDataContext(buildBoomGrowthAiContext(pulse, q));
+          return;
+        }
+
         const dash = await fetchMy360Dashboard(q);
         if (dash) {
+          setGrowthHubMode(null);
+          setPulseLabel(null);
           setBoom360Pending({
             released: dash.released,
             peerCount: dash.peerCount,
@@ -232,9 +259,17 @@ export default function EmployeeHub() {
               stopDoing: dash.qualitative.stopDoing,
               continueDoing: dash.qualitative.continueDoing,
             });
-            setAiDataContext(
-              `BOOM Executive Office peer 360 (${q}): anonymous aggregated averages by behaviour section. ${dash.peerCount} peer reviews received.`,
-            );
+            setAiDataContext(buildBoomGrowthAiContext({
+              mode: 'self',
+              pulseLabel: 'Your peer 360 feedback',
+              peerCount: dash.peerCount,
+              subjectCount: 1,
+              scores: dash.scores,
+              qualitative: dash.qualitative,
+              themes: dash.themes,
+            }, q));
+            setGrowthHubMode('self');
+            setPulseLabel('Your peer 360 feedback');
             return;
           }
 
@@ -244,6 +279,14 @@ export default function EmployeeHub() {
           setAiDataContext('');
           return;
         }
+
+        setGrowthHubMode(null);
+        setPulseLabel(null);
+        setMyScores([]);
+        setDashboardScoreSource('none');
+        setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
+        setAiDataContext('');
+        return;
       }
 
       const { data: myResponses } = await supabase
@@ -1104,7 +1147,11 @@ export default function EmployeeHub() {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-6">
                           <h2 className="text-sm font-semibold mb-4">
-                            {dashboardScoreSource === 'boom_peer_360' ? 'BOOM peer 360 — behaviour sections' : 'Overall Competency Overview'}
+                            {growthHubMode === 'team_pulse'
+                              ? `${pulseLabel ?? 'Team pulse'} — behaviour sections`
+                              : dashboardScoreSource === 'boom_peer_360'
+                                ? 'BOOM peer 360 — behaviour sections'
+                                : 'Overall Competency Overview'}
                           </h2>
                           <ResponsiveContainer width="100%" height={280}>
                             <RadarChart data={myScores}>
@@ -1134,10 +1181,12 @@ export default function EmployeeHub() {
                           <div>
                             <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
                               <MessageSquare className="w-4 h-4 text-primary" />
-                              Anonymous peer themes
+                              {growthHubMode === 'team_pulse' ? 'Anonymous team themes' : 'Anonymous peer themes'}
                             </h2>
                             <p className="text-[11px] text-muted-foreground mb-4">
-                              Written 360 comments are shown without reviewer names to protect anonymity.
+                              {growthHubMode === 'team_pulse'
+                                ? 'Aggregated written 360 comments from your oversight roster — no names shown.'
+                                : 'Written 360 comments are shown without reviewer names to protect anonymity.'}
                             </p>
                             <QualitativeFeedback
                               startDoing={qualitativeFeedback.startDoing}
@@ -1291,7 +1340,11 @@ export default function EmployeeHub() {
                       </div>
                       <div>
                         <h2 className="text-base font-bold">Your Growth Hub</h2>
-                        <p className="text-xs text-muted-foreground mt-0.5">Turn feedback into action. Pick a focus area below — we'll find real articles, books, and exercises for you, and help you commit to a small, specific goal.</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {growthHubMode === 'team_pulse'
+                            ? `Leading from team feedback: ${pulseLabel ?? 'L2 team pulse'}. Pick a focus area where your team needs the most lift — Perplexity and Claude will find resources tailored to those themes.`
+                            : 'Turn feedback into action. Pick a focus area below — we\'ll find real articles, books, and exercises for you, and help you commit to a small, specific goal.'}
+                        </p>
                       </div>
                     </div>
                   </motion.div>
@@ -1299,7 +1352,11 @@ export default function EmployeeHub() {
                   {/* Focus area picker — sorted weakest-first */}
                   <div className="glass-panel p-5">
                     <h3 className="text-sm font-semibold mb-1">Pick a focus area</h3>
-                    <p className="text-[10px] text-muted-foreground mb-3">Sorted by your lowest scores — these are where growth will move the needle most.</p>
+                    <p className="text-[10px] text-muted-foreground mb-3">
+                      {growthHubMode === 'team_pulse'
+                        ? 'Sorted by lowest team averages — develop your leadership response to where the pod needs the most support.'
+                        : 'Sorted by your lowest scores — these are where growth will move the needle most.'}
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {[...myScores].sort((a, b) => a.myScore - b.myScore).map((s) => {
                         const isWeak = s.myScore < 3.5;

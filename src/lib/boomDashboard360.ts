@@ -101,6 +101,90 @@ export async function fetchMy360Dashboard(
   };
 }
 
+export type GrowthHubPulseMode = 'self' | 'team_pulse';
+
+export type GrowthHubPulse = {
+  mode: GrowthHubPulseMode;
+  pulseLabel: string;
+  peerCount: number;
+  subjectCount: number;
+  scores: Boom360CategoryScore[];
+  qualitative: {
+    startDoing: { text: string; direction: string }[];
+    stopDoing: { text: string; direction: string }[];
+    continueDoing: { text: string; direction: string }[];
+  };
+  themes: { text: string }[];
+};
+
+/** Personal 360 or L0/L1 team pulse for Growth Hub + dashboard. */
+export async function fetchGrowthHubPulse(
+  period: string = defaultQuarterPeriod(),
+): Promise<GrowthHubPulse | null> {
+  const { data, error } = await supabase.rpc('get_eo_growth_hub_pulse', { _period: period });
+  if (error || !data || typeof data !== 'object') return null;
+
+  const row = data as {
+    mode?: GrowthHubPulseMode;
+    pulse_label?: string;
+    peer_count?: number;
+    subject_count?: number;
+    sections?: { section: string; avg_score: number; response_count: number }[];
+    start_doing?: { text: string; direction?: string }[];
+    stop_doing?: { text: string; direction?: string }[];
+    continue_doing?: { text: string; direction?: string }[];
+    themes?: { text: string }[];
+  };
+
+  const sections = row.sections ?? [];
+  if (!sections.length) return null;
+
+  const mapItems = (arr: { text: string; direction?: string }[] | undefined) =>
+    (arr ?? []).map((x) => ({ text: x.text, direction: x.direction ?? 'peer' }));
+
+  return {
+    mode: row.mode === 'team_pulse' ? 'team_pulse' : 'self',
+    pulseLabel: row.pulse_label?.trim() || 'Your peer 360 feedback',
+    peerCount: row.peer_count ?? 0,
+    subjectCount: row.subject_count ?? 1,
+    scores: sections.map((s) => ({
+      category: s.section?.trim() || '360 feedback',
+      myScore: Number(s.avg_score),
+      orgAvg: 0,
+    })),
+    qualitative: {
+      startDoing: mapItems(row.start_doing),
+      stopDoing: mapItems(row.stop_doing),
+      continueDoing: mapItems(row.continue_doing),
+    },
+    themes: (row.themes ?? []).map((x) => ({ text: x.text })).filter((x) => x.text?.trim()),
+  };
+}
+
+export function buildBoomGrowthAiContext(pulse: GrowthHubPulse, period: string): string {
+  const lines = [
+    pulse.mode === 'team_pulse'
+      ? `BOOM Executive Office team pulse (${period}): ${pulse.pulseLabel}.`
+      : `BOOM Executive Office peer 360 (${period}): personal anonymous feedback.`,
+    `Peer reviews in pool: ${pulse.peerCount}. Team members represented: ${pulse.subjectCount}.`,
+    '',
+    'Section averages (1–5):',
+    ...pulse.scores.map((s) => `• ${s.category}: ${s.myScore}/5`),
+  ];
+
+  const appendQual = (label: string, items: { text: string }[]) => {
+    if (!items.length) return;
+    lines.push('', `${label} (${items.length}):`, ...items.slice(0, 12).map((f) => `• ${f.text}`));
+  };
+
+  appendQual('Start doing themes', pulse.qualitative.startDoing);
+  appendQual('Stop doing themes', pulse.qualitative.stopDoing);
+  appendQual('Continue doing themes', pulse.qualitative.continueDoing);
+  appendQual('Other written themes', pulse.themes);
+
+  return lines.join('\n').slice(0, 1500);
+}
+
 /**
  * Org leaderboard: legacy subsidiary survey + submitted BOOM peer_360 Likert scores.
  */
