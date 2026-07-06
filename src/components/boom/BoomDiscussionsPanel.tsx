@@ -98,6 +98,15 @@ function formatTime(iso: string): string {
   }
 }
 
+function rpcErrorMessage(e: unknown, fallback: string): string {
+  if (e instanceof Error && e.message) return e.message;
+  if (e && typeof e === 'object' && 'message' in e) {
+    const message = (e as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  return fallback;
+}
+
 function ResultsPanel({ formCode, results, viewerRole }: { formCode: string; results: ThreadData['results']; viewerRole: string }) {
   if (formCode === 'peer_360') {
     const r = results as Peer360Results;
@@ -260,7 +269,7 @@ export default function BoomDiscussionsPanel({
         messages: Array.isArray(raw.messages) ? (raw.messages as ThreadMessage[]) : [],
       });
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Could not load discussion');
+      toast.error(rpcErrorMessage(e, 'Could not load discussion'));
       setThread(null);
     } finally {
       setThreadLoading(false);
@@ -331,7 +340,7 @@ export default function BoomDiscussionsPanel({
       await loadThread(selectedId);
       await loadInbox();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Could not send message');
+      toast.error(rpcErrorMessage(e, 'Could not send message'));
     } finally {
       setSending(false);
     }
