@@ -40,7 +40,7 @@ const EXPECTED = [
   { name: 'Brenda Nafula', email: 'brenda.nafula@vgplatform.com', department: 'Executive Office', role: 'EA - Brands and comms' },
   { name: 'Gideon Abiona', email: 'gideon.abiona@venturegardengroup.com', department: 'Executive Office', role: 'Visual Associate - Brands & Coms' },
   { name: 'Favour Oyekanmi', email: 'favour.oyekanmi@venturegardengroup.com', department: 'Executive Office', role: 'EA - Itinerary and Calendar Management' },
-  { name: 'Ekemudeme Inyang', email: 'ekemudeme.iriyang@venturegardengroup.com', department: 'Executive Office', role: 'EA - Itinerary and Calendar Management' },
+  { name: 'Ekemudeme Inyang', email: 'ekemudeme.inyang@venturegardengroup.com', department: 'Executive Office', role: 'EA - Itinerary and Calendar Management' },
   { name: 'Omotola Akinyemiju', email: 'omotola.akinyemiju@venturegardengroup.com', department: 'Executive Office', role: 'Executive Office Lead' },
   { name: 'Adeyinka Oshin', email: 'adeyinka.oshin@venturegardengroup.com', department: 'Executive Office', role: 'Executive Operations Support' },
   { name: 'Deyi Dipeolu', email: 'Deyi.Dipeolu@venturegardengroup.com', department: 'Executive office', role: 'Chief of Staff Portfolio, Capital & Investment' },

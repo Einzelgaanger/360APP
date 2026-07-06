@@ -48,6 +48,8 @@ type Overview = {
 interface BoomInsightsPanelProps {
   viewerHierarchyLevel: number | null;
   isAdmin: boolean;
+  periodQuarter?: string;
+  onPeriodQuarterChange?: (q: string) => void;
 }
 
 function heatColor(score: number | null | undefined): string {
@@ -62,8 +64,15 @@ function fmtScore(v: number | null | undefined, n: number): string {
   return `${v.toFixed(2)} (${n})`;
 }
 
-export default function BoomInsightsPanel({ viewerHierarchyLevel, isAdmin }: BoomInsightsPanelProps) {
-  const [periodQuarter, setPeriodQuarter] = useState(defaultQuarterPeriod);
+export default function BoomInsightsPanel({
+  viewerHierarchyLevel,
+  isAdmin,
+  periodQuarter: periodQuarterProp,
+  onPeriodQuarterChange,
+}: BoomInsightsPanelProps) {
+  const [localQuarter, setLocalQuarter] = useState(() => defaultQuarterPeriod());
+  const periodQuarter = periodQuarterProp ?? localQuarter;
+  const setPeriodQuarter = onPeriodQuarterChange ?? setLocalQuarter;
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<Overview | null>(null);
 
@@ -126,7 +135,7 @@ export default function BoomInsightsPanel({ viewerHierarchyLevel, isAdmin }: Boo
           </div>
           <Select value={periodQuarter} onValueChange={setPeriodQuarter}>
             <SelectTrigger className="h-8 w-[120px] text-xs">
-              <SelectValue />
+              <SelectValue>{periodQuarter}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {quarterOptions().map((q) => (
@@ -142,12 +151,6 @@ export default function BoomInsightsPanel({ viewerHierarchyLevel, isAdmin }: Boo
           rated by L2 vs L1 peers, and how each L2 receives feedback from L1 vs lateral peers. Drill into any
           person in the directory for self-assessment status and 360 by relation.
         </p>
-        {overview?.peer_360_released === false && (
-          <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-500/10 rounded-lg px-3 py-2">
-            HR has not released peer 360 for {periodQuarter}. L0 still sees leadership aggregates below; L2
-            self-views stay gated until release.
-          </p>
-        )}
         {loading ? (
           <p className="text-xs text-muted-foreground flex items-center gap-2">
             <Loader2 className="w-3 h-3 animate-spin" /> Loading insights…
@@ -279,7 +282,7 @@ export default function BoomInsightsPanel({ viewerHierarchyLevel, isAdmin }: Boo
           </div>
         )}
       </div>
-      <BoomDirectoryPanel viewerHierarchyLevel={0} isAdmin={isAdmin} />
+      <BoomDirectoryPanel viewerHierarchyLevel={0} isAdmin={isAdmin} periodQuarter={periodQuarter} />
     </div>
   );
 }

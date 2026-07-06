@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Loader2, Users, Eye } from 'lucide-react';
+import { toast } from 'sonner';
 import { defaultMonthPeriod, defaultQuarterPeriod } from '@/lib/boomPeriods';
 
 const EO_SUBSIDIARY = '11111111-1111-1111-1111-111111111111';
@@ -24,12 +25,24 @@ type RosterRow = {
 };
 
 type Insight = {
+  employee_id?: string;
+  name?: string;
   monthly_self_status?: string;
   executive_self_status?: string;
   peer_360_released?: boolean;
+  can_view_360?: boolean;
   peer_360_sections?: { section: string; avg_score: number; response_count: number }[];
   peer_360_by_relation?: { relation: string; avg_score: number; response_count: number }[];
 };
+
+function parseInsight(data: unknown): Insight | null {
+  if (!data || typeof data !== 'object') return null;
+  const o = data as Record<string, unknown>;
+  if (!o.employee_id && o.monthly_self_status == null && o.executive_self_status == null) {
+    return null;
+  }
+  return data as Insight;
+}
 
 const RELATION_LABELS: Record<string, string> = {
   up: 'From leaders (up)',
@@ -41,12 +54,20 @@ const RELATION_LABELS: Record<string, string> = {
 interface BoomDirectoryPanelProps {
   viewerHierarchyLevel: number | null;
   isAdmin: boolean;
+  periodQuarter?: string;
+  periodMonth?: string;
 }
 
-export default function BoomDirectoryPanel({ viewerHierarchyLevel, isAdmin }: BoomDirectoryPanelProps) {
+export default function BoomDirectoryPanel({
+  viewerHierarchyLevel,
+  isAdmin,
+  periodQuarter = defaultQuarterPeriod(),
+  periodMonth = defaultMonthPeriod(),
+}: BoomDirectoryPanelProps) {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<RosterRow[]>([]);
   const [selected, setSelected] = useState<RosterRow | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [insight, setInsight] = useState<Insight | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
 
@@ -62,7 +83,7 @@ export default function BoomDirectoryPanel({ viewerHierarchyLevel, isAdmin }: Bo
     const { data, error } = await supabase.rpc('get_eo_directory_roster');
     if (!error && data?.length) {
       setRows(data as RosterRow[]);
-    } else if (isAdmin || viewerHierarchyLevel === 0) {
+    } else if (isAdmin || viewerHierarchyLevel === 0 || viewerHierarchyLevel === 1) {
       const { data: fallback } = await supabase
         .from('employees')
         .select('id, name, email, role, department, department_code, manager:manager_id(name)')
@@ -93,14 +114,33 @@ export default function BoomDirectoryPanel({ viewerHierarchyLevel, isAdmin }: Bo
 
   const openInsight = async (row: RosterRow) => {
     setSelected(row);
+    setInsight(null);
+    setDialogOpen(true);
     setInsightLoading(true);
-    const { data, error } = await supabase.rpc('get_eo_employee_insight', {
-      _employee_id: row.employee_id,
-      _period_quarter: defaultQuarterPeriod,
-      _period_month: defaultMonthPeriod,
-    });
-    setInsight(error ? null : (data as Insight));
-    setInsightLoading(false);
+    try {
+      const { data, error } = await supabase.rpc('get_eo_employee_insight', {
+        _employee_id: row.employee_id,
+        _period_quarter: periodQuarter,
+        _period_month: periodMonth,
+      });
+      if (error) {
+        toast.error(error.message);
+        setInsight(null);
+        return;
+      }
+      setInsight(parseInsight(data));
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Could not load colleague insight');
+      setInsight(null);
+    } finally {
+      setInsightLoading(false);
+    }
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setSelected(null);
+    setInsight(null);
   };
 
   if (!canView) {
@@ -148,8 +188,8 @@ export default function BoomDirectoryPanel({ viewerHierarchyLevel, isAdmin }: Bo
         )}
       </div>
 
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <Dialog open={dialogOpen} onOpenChange={(o) => (o ? setDialogOpen(true) : closeDialog())}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
@@ -174,10 +214,12 @@ export default function BoomDirectoryPanel({ viewerHierarchyLevel, isAdmin }: Bo
               </div>
               <div>
                 <p className="text-[10px] uppercase text-muted-foreground mb-2">360 (anonymous aggregate)</p>
-                {!insight.peer_360_released ? (
-                  <p className="text-xs text-muted-foreground">Withheld until HR release for this quarter.</p>
+                {insight.can_view_360 === false ? (
+                  <p className="text-xs text-muted-foreground">
+                    360 aggregates for this person are not shown at your level (e.g. L1 peers for executives).
+                  </p>
                 ) : !insight.peer_360_sections?.length ? (
-                  <p className="text-xs text-muted-foreground">No peer scores yet (or below minimum responses).</p>
+                  <p className="text-xs text-muted-foreground">No peer 360 scores for {periodQuarter} yet.</p>
                 ) : (
                   <>
                     {insight.peer_360_by_relation && insight.peer_360_by_relation.length > 0 && (
@@ -211,9 +253,18 @@ export default function BoomDirectoryPanel({ viewerHierarchyLevel, isAdmin }: Bo
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Could not load insight data.</p>
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">Could not load insight for this colleague.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => selected && void openInsight(selected)}
+              >
+                Retry
+              </Button>
+            </div>
           )}
-          <Button variant="outline" size="sm" onClick={() => setSelected(null)}>
+          <Button variant="outline" size="sm" onClick={closeDialog}>
             Close
           </Button>
         </DialogContent>

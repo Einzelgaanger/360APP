@@ -12,6 +12,20 @@ export function defaultQuarterPeriod(d = new Date()): string {
   return `${y}-Q${q}`;
 }
 
+/** Resolve a quarter from URL/storage; falls back to current quarter if invalid. */
+export function resolveQuarterPeriod(value: string | null | undefined, d = new Date()): string {
+  const opts = quarterOptions(4, 1, d);
+  if (value && opts.includes(value)) return value;
+  return defaultQuarterPeriod(d);
+}
+
+/** Resolve a month key; falls back to current month if invalid. */
+export function resolveMonthPeriod(value: string | null | undefined, d = new Date()): string {
+  const opts = monthOptions(6, 1, d);
+  if (value && opts.includes(value)) return value;
+  return defaultMonthPeriod(d);
+}
+
 export function quarterOptions(countPast = 4, countFuture = 1, d = new Date()): string[] {
   const out: string[] = [];
   const centerYear = d.getFullYear();
@@ -37,7 +51,7 @@ export function quarterOptions(countPast = 4, countFuture = 1, d = new Date()): 
     }
     forward.push(`${y}-Q${q}`);
   }
-  return [...out, ...forward];
+  return [...new Set([...out, ...forward])];
 }
 
 export function monthOptions(monthsBack = 6, monthsAhead = 1, d = new Date()): string[] {

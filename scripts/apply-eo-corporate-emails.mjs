@@ -95,11 +95,11 @@ const UPDATES = [
     },
   },
   {
-    matchEmails: ['udeme.inyang@peopleos.co', 'ekemudeme.iriyang@venturegardengroup.com'],
-    matchNames: ['Udeme Inyang', 'Ekemudeme Iriyang'],
+    matchEmails: ['udeme.inyang@peopleos.co', 'ekemudeme.iriyang@venturegardengroup.com', 'ekemudeme.inyang@venturegardengroup.com'],
+    matchNames: ['Udeme Inyang', 'Ekemudeme Iriyang', 'Ekemudeme Inyang'],
     patch: {
-      email: 'ekemudeme.iriyang@venturegardengroup.com',
-      name: 'Ekemudeme Iriyang',
+      email: 'ekemudeme.inyang@venturegardengroup.com',
+      name: 'Ekemudeme Inyang',
       role: 'EA - Itinerary and Calendar Management',
       department: 'Executive Office',
     },

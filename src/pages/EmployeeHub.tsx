@@ -1232,16 +1232,14 @@ export default function EmployeeHub() {
                       <h2 className="text-lg font-semibold">Your anonymous 360 feedback</h2>
                       {!boom360Pending.released ? (
                         <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
-                          HR has not <strong>released</strong> peer 360 results for{' '}
-                          <span className="font-mono">{defaultQuarterPeriod()}</span> yet. Individual reviewers stay
-                          anonymous; only aggregated scores and themes will appear here after release.
+                          Loading your anonymous 360 feedback for{' '}
+                          <span className="font-mono">{defaultQuarterPeriod()}</span>…
                         </p>
                       ) : boom360Pending.peerCount < boom360Pending.minRequired ? (
                         <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
-                          Results are released, but you need at least{' '}
-                          <strong>{boom360Pending.minRequired}</strong> peer reviews for anonymity. You have{' '}
-                          <strong>{boom360Pending.peerCount}</strong> so far — ask colleagues to complete their 360
-                          tasks under <strong>Survey</strong>.
+                          No peer 360 reviews about you for{' '}
+                          <span className="font-mono">{defaultQuarterPeriod()}</span> yet. Aggregated scores and themes
+                          appear here automatically as colleagues submit — individual reviewers stay anonymous.
                         </p>
                       ) : (
                         <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
@@ -1257,8 +1255,8 @@ export default function EmployeeHub() {
                       <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
                         If you use the <strong>legacy organisation-wide survey</strong>, scores appear when colleagues submit
                         reviews about you. For the <strong>Executive Office BOOM</strong> programme, open{' '}
-                        <strong>Survey</strong> — complete peer 360 tasks; your aggregated 360 chart appears here after HR
-                        releases <span className="font-mono">{defaultQuarterPeriod()}</span> and enough peers have rated you.
+                        <strong>Survey</strong> — complete peer 360 tasks; your anonymous aggregated 360 chart updates live
+                        as colleagues rate you for <span className="font-mono">{defaultQuarterPeriod()}</span>.
                       </p>
                     </motion.div>
                   )}

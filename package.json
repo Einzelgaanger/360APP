@@ -15,7 +15,12 @@
     "seed:demo-auth": "node scripts/seed-demo-auth-users.mjs",
     "apply:eo-org": "node scripts/apply-eo-org-structure.mjs",
     "check:eo-roster": "node scripts/check-eo-roster.mjs",
-    "export:eo-roster": "node scripts/export-eo-team-roster.mjs"
+    "export:eo-roster": "node scripts/export-eo-team-roster.mjs",
+    "db:push": "node scripts/supabase-deploy.mjs --db-only",
+    "db:apply": "node scripts/apply-migrations.mjs",
+    "functions:deploy": "node scripts/supabase-deploy.mjs --functions-only",
+    "secrets:sync": "node scripts/supabase-deploy.mjs --secrets-only",
+    "supabase:deploy": "node scripts/supabase-deploy.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -89,6 +94,7 @@
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
     "lovable-tagger": "^1.1.13",
+    "pg": "^8.22.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

@@ -1,9 +1,27 @@
 export const BOOM_OVERSIGHT_EMAILS = [
   'bunmi.akinyemiju@peopleos.co',
   'omotola.akinyemiju@venturegardengroup.com',
+  'uche.ukonu@venturegardengroup.com',
+  'gisele.karakezi@venturegardengroup.com',
+  'deyi.dipeolu@venturegardengroup.com',
 ] as const;
 
-export function isBoomOversightViewer(email: string | null | undefined): boolean {
+/** L0/L1 can open the peer-360 oversight roster (scoped server-side by pod). */
+export function canViewPeer360Oversight(
+  hierarchyLevel: number | null | undefined,
+  isAdmin?: boolean,
+): boolean {
+  if (isAdmin) return true;
+  if (hierarchyLevel === null || hierarchyLevel === undefined) return false;
+  return hierarchyLevel <= 1;
+}
+
+/** @deprecated Prefer canViewPeer360Oversight(hierarchyLevel) */
+export function isBoomOversightViewer(
+  email: string | null | undefined,
+  hierarchyLevel?: number | null,
+): boolean {
+  if (canViewPeer360Oversight(hierarchyLevel)) return true;
   if (!email) return false;
   const e = email.toLowerCase();
   return BOOM_OVERSIGHT_EMAILS.some((x) => x.toLowerCase() === e);

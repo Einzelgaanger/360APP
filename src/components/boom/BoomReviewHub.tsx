@@ -20,11 +20,13 @@ import { toast } from 'sonner';
 import { boomFormPurpose, boomHierarchyLabel, boomPeerFormHint, boomTasksIntro } from '@/lib/boomRoleLabels';
 import { isEoTeamMember } from '@/lib/eoPilot';
 import {
-  defaultMonthPeriod,
-  defaultQuarterPeriod,
   quarterOptions,
   monthOptions,
+  resolveQuarterPeriod,
+  resolveMonthPeriod,
 } from '@/lib/boomPeriods';
+import { fetchMy360Dashboard, type Boom360DashboardState } from '@/lib/boomDashboard360';
+import QualitativeFeedback from '@/components/employee-dashboard/QualitativeFeedback';
 import AssessmentRunner from './AssessmentRunner';
 import ExecutiveAssessorRunner from './ExecutiveAssessorRunner';
 import {
@@ -98,23 +100,49 @@ export default function BoomReviewHub({
   reviewerEmail,
   isPlatformAdmin = false,
 }: BoomReviewHubProps) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialBoomTab = searchParams.get('boomTab');
-  const [periodQuarter, setPeriodQuarter] = useState(defaultQuarterPeriod);
+  const periodQuarter = resolveQuarterPeriod(searchParams.get('boomQuarter'));
+  const periodMonth = resolveMonthPeriod(searchParams.get('boomMonth'));
+
+  const setPeriodQuarter = useCallback(
+    (q: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('boomQuarter', q);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const setPeriodMonth = useCallback(
+    (m: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('boomMonth', m);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
   const [givesComments, setGivesComments] = useState(false);
   const [receivesComments, setReceivesComments] = useState(false);
   const [boomTab, setBoomTab] = useState(
     () => (initialBoomTab === 'discussions' ? 'discussions' : 'tasks'),
   );
-  const [periodMonth, setPeriodMonth] = useState(defaultMonthPeriod);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<AssignmentRow[]>([]);
   const teamMemberView = isEoTeamMember(reviewerHierarchyLevel);
-  const [results360, setResults360] = useState<
-    { question_id: string; question_text: string; section: string; avg_score: number; response_count: number }[]
-  >([]);
+  const [dashboard360, setDashboard360] = useState<Boom360DashboardState | null>(null);
   const [loading360, setLoading360] = useState(false);
-  const [released360, setReleased360] = useState<boolean | null>(null);
 
   const [runnerOpen, setRunnerOpen] = useState(false);
   const [runner, setRunner] = useState<{
@@ -199,21 +227,8 @@ export default function BoomReviewHub({
     if (!reviewerEmployeeId) return;
     setLoading360(true);
     try {
-      const [{ data: rel, error: relErr }, { data, error }] = await Promise.all([
-        supabase.rpc('peer_360_results_released', { _period: periodQuarter }),
-        supabase.rpc('get_my_360_results', { _period: periodQuarter }),
-      ]);
-      if (!relErr && rel !== null && rel !== undefined) {
-        setReleased360(!!rel);
-      } else {
-        // Migration not applied or RPC error: do not block employees with “withheld” copy.
-        setReleased360(true);
-      }
-      if (error) {
-        setResults360([]);
-        return;
-      }
-      setResults360((data ?? []) as typeof results360);
+      const dash = await fetchMy360Dashboard(periodQuarter);
+      setDashboard360(dash);
     } finally {
       setLoading360(false);
     }
@@ -397,7 +412,7 @@ export default function BoomReviewHub({
           <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Quarter</label>
           <Select value={periodQuarter} onValueChange={setPeriodQuarter}>
             <SelectTrigger className="w-[140px] h-9 text-xs">
-              <SelectValue />
+              <SelectValue>{periodQuarter}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {quarterOptions().map((q) => (
@@ -415,7 +430,7 @@ export default function BoomReviewHub({
           </label>
           <Select value={periodMonth} onValueChange={setPeriodMonth}>
             <SelectTrigger className="w-[140px] h-9 text-xs">
-              <SelectValue />
+              <SelectValue>{periodMonth}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {monthOptions().map((m) => (
@@ -431,6 +446,7 @@ export default function BoomReviewHub({
           variant="outline"
           size="sm"
           className="h-9"
+          disabled={loading}
           onClick={() => {
             void loadAssignments();
             void loadAssessorTasks();
@@ -439,6 +455,10 @@ export default function BoomReviewHub({
         >
           Refresh
         </Button>
+        <Badge variant="secondary" className="h-9 px-3 text-xs font-mono">
+          Viewing {periodQuarter}
+          {showMonthFilter ? ` · ${periodMonth}` : ''}
+        </Badge>
       </div>
 
       <Tabs value={boomTab} onValueChange={setBoomTab} className="space-y-4">
@@ -606,6 +626,8 @@ export default function BoomReviewHub({
           <BoomDiscussionsPanel
             reviewerEmployeeId={reviewerEmployeeId}
             reviewerEmail={reviewerEmail}
+            reviewerHierarchyLevel={reviewerHierarchyLevel}
+            isPlatformAdmin={isPlatformAdmin}
             periodQuarter={periodQuarter}
             periodMonth={periodMonth}
           />
@@ -621,38 +643,74 @@ export default function BoomReviewHub({
           </Badge>
         </div>
         <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
-          Anonymous aggregated peer scores by behaviour section. Individual reviewers are never shown.
+          Anonymous aggregated peer scores by behaviour section — updates as each colleague submits their 360 about you.
+          Individual reviewers are never shown.
         </p>
         {loading360 ? (
           <p className="text-xs text-muted-foreground flex items-center gap-2">
             <Loader2 className="w-3 h-3 animate-spin" /> Loading…
           </p>
-        ) : released360 === false ? (
+        ) : !dashboard360?.scores.length ? (
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Your aggregated 360 scores are withheld until HR or an administrator reviews submissions and{' '}
-            <strong>releases</strong> results for <span className="font-mono">{periodQuarter}</span>. Individual peer
-            responses stay anonymous; only consolidated averages are shown after release.
-          </p>
-        ) : results360.length === 0 ? (
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Results for this quarter are released, but either not enough peer reviews about you have been submitted yet
-            (minimum before averages show), or there are no scored items. Complete any 360 assignments you still have
-            open.
+            No peer 360 about you for <span className="font-mono">{periodQuarter}</span> yet. Scores and comments appear
+            here automatically as colleagues submit — refresh after more reviews come in.
+            {dashboard360 && dashboard360.peerCount > 0 && (
+              <span className="block mt-1">
+                {dashboard360.peerCount} peer review{dashboard360.peerCount === 1 ? '' : 's'} received so far.
+              </span>
+            )}
           </p>
         ) : (
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={results360.map((r) => ({ name: r.section.slice(0, 22), score: r.avg_score }))}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
-                <YAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
-                <Tooltip
-                  contentStyle={{ fontSize: 11 }}
-                  formatter={(v: number) => [v.toFixed(2), 'Avg']}
-                />
-                <Bar dataKey="score" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="space-y-6">
+            {dashboard360.peerCount > 0 && (
+              <p className="text-[10px] text-muted-foreground">
+                Based on <strong className="text-foreground">{dashboard360.peerCount}</strong> anonymous peer review
+                {dashboard360.peerCount === 1 ? '' : 's'} — updates as more colleagues submit.
+              </p>
+            )}
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={dashboard360.scores.map((r) => ({
+                    name: r.category.slice(0, 22),
+                    score: r.myScore,
+                  }))}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
+                  <YAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 11 }}
+                    formatter={(v: number) => [v.toFixed(2), 'Avg']}
+                  />
+                  <Bar dataKey="score" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            {(dashboard360.qualitative.startDoing.length > 0 ||
+              dashboard360.qualitative.stopDoing.length > 0 ||
+              dashboard360.qualitative.continueDoing.length > 0) && (
+              <QualitativeFeedback
+                startDoing={dashboard360.qualitative.startDoing}
+                stopDoing={dashboard360.qualitative.stopDoing}
+                continueDoing={dashboard360.qualitative.continueDoing}
+              />
+            )}
+            {dashboard360.themes.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-foreground">Anonymous peer comments</p>
+                <ul className="space-y-2">
+                  {dashboard360.themes.map((t, i) => (
+                    <li
+                      key={i}
+                      className="text-xs text-muted-foreground leading-relaxed rounded-lg border border-border/50 bg-muted/20 px-3 py-2"
+                    >
+                      {t.text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -673,6 +731,8 @@ export default function BoomReviewHub({
           <BoomDirectoryPanel
             viewerHierarchyLevel={reviewerHierarchyLevel}
             isAdmin={isPlatformAdmin}
+            periodQuarter={periodQuarter}
+            periodMonth={periodMonth}
           />
         </TabsContent>
 
@@ -680,6 +740,8 @@ export default function BoomReviewHub({
           <BoomInsightsPanel
             viewerHierarchyLevel={reviewerHierarchyLevel}
             isAdmin={isPlatformAdmin}
+            periodQuarter={periodQuarter}
+            onPeriodQuarterChange={setPeriodQuarter}
           />
         </TabsContent>
       </Tabs>

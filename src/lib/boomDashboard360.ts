@@ -17,6 +17,8 @@ export type Boom360DashboardState = {
     stopDoing: { text: string; direction: string }[];
     continueDoing: { text: string; direction: string }[];
   };
+  /** All anonymous written peer feedback (incl. optional per-question comments). */
+  themes: { text: string }[];
 };
 
 export type RankedEmployeeScore = {
@@ -28,7 +30,7 @@ export type RankedEmployeeScore = {
 };
 
 /**
- * Aggregated peer 360 about the current user (BOOM), after HR release and minimum peers server-side.
+ * Aggregated peer 360 about the current user (BOOM); updates live as peers submit.
  */
 export async function fetchMyAggregatedPeer360Scores(
   period: string = defaultQuarterPeriod(),
@@ -72,6 +74,7 @@ export async function fetchMy360Dashboard(
     start_doing?: { text: string; direction?: string }[];
     stop_doing?: { text: string; direction?: string }[];
     continue_doing?: { text: string; direction?: string }[];
+    themes?: { text: string }[];
   };
 
   const sections = row.sections ?? [];
@@ -87,13 +90,14 @@ export async function fetchMy360Dashboard(
   return {
     released: !!row.released,
     peerCount: row.peer_count ?? 0,
-    minPeersRequired: row.min_peers_required ?? 3,
+    minPeersRequired: row.min_peers_required ?? 1,
     scores,
     qualitative: {
       startDoing: mapItems(row.start_doing),
       stopDoing: mapItems(row.stop_doing),
       continueDoing: mapItems(row.continue_doing),
     },
+    themes: (row.themes ?? []).map((x) => ({ text: x.text })).filter((x) => x.text?.trim()),
   };
 }
 
