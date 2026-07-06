@@ -284,14 +284,14 @@ export default function AssessmentRunner({
 
   const buildAnswerRows = useCallback(() => {
     if (!responseId) return [];
+    const scoredCommentsEnabled = formCode === 'peer_360' || formCode === 'ea_quarterly';
     const out: { question_id: string; score: number | null; text_answer: string | null; no_opportunity: boolean }[] = [];
     for (const q of visibleQuestions) {
       const d = draft[q.id] ?? {};
       if (q.question_type === 'scored') {
         const no = !!d.no_opportunity;
         const score = no ? null : d.score ?? null;
-        const contextComment =
-          formCode === 'peer_360' ? (d.text ?? '').trim() || null : null;
+        const contextComment = scoredCommentsEnabled ? (d.text ?? '').trim() || null : null;
         out.push({
           question_id: q.id,
           score,
@@ -304,7 +304,7 @@ export default function AssessmentRunner({
       }
     }
     return out;
-  }, [draft, responseId, visibleQuestions]);
+  }, [draft, formCode, responseId, visibleQuestions]);
 
   const handleSaveDraft = async () => {
     if (!responseId || responseStatus !== 'draft') return;
@@ -382,6 +382,7 @@ export default function AssessmentRunner({
   const readOnly = responseStatus === 'submitted';
 
   const usesBoomScale = formCode === 'executive' || formCode === 'ea_quarterly' || formCode === 'peer_360';
+  const scoredCommentsEnabled = formCode === 'peer_360' || formCode === 'ea_quarterly';
   const activeScale = usesBoomScale ? BOOM_SCALE_BUTTONS : MONTHLY_LIKERT_SCALE;
 
   const totalVisible = visibleQuestions.length;
@@ -541,13 +542,17 @@ export default function AssessmentRunner({
                               Not applicable / no opportunity to observe
                             </label>
                           )}
-                          {formCode === 'peer_360' && !draft[q.id]?.no_opportunity && (
+                          {scoredCommentsEnabled && !draft[q.id]?.no_opportunity && (
                             <Textarea
                               disabled={readOnly}
                               value={draft[q.id]?.text ?? ''}
                               onChange={(e) => setField(q.id, { text: e.target.value })}
                               className="min-h-[72px] text-sm"
-                              placeholder="Optional comment — add context for this rating (anonymous to reviewee)."
+                              placeholder={
+                                formCode === 'peer_360'
+                                  ? 'Optional comment — add context for this rating (anonymous to reviewee).'
+                                  : 'Optional comment — add context for this rating.'
+                              }
                             />
                           )}
                         </>
