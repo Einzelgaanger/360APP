@@ -44,8 +44,10 @@ import {
 } from '@/lib/hierarchyConvention';
 import { defaultQuarterPeriod } from '@/lib/boomPeriods';
 import { fetchMyAggregatedPeer360Scores, fetchMy360Dashboard, fetchOrgPerformanceRankings, fetchGrowthHubPulse, buildBoomGrowthAiContext, type GrowthHubPulseMode } from '@/lib/boomDashboard360';
+import { fetchMyEaQuarterlyResults, type EaQuarterlyResults } from '@/lib/boomEaQuarterly';
 import { EO_PILOT_ONLY, EO_SUBSIDIARY_ID } from '@/lib/eoPilot';
 import { isMeaningfulQualitativeAnswer } from '@/lib/qualitativeFeedback';
+import EaQuarterlyDashboardCard from '@/components/employee-dashboard/EaQuarterlyDashboardCard';
 
 interface FeedbackItem {
   text: string;
@@ -119,6 +121,7 @@ export default function EmployeeHub() {
   /** self = personal 360; team_pulse = L0/L1 aggregated L2 pulse for Growth Hub */
   const [growthHubMode, setGrowthHubMode] = useState<GrowthHubPulseMode | null>(null);
   const [pulseLabel, setPulseLabel] = useState<string | null>(null);
+  const [eaQuarterlyResults, setEaQuarterlyResults] = useState<EaQuarterlyResults | null>(null);
 
   // Growth Hub state
   const [selectedFocusArea, setSelectedFocusArea] = useState<string | null>(null);
@@ -197,6 +200,7 @@ export default function EmployeeHub() {
       setDirectionCounts({ above: 0, peer: 0, below: 0 });
       setQualitativeFeedback({ startDoing: [], stopDoing: [], continueDoing: [] });
       setAiDataContext('');
+      setEaQuarterlyResults(null);
       setDashboardLoading(false);
       return;
     }
@@ -210,10 +214,14 @@ export default function EmployeeHub() {
     setBoom360DashMeta(null);
     setBoom360Pending(null);
     setDashboardScoreSource('none');
+    setEaQuarterlyResults(null);
     try {
       const q = defaultQuarterPeriod();
 
       if (EO_PILOT_ONLY) {
+        const eaResults = await fetchMyEaQuarterlyResults(q);
+        if (eaResults?.submissionCount) setEaQuarterlyResults(eaResults);
+
         const pulse = await fetchGrowthHubPulse(q);
         if (pulse) {
           setGrowthHubMode(pulse.mode);
@@ -1139,6 +1147,10 @@ export default function EmployeeHub() {
                     </div>
                   )}
 
+                  {eaQuarterlyResults && eaQuarterlyResults.submissionCount > 0 && (
+                    <EaQuarterlyDashboardCard results={eaQuarterlyResults} />
+                  )}
+
                   {myScores.length > 0 ? (
                     <>
                       {/* AI Insights Carousel */}
@@ -1276,7 +1288,7 @@ export default function EmployeeHub() {
                         </>
                       )}
                     </>
-                  ) : boom360Pending ? (
+                  ) : boom360Pending && !(eaQuarterlyResults && eaQuarterlyResults.submissionCount > 0) ? (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center space-y-3">
                       <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
                       <h2 className="text-lg font-semibold">Your anonymous 360 feedback</h2>
@@ -1298,7 +1310,7 @@ export default function EmployeeHub() {
                         </p>
                       )}
                     </motion.div>
-                  ) : (
+                  ) : !(eaQuarterlyResults && eaQuarterlyResults.submissionCount > 0) ? (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-12 text-center">
                       <BarChart3 className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
                       <h2 className="text-lg font-semibold mb-2">No dashboard scores yet</h2>
@@ -1306,10 +1318,11 @@ export default function EmployeeHub() {
                         If you use the <strong>legacy organisation-wide survey</strong>, scores appear when colleagues submit
                         reviews about you. For the <strong>Executive Office BOOM</strong> programme, open{' '}
                         <strong>Survey</strong> — complete peer 360 tasks; your anonymous aggregated 360 chart updates live
-                        as colleagues rate you for <span className="font-mono">{defaultQuarterPeriod()}</span>.
+                        as colleagues rate you for <span className="font-mono">{defaultQuarterPeriod()}</span>. Your EA
+                        quarterly manager evaluation also appears here once submitted.
                       </p>
                     </motion.div>
-                  )}
+                  ) : null}
                 </motion.div>
               )}
             </motion.div>

@@ -168,6 +168,13 @@ function ResultsPanel({ formCode, results, viewerRole }: { formCode: string; res
     return <p className="text-xs text-muted-foreground">No assessment answers to display.</p>;
   }
 
+  const scored = items.filter((q) => q.question_type === 'scored' && q.score != null && !q.no_opportunity);
+  const avgScore =
+    scored.length > 0
+      ? scored.reduce((sum, q) => sum + (q.score ?? 0), 0) / scored.length
+      : null;
+  const scorePct = avgScore != null ? Math.round((avgScore / 5) * 100) : null;
+
   const bySection = new Map<string, ResultItem[]>();
   for (const item of items) {
     const sec = item.section ?? 'General';
@@ -177,6 +184,17 @@ function ResultsPanel({ formCode, results, viewerRole }: { formCode: string; res
 
   return (
     <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1 text-xs">
+      {formCode === 'ea_quarterly' && scorePct != null && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Quarter score</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {avgScore!.toFixed(2)}/5 across {scored.length} ratings
+            </p>
+          </div>
+          <p className="text-2xl font-bold tabular-nums text-primary">{scorePct}%</p>
+        </div>
+      )}
       {[...bySection.entries()].map(([section, qs]) => (
         <div key={section}>
           <p className="font-semibold text-primary mb-2">{section}</p>

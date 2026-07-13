@@ -8,9 +8,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Loader2, Users, Eye } from 'lucide-react';
+import { Loader2, Users, Eye, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { defaultMonthPeriod, defaultQuarterPeriod } from '@/lib/boomPeriods';
+import {
+  fetchEaQuarterlyStatusRoster,
+  boomScoreBand,
+  type EaQuarterlyStatusRow,
+} from '@/lib/boomEaQuarterly';
+import { cn } from '@/lib/utils';
 
 const EO_SUBSIDIARY = '11111111-1111-1111-1111-111111111111';
 
@@ -24,6 +30,15 @@ type RosterRow = {
   manager_name: string | null;
 };
 
+type EaSubmission = {
+  reviewer_id: string;
+  reviewer_name: string;
+  status: string;
+  submitted_at: string | null;
+  avg_score: number | null;
+  score_pct: number | null;
+};
+
 type Insight = {
   employee_id?: string;
   name?: string;
@@ -33,12 +48,21 @@ type Insight = {
   can_view_360?: boolean;
   peer_360_sections?: { section: string; avg_score: number; response_count: number }[];
   peer_360_by_relation?: { relation: string; avg_score: number; response_count: number }[];
+  ea_quarterly_expected?: number;
+  ea_quarterly_submitted?: number;
+  ea_quarterly_status?: string;
+  ea_quarterly_submissions?: EaSubmission[];
 };
 
 function parseInsight(data: unknown): Insight | null {
   if (!data || typeof data !== 'object') return null;
   const o = data as Record<string, unknown>;
-  if (!o.employee_id && o.monthly_self_status == null && o.executive_self_status == null) {
+  if (
+    !o.employee_id &&
+    o.monthly_self_status == null &&
+    o.executive_self_status == null &&
+    o.ea_quarterly_status == null
+  ) {
     return null;
   }
   return data as Insight;
@@ -50,6 +74,19 @@ const RELATION_LABELS: Record<string, string> = {
   lateral: 'From peers (lateral)',
   self: 'Self',
 };
+
+function eaStatusBadge(status: string | undefined) {
+  switch (status) {
+    case 'complete':
+      return { label: 'EA complete', className: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30' };
+    case 'partial':
+      return { label: 'EA partial', className: 'bg-amber-500/15 text-amber-700 border-amber-500/30' };
+    case 'in_progress':
+      return { label: 'EA in progress', className: 'bg-blue-500/15 text-blue-700 border-blue-500/30' };
+    default:
+      return { label: 'EA todo', className: 'bg-muted text-muted-foreground border-border' };
+  }
+}
 
 interface BoomDirectoryPanelProps {
   viewerHierarchyLevel: number | null;
@@ -66,6 +103,7 @@ export default function BoomDirectoryPanel({
 }: BoomDirectoryPanelProps) {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<RosterRow[]>([]);
+  const [eaRoster, setEaRoster] = useState<EaQuarterlyStatusRow[]>([]);
   const [selected, setSelected] = useState<RosterRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [insight, setInsight] = useState<Insight | null>(null);
@@ -76,11 +114,18 @@ export default function BoomDirectoryPanel({
   const load = useCallback(async () => {
     if (!canView) {
       setRows([]);
+      setEaRoster([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase.rpc('get_eo_directory_roster');
+    const [rosterRes, eaStatus] = await Promise.all([
+      supabase.rpc('get_eo_directory_roster'),
+      fetchEaQuarterlyStatusRoster(periodQuarter),
+    ]);
+    setEaRoster(eaStatus);
+
+    const { data, error } = rosterRes;
     if (!error && data?.length) {
       setRows(data as RosterRow[]);
     } else if (isAdmin || viewerHierarchyLevel === 0 || viewerHierarchyLevel === 1) {
@@ -106,11 +151,13 @@ export default function BoomDirectoryPanel({
       setRows([]);
     }
     setLoading(false);
-  }, [canView, isAdmin, viewerHierarchyLevel]);
+  }, [canView, isAdmin, viewerHierarchyLevel, periodQuarter]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const eaById = Object.fromEntries(eaRoster.map((r) => [r.employee_id, r]));
 
   const openInsight = async (row: RosterRow) => {
     setSelected(row);
@@ -151,8 +198,61 @@ export default function BoomDirectoryPanel({
     );
   }
 
+  const eaComplete = eaRoster.filter((r) => r.status === 'complete').length;
+  const eaPartial = eaRoster.filter((r) => r.status === 'partial' || r.status === 'in_progress').length;
+
   return (
     <>
+      {eaRoster.length > 0 && (
+        <div className="glass-panel p-5 space-y-3 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <ClipboardCheck className="w-4 h-4 text-primary" />
+              <h4 className="text-sm font-semibold">EA quarterly completion</h4>
+              <Badge variant="outline" className="text-[10px] font-mono">
+                {periodQuarter}
+              </Badge>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {eaComplete} complete · {eaPartial} in progress · {eaRoster.length - eaComplete - eaPartial} todo
+            </p>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Updates automatically when a line manager submits an EA quarterly evaluation. Open a person below for
+            who completed it and their cumulative %.
+          </p>
+          <div className="grid gap-1.5 sm:grid-cols-2 max-h-56 overflow-y-auto pr-1">
+            {eaRoster.map((row) => {
+              const badge = eaStatusBadge(row.status);
+              const latest = row.submissions?.find((s) => s.status === 'submitted');
+              return (
+                <div
+                  key={row.employee_id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2 text-xs"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{row.employee_name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {row.submitted_count}/{row.expected_reviewers} manager
+                      {row.expected_reviewers === 1 ? '' : 's'}
+                      {latest?.reviewer_name ? ` · last: ${latest.reviewer_name}` : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {latest?.score_pct != null && (
+                      <span className="font-mono text-[11px] font-semibold">{latest.score_pct}%</span>
+                    )}
+                    <Badge variant="outline" className={cn('text-[9px]', badge.className)}>
+                      {badge.label}
+                    </Badge>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="glass-panel p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-primary" />
@@ -160,7 +260,7 @@ export default function BoomDirectoryPanel({
           <Badge variant="outline" className="text-[10px]">Level 2 · masked 360</Badge>
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Open a colleague to see monthly self-assessment status, performance self-assessment status, and
+          Open a colleague to see monthly self status, EA quarterly completion, performance self status, and
           aggregated anonymous 360 (no reviewer names).
         </p>
         {loading ? (
@@ -169,21 +269,32 @@ export default function BoomDirectoryPanel({
           </p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
-            {rows.map((row) => (
-              <button
-                key={row.employee_id}
-                type="button"
-                onClick={() => void openInsight(row)}
-                className="text-left rounded-xl border border-border p-3 hover:border-primary/40 hover:bg-muted/30 transition-colors"
-              >
-                <p className="font-medium text-sm">{row.name}</p>
-                <p className="text-[11px] text-muted-foreground">{row.role ?? '—'}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {row.department_code ?? row.department ?? '—'}
-                  {row.manager_name ? ` · ${row.manager_name}` : ''}
-                </p>
-              </button>
-            ))}
+            {rows.map((row) => {
+              const ea = eaById[row.employee_id];
+              const badge = ea ? eaStatusBadge(ea.status) : null;
+              return (
+                <button
+                  key={row.employee_id}
+                  type="button"
+                  onClick={() => void openInsight(row)}
+                  className="text-left rounded-xl border border-border p-3 hover:border-primary/40 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-sm">{row.name}</p>
+                    {badge && (
+                      <Badge variant="outline" className={cn('text-[9px] shrink-0', badge.className)}>
+                        {badge.label}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{row.role ?? '—'}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {row.department_code ?? row.department ?? '—'}
+                    {row.manager_name ? ` · ${row.manager_name}` : ''}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -212,6 +323,45 @@ export default function BoomDirectoryPanel({
                   <p className="font-medium">{insight.executive_self_status ?? '—'}</p>
                 </div>
               </div>
+
+              <div className="rounded-lg border p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] uppercase text-muted-foreground">EA quarterly ({periodQuarter})</p>
+                  <Badge
+                    variant="outline"
+                    className={cn('text-[9px]', eaStatusBadge(insight.ea_quarterly_status).className)}
+                  >
+                    {eaStatusBadge(insight.ea_quarterly_status).label}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {insight.ea_quarterly_submitted ?? 0} of {insight.ea_quarterly_expected ?? 0} assigned manager
+                  evaluation{(insight.ea_quarterly_expected ?? 0) === 1 ? '' : 's'} submitted.
+                </p>
+                {(insight.ea_quarterly_submissions ?? []).length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No EA quarterly started for this period yet.</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {(insight.ea_quarterly_submissions ?? []).map((s) => (
+                      <li
+                        key={`${s.reviewer_id}-${s.status}-${s.submitted_at ?? 'x'}`}
+                        className="flex justify-between gap-2 text-xs border-b border-border/40 py-1.5"
+                      >
+                        <span>
+                          {s.reviewer_name}
+                          <span className="text-muted-foreground"> · {s.status}</span>
+                        </span>
+                        <span className="font-mono shrink-0">
+                          {s.status === 'submitted' && s.score_pct != null
+                            ? `${s.score_pct}% (${s.avg_score}/5 · ${boomScoreBand(s.avg_score)})`
+                            : '—'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               <div>
                 <p className="text-[10px] uppercase text-muted-foreground mb-2">360 (anonymous aggregate)</p>
                 {insight.can_view_360 === false ? (
