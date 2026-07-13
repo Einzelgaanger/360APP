@@ -118,9 +118,26 @@ function ResultsPanel({ formCode, results, viewerRole }: { formCode: string; res
       );
     }
     const sections = r?.sections ?? [];
-    const peers = r?.peer_feedback ?? [];
+    // Per-peer blocks are facilitator/oversight only — never show to the recipient.
+    const peers = viewerRole === 'subject' ? [] : (r?.peer_feedback ?? []);
+    const themeTexts = viewerRole === 'subject'
+      ? [
+          ...((r as Peer360Results & { themes?: { text?: string }[] })?.themes ?? []),
+          ...((r as Peer360Results & { start_doing?: { text?: string }[] })?.start_doing ?? []),
+          ...((r as Peer360Results & { stop_doing?: { text?: string }[] })?.stop_doing ?? []),
+          ...((r as Peer360Results & { continue_doing?: { text?: string }[] })?.continue_doing ?? []),
+        ]
+          .map((t) => (typeof t === 'object' && t && 'text' in t ? String(t.text ?? '').trim() : ''))
+          .filter(Boolean)
+      : [];
+    const uniqueThemes = [...new Set(themeTexts)];
     return (
       <div className="space-y-4 text-xs">
+        {viewerRole === 'subject' && (
+          <p className="text-[11px] text-muted-foreground leading-relaxed rounded-lg bg-muted/30 px-3 py-2">
+            Peer reviewers stay anonymous. You only see aggregated scores and themes — not who submitted.
+          </p>
+        )}
         {sections.length > 0 && (
           <div>
             <p className="font-semibold text-foreground mb-2">Section averages</p>
@@ -129,6 +146,18 @@ function ResultsPanel({ formCode, results, viewerRole }: { formCode: string; res
                 <li key={s.section} className="flex justify-between gap-2 rounded-lg bg-muted/30 px-3 py-2">
                   <span className="text-muted-foreground">{s.section}</span>
                   <span className="font-mono font-medium">{s.avg_score} <span className="text-muted-foreground font-normal">({s.response_count})</span></span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {uniqueThemes.length > 0 && (
+          <div>
+            <p className="font-semibold text-foreground mb-2">Anonymous written themes</p>
+            <ul className="space-y-1.5">
+              {uniqueThemes.map((text, i) => (
+                <li key={i} className="rounded-lg bg-muted/30 px-3 py-2 text-foreground/90 leading-relaxed">
+                  {text}
                 </li>
               ))}
             </ul>
@@ -156,7 +185,7 @@ function ResultsPanel({ formCode, results, viewerRole }: { formCode: string; res
             </div>
           </div>
         )}
-        {sections.length === 0 && peers.length === 0 && (
+        {sections.length === 0 && peers.length === 0 && uniqueThemes.length === 0 && (
           <p className="text-muted-foreground">No peer 360 submissions yet for this period.</p>
         )}
       </div>
@@ -458,9 +487,11 @@ export default function BoomDiscussionsPanel({
                         <ul className="space-y-1">
                           {rows.map((row) => {
                             const title =
-                              row.viewer_role === 'subject'
-                                ? row.facilitator_name
-                                : row.subject_name;
+                              row.form_code === 'peer_360' && row.viewer_role === 'subject'
+                                ? (row.facilitator_name?.trim() || 'Anonymous 360 feedback')
+                                : row.viewer_role === 'subject'
+                                  ? row.facilitator_name
+                                  : row.subject_name;
                             return (
                               <li key={row.discussion_id}>
                                 <button

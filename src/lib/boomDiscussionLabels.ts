@@ -41,6 +41,9 @@ export function discussionThreadTitle(
   facilitatorName: string,
 ): string {
   const label = DISCUSSION_FORM_LABELS[formCode] ?? formCode;
+  if (formCode === 'peer_360' && viewerRole === 'subject') {
+    return `${label} · anonymous results`;
+  }
   if (viewerRole === 'subject') {
     return `${label} · with ${facilitatorName}`;
   }

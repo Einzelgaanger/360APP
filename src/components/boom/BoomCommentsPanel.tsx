@@ -55,13 +55,12 @@ export default function BoomCommentsPanel({
       setReceived([]);
       return;
     }
-    const { data, error } = await supabase
-      .from('assessment_peer_comments')
-      .select('comment_text')
-      .eq('reviewee_employee_id', reviewerEmployeeId)
-      .eq('status', 'submitted')
-      .eq('period', periodQuarter);
-    if (!error) setReceived(data ?? []);
+    const { data, error } = await supabase.rpc('get_my_anonymous_peer_comments', {
+      _period: periodQuarter,
+    });
+    if (!error) {
+      setReceived((data ?? []).map((row: { comment_text: string }) => ({ comment_text: row.comment_text })));
+    }
   }, [reviewerEmployeeId, periodQuarter, receivesComments]);
 
   useEffect(() => {
