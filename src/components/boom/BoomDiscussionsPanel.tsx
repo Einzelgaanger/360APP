@@ -212,7 +212,7 @@ function ResultsPanel({ formCode, results, viewerRole }: { formCode: string; res
   }
 
   return (
-    <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1 text-xs">
+    <div className="space-y-4 text-xs">
       {formCode === 'ea_quarterly' && scorePct != null && (
         <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 flex items-center justify-between gap-3">
           <div>
@@ -430,8 +430,8 @@ export default function BoomDiscussionsPanel({
           <Loader2 className="w-4 h-4 animate-spin" /> Loading discussions…
         </p>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(240px,320px)_1fr] min-h-[420px]">
-          <div className="glass-panel p-4 space-y-3 overflow-y-auto max-h-[70vh]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(240px,320px)_1fr] lg:items-start min-h-[420px]">
+          <div className="glass-panel p-4 space-y-3 overflow-y-auto max-h-[70vh] scrollbar-thin">
             {view === 'peer360' && oversight ? (
               <>
                 <h4 className="text-sm font-semibold">360 — your team</h4>
@@ -525,7 +525,7 @@ export default function BoomDiscussionsPanel({
             )}
           </div>
 
-          <div className="glass-panel p-4 flex flex-col min-h-[360px]">
+          <div className="glass-panel p-4 flex flex-col min-h-[360px] max-h-[min(78vh,820px)] overflow-hidden">
             {!selectedId ? (
               <div className="flex-1 flex items-center justify-center text-xs text-muted-foreground text-center px-4">
                 Select a person or discussion on the left to open the chat.
@@ -536,7 +536,7 @@ export default function BoomDiscussionsPanel({
               </div>
             ) : thread ? (
               <>
-                <div className="border-b border-border pb-3 mb-3">
+                <div className="border-b border-border pb-3 mb-3 shrink-0">
                   <h4 className="text-sm font-semibold">
                     {discussionThreadTitle(
                       thread.form_code,
@@ -550,9 +550,11 @@ export default function BoomDiscussionsPanel({
                   </p>
                 </div>
 
-                <div className="grid gap-4 flex-1 lg:grid-cols-2 min-h-0 overflow-hidden">
-                  <div className="overflow-y-auto min-h-0 pr-1 max-h-[45vh] lg:max-h-none">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Submitted results</p>
+                <div className="grid gap-4 flex-1 min-h-0 lg:grid-cols-2 overflow-y-auto lg:overflow-hidden scrollbar-thin">
+                  <div className="min-h-0 lg:overflow-y-auto lg:pr-2 scrollbar-thin">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2 sticky top-0 bg-card/95 backdrop-blur-sm z-10 py-0.5">
+                      Submitted results
+                    </p>
                     <ResultsPanel
                       formCode={thread.form_code}
                       results={thread.results}
@@ -560,9 +562,9 @@ export default function BoomDiscussionsPanel({
                     />
                   </div>
 
-                  <div className="flex flex-col min-h-[220px] border-t lg:border-t-0 lg:border-l border-border pt-4 lg:pt-0 lg:pl-4">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Discussion</p>
-                    <div className="flex-1 overflow-y-auto space-y-2 mb-3 min-h-[100px] max-h-[40vh] lg:max-h-none">
+                  <div className="flex flex-col min-h-[220px] lg:min-h-0 border-t lg:border-t-0 lg:border-l border-border pt-4 lg:pt-0 lg:pl-4">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2 shrink-0">Discussion</p>
+                    <div className="flex-1 overflow-y-auto space-y-2 mb-3 min-h-[100px] max-h-[40vh] lg:max-h-none scrollbar-thin">
                       {thread.messages.length === 0 ? (
                         <p className="text-xs text-muted-foreground italic">No messages yet — start the conversation.</p>
                       ) : (
