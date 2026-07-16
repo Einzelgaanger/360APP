@@ -129,6 +129,31 @@
     background: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
   }
+
+  /* Hide Lovable host “Edit with Lovable” badge (injected on lovable.app / published hosts) */
+  #lovable-badge,
+  #lovable-badge *,
+  [id="lovable-badge"],
+  a#lovable-badge,
+  a[href*="lovable.dev"],
+  a[href*="lovable.app"][target="_blank"],
+  iframe[src*="lovable.dev"],
+  iframe[src*="lovable.app/badge"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+    bottom: auto !important;
+    right: auto !important;
+    z-index: -1 !important;
+  }
 }
 
 @layer components {

@@ -34,5 +34,40 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      (function () {
+        var SELECTORS = [
+          '#lovable-badge',
+          'a[href*="lovable.dev"]',
+          'iframe[src*="lovable.dev"]',
+          'iframe[src*="lovable.app/badge"]',
+        ];
+        function strip() {
+          SELECTORS.forEach(function (sel) {
+            document.querySelectorAll(sel).forEach(function (el) {
+              // Keep in-app links that are not the floating badge (none expected).
+              if (sel.indexOf('lovable.dev') !== -1 && el.tagName === 'A') {
+                var style = window.getComputedStyle(el);
+                var fixed =
+                  style.position === 'fixed' ||
+                  style.position === 'sticky' ||
+                  el.id === 'lovable-badge';
+                if (!fixed && el.id !== 'lovable-badge') return;
+              }
+              el.remove();
+            });
+          });
+        }
+        strip();
+        document.addEventListener('DOMContentLoaded', strip);
+        var obs = new MutationObserver(function () { strip(); });
+        if (document.documentElement) {
+          obs.observe(document.documentElement, { childList: true, subtree: true });
+        }
+        setTimeout(strip, 500);
+        setTimeout(strip, 2000);
+        setTimeout(strip, 5000);
+      })();
+    </script>
   </body>
 </html>
