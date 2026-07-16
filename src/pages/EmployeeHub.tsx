@@ -37,6 +37,7 @@ import {
   RankingsTabSkeleton,
 } from '@/components/shell/LoadingShells';
 import BoomReviewHub from '@/components/boom/BoomReviewHub';
+import BoomNotificationsBell from '@/components/boom/BoomNotificationsBell';
 import {
   displayHierarchyLabel,
   getSurveyFeedbackDirection,
@@ -951,6 +952,7 @@ export default function EmployeeHub() {
         ]}
         actions={
           <>
+            <BoomNotificationsBell />
             {isAdmin && (
               <Button variant="outline" size="sm" asChild className="w-full gap-2 border-primary/30 text-primary">
                 <Link to="/appraisal"><Shield className="w-4 h-4" /> Admin</Link>
@@ -981,11 +983,14 @@ export default function EmployeeHub() {
                   : 'Appraisal'}
             </span>
           </div>
-          {isAdmin && (
-            <Link to="/appraisal" aria-label="Admin" className="text-muted-foreground hover:text-primary">
-              <Shield className="w-4 h-4" />
-            </Link>
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            <BoomNotificationsBell compact />
+            {isAdmin && (
+              <Link to="/appraisal" aria-label="Admin" className="text-muted-foreground hover:text-primary p-2">
+                <Shield className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
