@@ -16,26 +16,26 @@ const SECTIONS: Section[] = [
     body: (
       <>
         <p>
-          The BOOM Appraisal Platform is a private, invite-only performance and 360 feedback system built for the
-          Executive Office of the GCEO at Venture Garden Group (VGG). It replaces the previous VGG-wide 360 tool with
-          a focused, mobile-first application that routes each user to exactly the reviews they must complete based on
-          their position in the org chart.
+          The BOOM Appraisal Platform is a private, invite-only performance and 360 feedback system for the
+          Executive Office of the GCEO at Venture Garden Group (VGG). It is the production application behind{" "}
+          <code>appraisal.vgg.app</code>: each user is routed to the reviews they must complete based on their place
+          in the EO org chart, and recipients of peer 360 feedback see only anonymous aggregates.
         </p>
         <h3>Core capabilities</h3>
         <ul>
-          <li>Three assessment forms — Monthly Self-Assessment, Quarterly 360 Peer Review (anonymous), and Quarterly Executive Performance Assessment (named, dual-assessor).</li>
-          <li>Automatic routing — a single Postgres function decides who reviews whom, per form, per period.</li>
-          <li>Anonymity enforcement — 360 responses are read through security-definer RPCs that strip reviewer identity; results only unlock at ≥3 respondents.</li>
-          <li>Admin monitoring — roster, period control, response tracking, export to Excel/PDF.</li>
-          <li>AI assistants — Perplexity + Claude powered analytics copilot for admins; growth resource recommender for employees.</li>
-          <li>Branded auth flow — VGG-branded transactional emails via a queued edge function pipeline.</li>
+          <li>Assessment forms — Monthly Self-Assessment, Quarterly 360 Peer Review (anonymous to the recipient), EA quarterly manager evaluation, and Executive Performance Assessment where assigned.</li>
+          <li>Automatic routing — Postgres functions decide who reviews whom, per form, per period, from the EO org chart and explicit pairings (e.g. EA quarterly).</li>
+          <li>Anonymity enforcement — 360 results are read only through security-definer RPCs that never return reviewer identity; recipients see aggregated scores and themes only.</li>
+          <li>Discussions — routed threads between subjects and facilitators after submissions (monthly self, EA quarterly, peer 360 oversight).</li>
+          <li>Admin monitoring — roster, period control, completion tracking, and export.</li>
+          <li>Optional AI assistants — admin analytics assistant and employee Growth Hub resource recommendations (server-side only; advisory; never writes assessment scores).</li>
+          <li>Branded auth flow — VGG-branded transactional emails via a queued edge-function pipeline.</li>
         </ul>
-        <h3>Design principles</h3>
+        <h3>Product principles</h3>
         <ul>
-          <li>Strict light mode. Editorial magazine aesthetic (cream paper, ink, VGG green, ember orange).</li>
-          <li>Sharp edges, hairline rules, flat colour — no gradients, glass, or glow.</li>
-          <li>Fraunces (display), Inter (body), JetBrains Mono (labels).</li>
-          <li>Mobile-first surveys: single question per screen, sticky progress, swipe navigation.</li>
+          <li>Invite-only EO pilot: each signed-in user sees only the tasks and results their role allows.</li>
+          <li>Light, readable UI oriented to completing assessments on desktop and mobile.</li>
+          <li>Mobile-friendly surveys: clear progress, draft auto-save, explicit submit.</li>
         </ul>
       </>
     ),
@@ -48,40 +48,38 @@ const SECTIONS: Section[] = [
       <>
         <h3>High-level topology</h3>
         <p>
-          Browser (React 18 SPA over HTTPS) → static host at{" "}
-          <code>appraisal.vgg.app</code> → Lovable Cloud (managed Postgres backend). The backend combines a
-          RLS-locked <code>public</code> schema, email + password auth (invite-only), a public{" "}
-          <code>email-assets</code> storage bucket, and Deno edge functions that drive the queued email pipeline
-          (<code>pgmq</code> + <code>pg_cron</code>). Outbound integrations: Perplexity (copilot search), Claude
-          (copilot reasoning and growth resources), and an SMTP relay on{" "}
-          <code>notify.appraisal.vgg.app</code>.
+          Browser (React 18 SPA over HTTPS) → static host at <code>appraisal.vgg.app</code> → Supabase
+          (Postgres, Auth, Storage, Edge Functions). The backend uses an RLS-locked <code>public</code> schema,
+          invite-only email/password auth, a public <code>email-assets</code> storage bucket, and Deno edge
+          functions for provisioning, email dispatch (<code>pgmq</code> + <code>pg_cron</code>), and optional AI
+          helpers. Outbound integrations: Anthropic Claude and Perplexity (when AI features are enabled), and an
+          SMTP relay on <code>notify.appraisal.vgg.app</code>.
         </p>
         <h3>Frontend stack</h3>
         <table>
           <thead><tr><th>Layer</th><th>Choice</th></tr></thead>
           <tbody>
             <tr><td>Framework</td><td>React 18 + Vite 5 + TypeScript 5</td></tr>
-            <tr><td>Styling</td><td>Tailwind CSS v3 (semantic tokens in index.css)</td></tr>
-            <tr><td>Components</td><td>shadcn/ui (Radix primitives)</td></tr>
+            <tr><td>Styling</td><td>Tailwind CSS v3 (design tokens in <code>index.css</code>)</td></tr>
+            <tr><td>Components</td><td>Accessible UI primitives (Radix-based)</td></tr>
             <tr><td>Routing</td><td>react-router-dom</td></tr>
-            <tr><td>State / data</td><td>@tanstack/react-query</td></tr>
+            <tr><td>State / data</td><td>@tanstack/react-query + Supabase JS client</td></tr>
             <tr><td>Forms</td><td>react-hook-form + zod</td></tr>
             <tr><td>Charts</td><td>Recharts</td></tr>
-            <tr><td>Motion</td><td>framer-motion</td></tr>
-            <tr><td>Auth client</td><td>Lovable Cloud client SDK</td></tr>
+            <tr><td>Auth client</td><td>@supabase/supabase-js</td></tr>
           </tbody>
         </table>
         <h3>Backend stack</h3>
         <table>
           <thead><tr><th>Layer</th><th>Choice</th></tr></thead>
           <tbody>
-            <tr><td>Database</td><td>Postgres 15 (Lovable Cloud)</td></tr>
-            <tr><td>Auth</td><td>Email/password only</td></tr>
+            <tr><td>Database</td><td>PostgreSQL (Supabase-hosted)</td></tr>
+            <tr><td>Auth</td><td>Email/password (invite-only; no public signup)</td></tr>
             <tr><td>Server logic</td><td>Edge Functions (Deno + TypeScript)</td></tr>
             <tr><td>Queue</td><td>pgmq (auth + transactional email queues)</td></tr>
-            <tr><td>Scheduler</td><td>pg_cron (5s dispatcher when queue is armed)</td></tr>
-            <tr><td>Storage</td><td>Bucket <code>email-assets</code> (public)</td></tr>
-            <tr><td>Access control</td><td>RLS + <code>user_roles</code> + <code>has_role()</code></td></tr>
+            <tr><td>Scheduler</td><td>pg_cron (dispatcher when the email queue is armed)</td></tr>
+            <tr><td>Storage</td><td>Bucket <code>email-assets</code> (public imagery only)</td></tr>
+            <tr><td>Access control</td><td>Row Level Security + <code>user_roles</code> + <code>has_role()</code></td></tr>
           </tbody>
         </table>
       </>
@@ -106,7 +104,7 @@ const SECTIONS: Section[] = [
           <tbody>
             <tr><td>Employee roster <code>employees</code></td><td>Admin import by the EO</td><td>Ad hoc; deactivated, not deleted</td><td>Read: authenticated EO. Write: admin only.</td></tr>
             <tr><td>Auth accounts <code>profiles</code></td><td><code>bulk-create-users</code> + first-login completion</td><td>Ad hoc</td><td>Self + admin.</td></tr>
-            <tr><td>Assessments <code>assessment_responses / _answers</code></td><td>Reviewer in-app (draft → submit)</td><td>Monthly (self), Quarterly (360, EPA)</td><td>Reviewer: own rows. Reviewee: aggregated only via RPCs with the ≥3 floor. Admin: monitoring + export.</td></tr>
+            <tr><td>Assessments <code>assessment_responses / _answers</code></td><td>Reviewer in-app (draft → submit)</td><td>Monthly (self), Quarterly (360, EPA, EA)</td><td>Reviewer: own rows. Reviewee: aggregated / anonymised via RPCs only (no reviewer names). Admin: monitoring + export.</td></tr>
             <tr><td>Peer comments <code>assessment_peer_comments</code></td><td>Entered in-app</td><td>Quarterly</td><td>Reviewer: own rows. Reviewee: anonymised RPC, text only.</td></tr>
             <tr><td>Email metadata <code>email_send_log</code></td><td>Queue pipeline at send time</td><td>Per send (5s dispatcher)</td><td>Service role (pipeline); bodies never stored.</td></tr>
             <tr><td>AI context</td><td>Assembled server-side per request</td><td>On demand</td><td>Sent to Anthropic / Perplexity APIs; transient; advisory only.</td></tr>
@@ -122,8 +120,8 @@ const SECTIONS: Section[] = [
         <p>
           The only VGG data received to date is the set of Microsoft 365 usage exports (Excel workbooks) shared by
           the GCEO from the Microsoft 365 admin centre for the Group productivity and digital engagement review:
-          Email activity, Teams activity, OneDrive activity and usage, SharePoint activity and site usage, Copilot
-          readiness, and the VGG user roster. Those files are held and processed separately for that review and are
+          Email activity, Teams activity, OneDrive activity and usage, SharePoint activity and site usage, Microsoft 365
+          readiness exports, and the VGG user roster. Those files are held and processed separately for that review and are
           not loaded into this platform. No other VGG data has been received — no HRIS extracts, no direct access to
           VGG systems, no automated feeds. The EO roster used by this platform (name, work email, role, vertical,
           hierarchy level) was supplied by the Executive Office for provisioning.
@@ -187,27 +185,33 @@ const SECTIONS: Section[] = [
           <code>assessment_responses</code> to report each row’s status.
         </p>
         <table>
-          <thead><tr><th>Caller role (hierarchy)</th><th>Form</th><th>Reviewees</th></tr></thead>
+          <thead><tr><th>Caller</th><th>Form</th><th>Reviewees / behaviour</th></tr></thead>
           <tbody>
-            <tr><td>GCEO (0)</td><td><code>executive</code></td><td>All L1 executives</td></tr>
-            <tr><td>Executive (1)</td><td><code>executive</code></td><td>GCEO</td></tr>
-            <tr><td>Executive (1)</td><td><code>peer_360</code></td><td>Own direct reports</td></tr>
-            <tr><td>Manager (2)</td><td><code>peer_360</code></td><td>Manager + same-vertical peers + own reports</td></tr>
-            <tr><td>Employee (3)</td><td><code>peer_360</code></td><td>Manager + same-vertical peers</td></tr>
-            <tr><td>Everyone</td><td><code>monthly_self</code></td><td>Self</td></tr>
+            <tr><td>Everyone (active EO)</td><td><code>monthly_self</code></td><td>Self (monthly period)</td></tr>
+            <tr><td>Everyone (active EO)</td><td><code>peer_360</code></td><td>Every other active EO colleague (full roster; not self)</td></tr>
+            <tr><td>Flagged L0/L1</td><td><code>executive</code></td><td>Self performance assessment where <code>appraisal_self_performance</code> is set</td></tr>
+            <tr><td>Configured managers</td><td><code>ea_quarterly</code></td><td>Explicit pairs in <code>eo_ea_quarterly_pairs</code> (line manager → report)</td></tr>
+            <tr><td>EPA assessors</td><td><code>epa_gceo_assessor</code></td><td>Assigned executive self reviews (where enabled)</td></tr>
           </tbody>
         </table>
-        <h3>Anonymity floor</h3>
         <p>
-          For <code>peer_360</code> results, <code>get_my_360_results(_period)</code> only returns aggregated scores
-          when the reviewee has ≥3 submitted responses. Below the floor, the RPC returns an empty set — the UI shows
-          an anonymity banner instead of any score.
+          L2+ team members typically see Tasks only (monthly self, peer 360, and EA quarterly if they are a configured
+          manager). L0/L1 additionally get oversight surfaces (Directory, Insights, Discussions facilitation) scoped by
+          hierarchy and pod rules.
         </p>
-        <h3>Reviewer identity</h3>
+        <h3>360 anonymity for recipients</h3>
+        <p>
+          Aggregated peer 360 scores and written themes are available to the reviewee as soon as at least one peer has
+          submitted. Individual reviewer names are never shown to the recipient — neither in My Dashboard, My 360
+          feedback, nor Discussions. Discussion inbox labels for subjects use “Anonymous 360 feedback”; facilitator
+          chat messages appear as “Leadership”. Per-peer answer blocks are available only to authorised facilitators /
+          oversight viewers, labelled Peer 1, Peer 2, etc. (no real names).
+        </p>
+        <h3>Reviewer identity (storage vs display)</h3>
         <ul>
-          <li><code>peer_360</code> rows do store <code>reviewer_id</code> (needed for dedupe and RLS on drafts).</li>
-          <li>All reads that surface answers to a reviewee route through security-definer functions that never project <code>reviewer_id</code>.</li>
-          <li><code>assessment_peer_comments</code> are surfaced via <code>get_my_anonymous_peer_comments(_period)</code>, returning <code>comment_text</code> only.</li>
+          <li><code>peer_360</code> rows store <code>reviewer_id</code> (needed for draft ownership, dedupe, and RLS).</li>
+          <li>All reads that surface answers to a reviewee go through security-definer functions that never project <code>reviewer_id</code>.</li>
+          <li>Narrative peer comments are surfaced via <code>get_my_anonymous_peer_comments(_period)</code>, returning <code>comment_text</code> only.</li>
         </ul>
       </>
     ),
@@ -289,7 +293,7 @@ GRANT ALL ON public.<table> TO service_role;
             <tr><td><code>create-admin-user</code></td><td>Bootstrap: elevates a specific email to admin in <code>user_roles</code>.</td></tr>
             <tr><td><code>auth-email-hook</code></td><td>Signed webhook from Auth. Renders React email templates and enqueues them.</td></tr>
             <tr><td><code>process-email-queue</code></td><td>Woken by <code>pg_cron</code> (5s). Drains <code>q_auth_emails</code> and <code>q_transactional_emails</code> via the SMTP relay.</td></tr>
-            <tr><td><code>chat</code></td><td>Analytics copilot for <code>/admin</code>. Perplexity (search) + Claude (reasoning).</td></tr>
+            <tr><td><code>chat</code></td><td>Admin analytics assistant on <code>/admin</code> (search + reasoning providers when enabled).</td></tr>
             <tr><td><code>adaptive-resources</code></td><td>Employee growth hub: personalised learning resource generation.</td></tr>
             <tr><td><code>research-resources</code></td><td>Perplexity-backed research to enrich resource metadata.</td></tr>
             <tr><td><code>learning-path-generate</code></td><td>Builds structured learning paths from an employee’s 360 growth areas.</td></tr>
@@ -349,21 +353,17 @@ npm run supabase:deploy    # migrations + functions + secrets sync`}</code></pre
             <tr><td><code>/login</code></td><td>EmployeeLogin</td><td>Public</td></tr>
             <tr><td><code>/find-account</code></td><td>FindAccount</td><td>Public</td></tr>
             <tr><td><code>/reset-password</code></td><td>ResetPassword</td><td>Signed link</td></tr>
-            <tr><td><code>/hub</code></td><td>EmployeeHub (tabs)</td><td>Authenticated employee</td></tr>
-            <tr><td><code>/survey/:formCode/:revieweeId</code></td><td>AssessmentRunner</td><td>Authenticated</td></tr>
-            <tr><td><code>/dashboard</code></td><td>Personal Dashboard</td><td>Authenticated</td></tr>
-            <tr><td><code>/admin</code></td><td>AppraisalAdmin</td><td>Authenticated admin</td></tr>
-            <tr><td><code>/demo</code></td><td>DemoDashboard</td><td>Public — mock data</td></tr>
-            <tr><td><code>/omotola</code></td><td>OmotolaRoutingConfigurator</td><td>Configurator allowlist + admin</td></tr>
+            <tr><td><code>/hub</code></td><td>EmployeeHub (Appraisal / Dashboard / Growth Hub)</td><td>Authenticated employee</td></tr>
+            <tr><td><code>/appraisal</code></td><td>AppraisalAdmin</td><td>Authenticated admin</td></tr>
+            <tr><td><code>/docs</code></td><td>This technical documentation</td><td>Public</td></tr>
+            <tr><td><code>/omotola</code></td><td>Routing configurator</td><td>Allowlisted configurator + admin</td></tr>
           </tbody>
         </table>
-        <h3>Mobile-first survey UX</h3>
+        <h3>Survey UX</h3>
         <ul>
-          <li>Single question per screen below 640px width.</li>
-          <li>Sticky progress bar + bottom-sheet CTA (44px min tap targets).</li>
-          <li>Swipe navigation via <code>framer-motion</code> drag gestures.</li>
-          <li>Draft auto-save on every answer change; explicit Submit moves status → <code>submitted</code>.</li>
-          <li>Executive form enforces min 200-word written response; 360 supports per-question N/O.</li>
+          <li>Clear progress and draft auto-save on answer changes; Submit marks the response <code>submitted</code>.</li>
+          <li>Peer 360 supports per-question “no opportunity to observe” where applicable.</li>
+          <li>EA quarterly and executive forms collect scored ratings plus narrative answers as defined in the question bank.</li>
         </ul>
       </>
     ),
@@ -374,19 +374,19 @@ npm run supabase:deploy    # migrations + functions + secrets sync`}</code></pre
     title: "AI Integrations",
     body: (
       <>
-        <h3>Analytics Copilot (/admin)</h3>
+        <h3>Analytics assistant (/admin)</h3>
         <ul>
-          <li>Model: Claude (Anthropic) via <code>CLAUDE_API_KEY</code> secret.</li>
-          <li>Web search: Perplexity via <code>PERPLEXITY_API_KEY</code> secret.</li>
-          <li>Context strategy: enriched with roster, hierarchy, aggregated scores, qualitative themes.</li>
-          <li>Output: markdown, admin-only. Never exposes reviewer identity for <code>peer_360</code>.</li>
+          <li>Reasoning: Anthropic Claude via <code>CLAUDE_API_KEY</code>.</li>
+          <li>Web search: Perplexity via <code>PERPLEXITY_API_KEY</code>.</li>
+          <li>Context: roster, hierarchy, aggregated scores, and qualitative themes assembled server-side.</li>
+          <li>Output: markdown for admins only. Never exposes reviewer identity for <code>peer_360</code>.</li>
         </ul>
         <h3>Growth Hub (employee)</h3>
         <ul>
-          <li><code>adaptive-resources</code> — Claude-powered personalised resource generation.</li>
-          <li><code>research-resources</code> — Perplexity enrichment.</li>
+          <li><code>adaptive-resources</code> — personalised learning resource suggestions.</li>
+          <li><code>research-resources</code> — research enrichment for resource metadata.</li>
           <li><code>learning-path-generate</code> — structured learning paths from growth areas.</li>
-          <li><code>recommendation-*</code> — 5-stage recommender pipeline.</li>
+          <li><code>recommendation-*</code> — multi-stage recommender pipeline when Growth Hub v2 is enabled.</li>
         </ul>
         <h3>Model governance</h3>
         <ul>
@@ -407,8 +407,8 @@ npm run supabase:deploy    # migrations + functions + secrets sync`}</code></pre
         <table>
           <thead><tr><th>Key</th><th>Purpose</th></tr></thead>
           <tbody>
-            <tr><td><code>VITE_SUPABASE_URL</code></td><td>Backend URL (auto-managed)</td></tr>
-            <tr><td><code>VITE_SUPABASE_PUBLISHABLE_KEY</code></td><td>Anon key (safe in browser)</td></tr>
+            <tr><td><code>VITE_SUPABASE_URL</code></td><td>Supabase project URL</td></tr>
+            <tr><td><code>VITE_SUPABASE_PUBLISHABLE_KEY</code></td><td>Anon (publishable) key — safe for the browser; RLS still applies</td></tr>
             <tr><td><code>VITE_ENABLE_APP_AI</code></td><td>Toggle AI features (default true)</td></tr>
             <tr><td><code>VITE_ENABLE_GROWTH_HUB_V2</code></td><td>Beta growth hub UI</td></tr>
           </tbody>
@@ -468,9 +468,10 @@ npm run supabase:deploy    # migrations + functions + secrets sync`}</code></pre
         </ol>
         <h3>Incident · Results screen empty</h3>
         <p>
-          Almost always the anonymity floor. <code>get_my_360_results</code> returns nothing until ≥3 submitted{" "}
-          <code>peer_360</code> responses exist for the given period. Verify submitted counts in{" "}
-          <code>assessment_responses</code> before escalating.
+          Confirm the correct quarter is selected, then check that at least one submitted{" "}
+          <code>peer_360</code> response exists for that reviewee and period in{" "}
+          <code>assessment_responses</code>. If scores exist for facilitators but not the subject, verify the subject
+          is calling <code>get_my_360_dashboard</code> / <code>get_my_360_results</code> (not oversight detail).
         </p>
       </>
     ),
@@ -517,7 +518,7 @@ npm run supabase:deploy    # migrations + functions + secrets sync`}</code></pre
           <tr><td>EPA</td><td>Executive Performance Assessment (BOOM v2).</td></tr>
           <tr><td>EA</td><td>Executive Assistant.</td></tr>
           <tr><td>N/O</td><td>No opportunity to observe — valid non-answer for 360 items.</td></tr>
-          <tr><td>Anonymity floor</td><td>Minimum reviewer count (3) required before results are shown.</td></tr>
+          <tr><td>Anonymous 360</td><td>Recipient sees aggregates only; reviewer identity is never disclosed in UI or recipient RPCs.</td></tr>
           <tr><td>Period</td><td>A cadence bucket: <code>YYYY-Qn</code> (quarterly) or <code>YYYY-MM</code> (monthly).</td></tr>
         </tbody>
       </table>
@@ -548,10 +549,10 @@ export default function Docs() {
   const meta = useMemo(
     () => [
       { label: "Audience", value: "Engineers, admins, auditors" },
-      { label: "Stack", value: "React 18 · Vite · TypeScript · Tailwind · Lovable Cloud" },
+      { label: "Stack", value: "React · TypeScript · Supabase (Postgres + Auth + Edge)" },
       { label: "Deploy", value: "appraisal.vgg.app" },
       { label: "Owner", value: "Executive Office of the GCEO" },
-      { label: "Date", value: "July 2026 · v1.0" },
+      { label: "Date", value: "July 2026 · v1.1" },
     ],
     [],
   );
@@ -575,13 +576,15 @@ export default function Docs() {
         </div>
         <div className="mx-auto max-w-6xl px-6 pb-10">
           <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-foreground/60">
-            № v1.0 · Technical Documentation
+            № v1.1 · Technical Documentation
           </p>
           <h1 className="mt-3 font-serif text-5xl md:text-7xl leading-[0.95] tracking-tight">
             BOOM Appraisal Platform
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-foreground/70">
             Private, invite-only performance and 360 feedback system for the Executive Office of the GCEO.
+            This document explains what the system does, how data is stored and accessed, how reviews are routed,
+            and how anonymity and access control are enforced.
           </p>
           <dl className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-4 border-t border-foreground/15 pt-6">
             {meta.map((m) => (
