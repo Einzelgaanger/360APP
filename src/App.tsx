@@ -18,6 +18,7 @@ import EmployeeHub from "./pages/EmployeeHub";
 import AppraisalAdmin from "./pages/AppraisalAdmin";
 import OmotolaRoutingConfigurator from "./pages/OmotolaRoutingConfigurator";
 import NotFound from "./pages/NotFound";
+import Docs from "./pages/Docs";
 import ProfileCompletionGate from "@/components/ProfileCompletionGate";
 import { AppBootstrapSkeleton } from "@/components/shell/LoadingShells";
 import { EO_PILOT_ONLY } from "@/lib/eoPilot";
@@ -80,6 +81,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/omotola" element={<OmotolaRoutingConfigurator />} />
+      <Route path="/docs" element={<Docs />} />
+      <Route path="/docs/:section" element={<Docs />} />
       <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/landing" element={<Index />} />
