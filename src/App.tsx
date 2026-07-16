@@ -16,7 +16,6 @@ import Dashboard from "./pages/Dashboard";
 import DemoDashboard from "./pages/DemoDashboard";
 import EmployeeHub from "./pages/EmployeeHub";
 import AppraisalAdmin from "./pages/AppraisalAdmin";
-import OmotolaRoutingConfigurator from "./pages/OmotolaRoutingConfigurator";
 import NotFound from "./pages/NotFound";
 import Docs from "./pages/Docs";
 import ProfileCompletionGate from "@/components/ProfileCompletionGate";
@@ -80,7 +79,7 @@ function LoginRoute() {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/omotola" element={<OmotolaRoutingConfigurator />} />
+      <Route path="/omotola" element={<Navigate to="/hub?tab=survey" replace />} />
       <Route path="/docs" element={<Docs />} />
       <Route path="/docs/:section" element={<Docs />} />
       <Route path="/" element={<HomeRoute />} />

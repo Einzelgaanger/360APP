@@ -356,7 +356,6 @@ npm run supabase:deploy    # migrations + functions + secrets sync`}</code></pre
             <tr><td><code>/hub</code></td><td>EmployeeHub (Appraisal / Dashboard / Growth Hub)</td><td>Authenticated employee</td></tr>
             <tr><td><code>/appraisal</code></td><td>AppraisalAdmin</td><td>Authenticated admin</td></tr>
             <tr><td><code>/docs</code></td><td>This technical documentation</td><td>Public</td></tr>
-            <tr><td><code>/omotola</code></td><td>Routing configurator</td><td>Allowlisted configurator + admin</td></tr>
           </tbody>
         </table>
         <h3>Survey UX</h3>
