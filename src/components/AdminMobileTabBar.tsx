@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { EO_PILOT_ONLY } from '@/lib/eoPilot';
 import { BarChart3, ClipboardList, Brain, MoreHorizontal, RefreshCw, LogOut, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,7 +37,7 @@ export default function AdminMobileTabBar({ onOpenCopilot, onSignOut, onRefresh 
       <ul className="grid grid-cols-4">
         <li>
           <NavLink
-            to="/dashboard"
+            to={EO_PILOT_ONLY ? '/hub?tab=survey' : '/dashboard'}
             end
             onClick={() => setMoreOpen(false)}
             className={({ isActive }) =>
@@ -52,7 +53,9 @@ export default function AdminMobileTabBar({ onOpenCopilot, onSignOut, onRefresh 
                   />
                 )}
                 <BarChart3 className={cn('h-5 w-5', isActive && 'stroke-[2.25]')} />
-                <span className="text-[10px] font-medium tracking-wide font-mono uppercase">Overview</span>
+                <span className="text-[10px] font-medium tracking-wide font-mono uppercase">
+                  {EO_PILOT_ONLY ? 'Hub' : 'Overview'}
+                </span>
               </span>
             )}
           </NavLink>
@@ -90,7 +93,7 @@ export default function AdminMobileTabBar({ onOpenCopilot, onSignOut, onRefresh 
           >
             <span className={tabInner}>
               <Brain className="h-5 w-5" />
-              <span className="text-[10px] font-medium tracking-wide font-mono uppercase">Copilot</span>
+              <span className="text-[10px] font-medium tracking-wide font-mono uppercase">AI</span>
             </span>
           </button>
         </li>

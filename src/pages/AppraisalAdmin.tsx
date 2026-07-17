@@ -21,7 +21,7 @@ import { AppraisalAdminSkeleton } from '@/components/shell/LoadingShells';
 import AdminMobileTabBar from '@/components/AdminMobileTabBar';
 import { ENABLE_APP_AI } from '@/lib/featureFlags';
 import { defaultQuarterPeriod, quarterOptions } from '@/lib/boomPeriods';
-import { EO_PILOT_ONLY } from '@/lib/eoPilot';
+import { EO_PILOT_ONLY, EO_SUBSIDIARY_ID } from '@/lib/eoPilot';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -501,6 +501,43 @@ export default function AppraisalAdmin() {
 
   // AI data context
   const dataContext = useMemo(() => {
+    if (EO_PILOT_ONLY) {
+      const submitted = boomResponses.filter((r) => r.status === 'submitted');
+      const byForm: Record<string, number> = {};
+      for (const r of submitted) {
+        const code = getBoomFormCode(r.form_id);
+        byForm[code] = (byForm[code] ?? 0) + 1;
+      }
+      const formLines = Object.entries(byForm)
+        .map(([code, n]) => `• ${code}: ${n} submitted`)
+        .join('\n');
+      const sample = submitted.slice(0, 30).map((r) =>
+        `• ${r.period} | ${getBoomFormCode(r.form_id)} | ${getEmployeeName(r.reviewer_id)} → ${getEmployeeName(r.reviewee_id)}`,
+      ).join('\n');
+      const scored = boomAnswers.filter((a) => a.score != null && !a.no_opportunity);
+      const avg =
+        scored.length > 0
+          ? (scored.reduce((s, a) => s + (a.score ?? 0), 0) / scored.length).toFixed(2)
+          : 'n/a';
+      return `=== VGG EO BOOM APPRAISAL (PILOT) ===
+
+SUMMARY:
+• Assessment responses (all statuses): ${boomResponses.length}
+• Submitted: ${submitted.length}
+• Unique reviewees (submitted): ${new Set(submitted.map((r) => r.reviewee_id)).size}
+• Average scored answer: ${avg}/5
+
+BY FORM (submitted):
+${formLines || '• None yet'}
+
+SAMPLE SUBMISSIONS:
+${sample || '• No submissions yet'}
+
+NOTES:
+• Peer 360 results are anonymous aggregates for recipients (no reviewer names).
+• Forms: monthly_self, peer_360, ea_quarterly, executive (and related).`;
+    }
+
     if (!responses.length) return '';
     const topEmployees = employeeLeaderboard.slice(0, 20).map(e =>
       `• ${e.name} (${e.subsidiary}${e.department ? ', ' + e.department : ''}): Score ${e.avgScore}/5, ${e.count} reviews`
@@ -539,7 +576,20 @@ ${deptData}
 
 SAMPLE QUALITATIVE FEEDBACK:
 ${feedbackSample || '• No text feedback yet'}`;
-  }, [responses, employeeLeaderboard, categoryAverages, subsidiaryBreakdown, departmentBreakdown, answers]);
+  }, [EO_PILOT_ONLY, boomResponses, boomAnswers, boomForms, employees, responses, employeeLeaderboard, categoryAverages, subsidiaryBreakdown, departmentBreakdown, answers, totalResponses, uniqueReviewees, totalEmployees, participationRate, avgOverallScore]);
+
+  const boomSubmittedCount = useMemo(
+    () => filteredBoomResponses.filter((r) => r.status === 'submitted').length,
+    [filteredBoomResponses],
+  );
+  const boomUniqueReviewees = useMemo(
+    () => new Set(filteredBoomResponses.filter((r) => r.status === 'submitted').map((r) => r.reviewee_id)).size,
+    [filteredBoomResponses],
+  );
+  const boomUniqueReviewers = useMemo(
+    () => new Set(filteredBoomResponses.filter((r) => r.status === 'submitted').map((r) => r.reviewer_id)).size,
+    [filteredBoomResponses],
+  );
 
   const filteredEmployees = useMemo(() => {
     if (selectedSubsidiary === 'all') return employees;
@@ -564,19 +614,23 @@ ${feedbackSample || '• No text feedback yet'}`;
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/85">
         <div className="platform-canvas py-3 sm:py-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 min-w-0">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="gap-1 flex-shrink-0 self-start sm:self-auto">
-              <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Dashboard</span><span className="sm:hidden">Back</span>
+            <Button variant="ghost" size="sm" onClick={() => navigate(EO_PILOT_ONLY ? '/hub?tab=survey' : '/dashboard')} className="gap-1 flex-shrink-0 self-start sm:self-auto">
+              <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">{EO_PILOT_ONLY ? 'Hub' : 'Dashboard'}</span><span className="sm:hidden">Back</span>
             </Button>
             <div className="min-w-0">
               <h1 className="text-base sm:text-lg font-bold text-primary flex flex-wrap items-center gap-2">
-                <span className="truncate">360° Appraisal Monitor</span>
-                {totalResponses > 0 && (
+                <span className="truncate">{EO_PILOT_ONLY ? 'EO Appraisal Monitor' : '360° Appraisal Monitor'}</span>
+                {(EO_PILOT_ONLY ? boomSubmittedCount > 0 : totalResponses > 0) && (
                   <Badge variant="secondary" className="text-[10px] gap-1 shrink-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> Live
                   </Badge>
                 )}
               </h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Real-time response tracking & analytics</p>
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                {EO_PILOT_ONLY
+                  ? 'Executive Office BOOM completion tracking & analytics'
+                  : 'Real-time response tracking & analytics'}
+              </p>
             </div>
           </div>
           <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
@@ -596,7 +650,8 @@ ${feedbackSample || '• No text feedback yet'}`;
       </header>
 
       <main className="platform-content section-stack has-admin-mobile-nav">
-        {/* Filters */}
+        {/* Filters — legacy multi-subsidiary only */}
+        {!EO_PILOT_ONLY && (
         <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center">
           <Select value={selectedSubsidiary} onValueChange={v => { setSelectedSubsidiary(v); setSelectedEmployee(null); }}>
             <SelectTrigger className="w-full sm:w-[200px] bg-secondary/50">
@@ -619,16 +674,25 @@ ${feedbackSample || '• No text feedback yet'}`;
             </SelectContent>
           </Select>
         </div>
+        )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {[
-            { label: 'Total Responses', value: totalResponses, icon: ClipboardCheck, color: 'bg-primary/10 text-primary' },
-            { label: 'People Reviewed', value: uniqueReviewees, icon: Users, color: 'bg-accent/10 text-accent' },
-            { label: 'Total Employees', value: totalEmployees, icon: Target, color: 'bg-muted text-foreground' },
-            { label: 'Participation', value: `${participationRate}%`, icon: Activity, color: 'bg-success/10 text-success' },
-            { label: 'Avg Score', value: `${avgOverallScore.toFixed(2)}/5`, icon: TrendingUp, color: 'bg-primary/10 text-primary' },
-          ].map((stat, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {(EO_PILOT_ONLY
+            ? [
+                { label: 'Submitted', value: boomSubmittedCount, icon: ClipboardCheck, color: 'bg-primary/10 text-primary' },
+                { label: 'People reviewed', value: boomUniqueReviewees, icon: Users, color: 'bg-accent/10 text-accent' },
+                { label: 'Reviewers active', value: boomUniqueReviewers, icon: Target, color: 'bg-muted text-foreground' },
+                { label: 'EO roster', value: employees.filter((e) => e.subsidiary_id === EO_SUBSIDIARY_ID).length || employees.length, icon: Activity, color: 'bg-success/10 text-success' },
+              ]
+            : [
+                { label: 'Total Responses', value: totalResponses, icon: ClipboardCheck, color: 'bg-primary/10 text-primary' },
+                { label: 'People Reviewed', value: uniqueReviewees, icon: Users, color: 'bg-accent/10 text-accent' },
+                { label: 'Total Employees', value: totalEmployees, icon: Target, color: 'bg-muted text-foreground' },
+                { label: 'Participation', value: `${participationRate}%`, icon: Activity, color: 'bg-success/10 text-success' },
+                { label: 'Avg Score', value: `${avgOverallScore.toFixed(2)}/5`, icon: TrendingUp, color: 'bg-primary/10 text-primary' },
+              ]
+          ).map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass-panel p-4">
               <div className={`w-8 h-8 rounded-lg ${stat.color} flex items-center justify-center mb-2`}>
                 <stat.icon className="w-4 h-4" />
@@ -639,30 +703,30 @@ ${feedbackSample || '• No text feedback yet'}`;
           ))}
         </div>
 
-        {totalResponses === 0 && boomResponses.length === 0 ? (
+        {(EO_PILOT_ONLY ? boomResponses.length === 0 : totalResponses === 0 && boomResponses.length === 0) ? (
           <div className="glass-panel p-12 text-center">
             <ClipboardCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Responses Yet</h3>
+            <h3 className="text-lg font-semibold mb-2">No responses yet</h3>
             <p className="text-muted-foreground text-sm mb-4">
-              Share the hub link for legacy subsidiary surveys, or complete BOOM assessments from the employee hub.
+              {EO_PILOT_ONLY
+                ? 'BOOM assessments appear here as the EO team submits monthly self, peer 360, and EA quarterly forms.'
+                : 'Share the hub link for legacy subsidiary surveys, or complete BOOM assessments from the employee hub.'}
             </p>
             <Button onClick={() => { navigator.clipboard.writeText(window.location.origin + '/hub'); }} className="bg-primary hover:bg-primary/90">
-              Copy Survey Link
+              Copy hub link
             </Button>
           </div>
         ) : (
           <Tabs value={adminTab} onValueChange={setAdminTab}>
-            <TabsList className={`grid w-full ${EO_PILOT_ONLY ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'} min-h-11 h-auto gap-1 py-1`}>
-              {!EO_PILOT_ONLY && (
-                <>
+            {!EO_PILOT_ONLY && (
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 min-h-11 h-auto gap-1 py-1">
                   <TabsTrigger value="overview" className="text-xs gap-1.5"><BarChart3 className="w-3 h-3" /> Overview</TabsTrigger>
                   <TabsTrigger value="people" className="text-xs gap-1.5"><Users className="w-3 h-3" /> People</TabsTrigger>
                   <TabsTrigger value="trends" className="text-xs gap-1.5"><TrendingUp className="w-3 h-3" /> Trends</TabsTrigger>
                   <TabsTrigger value="feed" className="text-xs gap-1.5"><Clock className="w-3 h-3" /> Live Feed</TabsTrigger>
-                </>
-              )}
               <TabsTrigger value="boom" className="text-xs gap-1.5"><Layers className="w-3 h-3" /> BOOM</TabsTrigger>
             </TabsList>
+            )}
 
             {/* ===== OVERVIEW TAB ===== */}
             <TabsContent value="overview" className="mt-4 space-y-6">
@@ -929,6 +993,7 @@ ${feedbackSample || '• No text feedback yet'}`;
 
             {/* ===== BOOM ASSESSMENTS TAB ===== */}
             <TabsContent value="boom" className="mt-4 space-y-4">
+              {!EO_PILOT_ONLY && (
               <div className="glass-panel p-5 border-amber-500/20 bg-amber-500/[0.03]">
                 <div className="flex items-start gap-3 mb-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15">
@@ -1035,7 +1100,9 @@ ${feedbackSample || '• No text feedback yet'}`;
                   </div>
                 )}
               </div>
+              )}
 
+              {!EO_PILOT_ONLY && (
               <div className="glass-panel p-5 border-primary/15 space-y-6">
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
@@ -1206,6 +1273,7 @@ ${feedbackSample || '• No text feedback yet'}`;
                   </div>
                 </div>
               </div>
+              )}
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
