@@ -585,7 +585,7 @@ ${feedbackSample || '• No text feedback yet'}`;
             </Button>
             {ENABLE_APP_AI && (
               <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2 h-8 text-xs">
-                <Brain className="w-3.5 h-3.5" /> AI Copilot
+                <Brain className="w-3.5 h-3.5" /> Analytics assistant
               </Button>
             )}
             <Button variant="ghost" size="sm" onClick={() => void handleLogout()}>

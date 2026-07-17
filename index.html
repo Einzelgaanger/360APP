@@ -38,25 +38,60 @@
       (function () {
         var SELECTORS = [
           '#lovable-badge',
+          '[id*="lovable-badge" i]',
+          '[data-lovable-badge]',
           'a[href*="lovable.dev"]',
+          'a[href*="lovable.app"]',
           'iframe[src*="lovable.dev"]',
           'iframe[src*="lovable.app/badge"]',
         ];
+        function looksLikeBadge(el) {
+          if (!el || el.nodeType !== 1) return false;
+          if (el.id && String(el.id).toLowerCase().indexOf('lovable') !== -1) return true;
+          var href = (el.getAttribute && el.getAttribute('href')) || '';
+          if (/lovable\.(dev|app)/i.test(href)) {
+            var style = window.getComputedStyle(el);
+            if (style.position === 'fixed' || style.position === 'sticky') return true;
+            if (el.id && String(el.id).toLowerCase().indexOf('lovable') !== -1) return true;
+          }
+          var text = (el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+          if (
+            text === 'edit with lovable' ||
+            text === 'built with lovable' ||
+            text.indexOf('edit with lovable') !== -1 ||
+            text.indexOf('built with lovable') !== -1
+          ) {
+            var st = window.getComputedStyle(el);
+            if (st.position === 'fixed' || st.position === 'sticky' || (el.parentElement && window.getComputedStyle(el.parentElement).position === 'fixed')) {
+              return true;
+            }
+          }
+          return false;
+        }
         function strip() {
           SELECTORS.forEach(function (sel) {
-            document.querySelectorAll(sel).forEach(function (el) {
-              // Keep in-app links that are not the floating badge (none expected).
-              if (sel.indexOf('lovable.dev') !== -1 && el.tagName === 'A') {
-                var style = window.getComputedStyle(el);
-                var fixed =
-                  style.position === 'fixed' ||
-                  style.position === 'sticky' ||
-                  el.id === 'lovable-badge';
-                if (!fixed && el.id !== 'lovable-badge') return;
-              }
-              el.remove();
-            });
+            try {
+              document.querySelectorAll(sel).forEach(function (el) {
+                if (sel.indexOf('lovable.') !== -1 && el.tagName === 'A' && !looksLikeBadge(el) && el.id !== 'lovable-badge') {
+                  return;
+                }
+                el.remove();
+              });
+            } catch (_) { /* ignore */ }
           });
+          // Catch fixed bottom-right badge by text if id changed
+          document.querySelectorAll('a, button, div').forEach(function (el) {
+            if (looksLikeBadge(el)) {
+              var target = el.id === 'lovable-badge' || (el.getAttribute('href') || '').indexOf('lovable') !== -1
+                ? el
+                : (el.closest('[style*="fixed"],[class*="fixed"]') || el);
+              try { target.remove(); } catch (_) { el.remove(); }
+            }
+          });
+          if (document.title && /lovable/i.test(document.title)) {
+            document.title = document.title.replace(/\s*[|–—-]\s*Lovable\s*/gi, ' ').replace(/\s{2,}/g, ' ').trim();
+            if (!document.title) document.title = 'VGG 360° Appraisal';
+          }
         }
         strip();
         document.addEventListener('DOMContentLoaded', strip);
@@ -64,9 +99,10 @@
         if (document.documentElement) {
           obs.observe(document.documentElement, { childList: true, subtree: true });
         }
-        setTimeout(strip, 500);
-        setTimeout(strip, 2000);
-        setTimeout(strip, 5000);
+        setTimeout(strip, 300);
+        setTimeout(strip, 1000);
+        setTimeout(strip, 3000);
+        setTimeout(strip, 8000);
       })();
     </script>
   </body>

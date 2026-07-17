@@ -186,7 +186,7 @@ export default function AIChatPanel({ isOpen, onClose, dataContext }: AIChatPane
                 <Brain className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold">Analytics Copilot</h3>
+                <h3 className="font-semibold">Analytics assistant</h3>
                 <p className="text-xs text-muted-foreground">Ask anything about the data</p>
               </div>
             </div>
