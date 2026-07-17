@@ -107,7 +107,7 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
         actions={
           ENABLE_APP_AI ? (
             <Button onClick={() => setChatOpen(true)} size="sm" className="w-full gap-2">
-              <Zap className="w-4 h-4" /> Analytics Copilot
+              <Zap className="w-4 h-4" /> Analytics assistant
             </Button>
           ) : undefined
         }

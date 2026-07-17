@@ -115,7 +115,7 @@ ${feedbackData.continueDoing || '• No feedback available'}`;
             <ExportButton managers={managerSummaries} responses={responses} />
             {ENABLE_APP_AI && (
               <Button onClick={() => setChatOpen(true)} size="sm" className="gap-2">
-                <Zap className="w-4 h-4" /> Analytics Copilot
+                <Zap className="w-4 h-4" /> Analytics assistant
               </Button>
             )}
           </div>
