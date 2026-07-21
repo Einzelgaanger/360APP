@@ -130,7 +130,7 @@ You do **not** see executive performance forms, EPA assessor sheets, narrative C
 
 | Person | Email | Pod | Manager |
 |--------|-------|-----|---------|
-| Eniola Olawale | `eniola.olawale@peopleos.co` | Top office | Kunmi |
+| Eniola Olawale | `eniola.olawale@venturegardengroup.com` | Top office | Kunmi |
 | Adeyinka Oshin | `adeyinka.oshin@venturegardengroup.com` | General ops | Omotola (+ Uche) |
 | Favour Oyekanmi | `favour.oyekanmi@venturegardengroup.com` | General ops | Omotola (+ Uche) |
 | Ayomide Adeosun | `adeosun.ayomide@venturegardengroup.com` | General ops / Technical lead | Omotola (+ Uche) |
@@ -176,7 +176,7 @@ You do **not** see executive performance forms, EPA assessor sheets, narrative C
 | 5 | Uche Ukonu | uche.ukonu@venturegardengroup.com | L1 | Tasks + Comments + Directory |
 | 6 | Gisele Ishema Karekezi | gisele.karakezi@venturegardengroup.com | L1 | Tasks + Comments + Directory |
 | 7 | Deyi Dipeolu | deyi.dipeolu@venturegardengroup.com | L1 | Tasks + Comments + Directory |
-| 8 | Eniola Olawale | eniola.olawale@peopleos.co | L2 | Tasks |
+| 8 | Eniola Olawale | eniola.olawale@venturegardengroup.com | L2 | Tasks |
 | 9 | Adeyinka Oshin | adeyinka.oshin@venturegardengroup.com | L2 | Tasks |
 | 10 | Favour Oyekanmi | favour.oyekanmi@venturegardengroup.com | L2 | Tasks |
 | 11 | Ayomide Adeosun | adeosun.ayomide@venturegardengroup.com | L2 | Tasks |
