@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:demo-auth": "node scripts/seed-demo-auth-users.mjs",
+    "fix:eo-auth": "node scripts/fix-eo-corporate-auth.mjs",
     "apply:eo-org": "node scripts/apply-eo-org-structure.mjs",
     "check:eo-roster": "node scripts/check-eo-roster.mjs",
     "export:eo-roster": "node scripts/export-eo-team-roster.mjs",

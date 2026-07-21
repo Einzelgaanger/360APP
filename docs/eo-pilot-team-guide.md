@@ -66,7 +66,7 @@ Inside **Appraisal**, you may see up to five sub-tabs depending on your role:
 | Person | Email | Flags |
 |--------|-------|-------|
 | Bunmi Akinyemiju | `bunmi.akinyemiju@peopleos.co` | Green · **Platform admin** |
-| Kunmi Demuren | `kunmi.demuren@peopleos.co` | Green + Orange |
+| Kunmi Demuren | `kunmi.demuren@venturegardengroup.com` | Green + Orange |
 | Demola Idowu | `demola.idowu@venturegardengroup.com` | Green + Orange |
 
 **Your tasks**
@@ -170,7 +170,7 @@ You do **not** see executive performance forms, EPA assessor sheets, narrative C
 | # | Name | Email | Level | What to do first |
 |---|------|-------|-------|------------------|
 | 1 | Bunmi Akinyemiju | bunmi.akinyemiju@peopleos.co | L0 Admin | Tasks → then Admin → BOOM for releases |
-| 2 | Kunmi Demuren | kunmi.demuren@peopleos.co | L0 | Tasks + Comments |
+| 2 | Kunmi Demuren | kunmi.demuren@venturegardengroup.com | L0 | Tasks + Comments |
 | 3 | Demola Idowu | demola.idowu@venturegardengroup.com | L0 | Tasks + Comments |
 | 4 | Omotola Akinyemiju | omotola.akinyemiju@venturegardengroup.com | L1 | Tasks + Directory |
 | 5 | Uche Ukonu | uche.ukonu@venturegardengroup.com | L1 | Tasks + Comments + Directory |
