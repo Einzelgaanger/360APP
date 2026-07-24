@@ -18,6 +18,7 @@ import EmployeeHub from "./pages/EmployeeHub";
 import AppraisalAdmin from "./pages/AppraisalAdmin";
 import NotFound from "./pages/NotFound";
 import Docs from "./pages/Docs";
+import MvpDemo from "./pages/MvpDemo";
 import ProfileCompletionGate from "@/components/ProfileCompletionGate";
 import { AppBootstrapSkeleton } from "@/components/shell/LoadingShells";
 import { EO_PILOT_ONLY } from "@/lib/eoPilot";
@@ -82,6 +83,7 @@ function AppRoutes() {
       <Route path="/omotola" element={<Navigate to="/hub?tab=survey" replace />} />
       <Route path="/docs" element={<Docs />} />
       <Route path="/docs/:section" element={<Docs />} />
+      <Route path="/mvp" element={<MvpDemo />} />
       <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/landing" element={<Index />} />
